@@ -1,0 +1,31 @@
+# 버전은 dl.google.com / repo1.maven.org의 maven-metadata.xml을 직접 조회해
+# 확인한 실제 최신 stable 값이다(2026-08-19 기준, alpha/beta/rc 제외).
+
+[versions]
+agp = "9.3.1"
+# AGP 9.3.1이 내장 Kotlin으로 실제 구동하는 KGP 버전 — Compose Compiler 플러그인은 이 버전에 맞춰야 한다.
+kotlinCompilerPlugin = "2.2.10"
+coreKtx = "1.19.0"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.08.00"
+camerax = "1.6.1"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+
+camerax-core = { group = "androidx.camera", name = "camera-core", version.ref = "camerax" }
+camerax-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlinCompilerPlugin" }
+# AGP 9.0+ built-in Kotlin — org.jetbrains.kotlin.android는 적용하지 않는다(적용 시 에러).
