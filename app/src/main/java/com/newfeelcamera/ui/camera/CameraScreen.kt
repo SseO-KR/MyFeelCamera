@@ -1,9 +1,11 @@
 package com.newfeelcamera.ui.camera
 
 import android.view.Surface
+import android.widget.Toast
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +70,8 @@ fun CameraScreen(
 
     val currentPreviewView = previewView.value
 
+    val context = LocalContext.current
+
     LaunchedEffect(
         lifecycleOwner,
         currentPreviewView,
@@ -98,6 +103,16 @@ fun CameraScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
+            onShutterClick = {
+                cameraController.takePhoto(
+                    onPhotoSaved = { uri ->
+                        Toast.makeText(context, "저장 완료: &uri", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { error ->
+                        Toast.makeText(context, "촬영 실패: ${error.message}", Toast.LENGTH_SHORT).show()
+                    },
+                )
+            },
         )
     }
 }
@@ -108,6 +123,7 @@ private fun CameraControlLayout(
     displayRotation: Int,
     showCameraPreview: Boolean,
     onPreviewReady: (PreviewView) -> Unit,
+    onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (layoutMode) {
@@ -116,12 +132,14 @@ private fun CameraControlLayout(
             showCameraPreview = showCameraPreview,
             onPreviewReady = onPreviewReady,
             modifier = modifier,
+            onShutterClick = onShutterClick
         )
 
         CameraLayoutMode.Landscape -> LandscapeCameraLayout(
             startOnLeft = displayRotation != Surface.ROTATION_270,
             showCameraPreview = showCameraPreview,
             onPreviewReady = onPreviewReady,
+            onShutterClick = onShutterClick,
             modifier = modifier,
         )
     }
@@ -132,6 +150,7 @@ private fun PortraitCameraLayout(
     startOnTop: Boolean,
     showCameraPreview: Boolean,
     onPreviewReady: (PreviewView) -> Unit,
+    onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -149,6 +168,7 @@ private fun PortraitCameraLayout(
         } else {
             EndControlRail(
                 isVertical = false,
+                onShutterClick = onShutterClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(96.dp)
@@ -168,6 +188,7 @@ private fun PortraitCameraLayout(
         if (startOnTop) {
             EndControlRail(
                 isVertical = false,
+                onShutterClick = onShutterClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(96.dp)
@@ -190,6 +211,7 @@ private fun LandscapeCameraLayout(
     startOnLeft: Boolean,
     showCameraPreview: Boolean,
     onPreviewReady: (PreviewView) -> Unit,
+    onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -207,6 +229,7 @@ private fun LandscapeCameraLayout(
         } else {
             EndControlRail(
                 isVertical = true,
+                onShutterClick = onShutterClick,
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(72.dp)
@@ -226,6 +249,7 @@ private fun LandscapeCameraLayout(
         if (startOnLeft) {
             EndControlRail(
                 isVertical = true,
+                onShutterClick = onShutterClick,
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(72.dp)
@@ -301,6 +325,7 @@ private fun StartControlRail(
 @Composable
 private fun EndControlRail(
     isVertical: Boolean,
+    onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -309,7 +334,7 @@ private fun EndControlRail(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
-            EndRailActions()
+            EndRailActions(onShutterClick = onShutterClick)
         }
     } else {
         Row(
@@ -317,13 +342,15 @@ private fun EndControlRail(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            EndRailActions()
+            EndRailActions(onShutterClick = onShutterClick)
         }
     }
 }
 
 @Composable
-private fun EndRailActions() {
+private fun EndRailActions(
+    onShutterClick: () -> Unit,
+) {
     RailAction(label = "FLASH") {
         Text(
             text = "ϟ",
@@ -331,7 +358,7 @@ private fun EndRailActions() {
             fontSize = 24.sp,
         )
     }
-    ShutterButton()
+    ShutterButton(onClick = onShutterClick)
     RailAction(label = "GALLERY") {
         GalleryThumbnail()
     }
@@ -673,7 +700,9 @@ private fun DialCircle(
 }
 
 @Composable
-private fun ShutterButton() {
+private fun ShutterButton(
+    onClick: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -681,6 +710,7 @@ private fun ShutterButton() {
         Box(
             modifier = Modifier
                 .size(68.dp)
+                .clickable(onClick = onClick)
                 .border(3.dp, Ink.copy(alpha = 0.85f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
