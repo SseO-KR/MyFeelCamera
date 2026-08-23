@@ -65,9 +65,10 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 - 레이아웃을 표현하는 타입(모드 구분)은 처음부터 Portrait 외의 모드를 포함한 형태로 정의한다. 아직 구현하지 않는 모드는 타입 자리는 있되 내부 구현이 `TODO()`인 상태로 둔다 — 타입 자체가 없는 상태로 두지 않는다.
 - UI를 구성하는 Composable 트리는 모드에 따라 통째로 스왑되지 않고, 하나의 트리를 유지한 채 measure/place만 모드별로 달라지는 구조를 전제로 한다. (세부 타입/Composable 설계는 `01-architecture.md`에서 다룬다.)
 - 전 기기 방향 잠금 해제(`fullUser`)를 목표로 하되, Activity `configChanges`로 재생성을 막는 것을 정상 동작의 전제 조건으로 삼지 않는다 — "재생성되지 않는 구조"가 아니라 "재생성돼도 복구되는 구조"를 원칙으로 한다(§9).
-- Window/layout 신호(화면 크기, foldable posture)와 카메라 sensor rotation 신호(`targetRotation`)는 서로 다른 입력으로 취급하고, 하나가 다른 하나를 계산하는 데 쓰이지 않는다.
+- 카메라 UI의 기준 배치는 Portrait다: StartControls는 상단, Preview는 중앙, EndControls는 하단이다. 기기를 왼쪽으로 90° 돌리면 StartControls/EndControls는 각각 좌/우로, 오른쪽으로 90° 돌리면 각각 우/좌로 이동한다. 180°에서는 각각 하/상으로 이동한다. Preview는 항상 두 control 영역 사이의 남는 공간을 차지한다.
+- Window/layout 신호(화면 크기, foldable posture), UI control의 display rotation, 카메라 sensor rotation 신호(`targetRotation`)는 별개다. display rotation은 UI의 Start/End 물리적 위치를 정할 수 있지만, 그 값으로 layout mode나 camera target rotation을 계산하지 않는다.
 
-**P0 구현 범위는 그럼에도 Portrait로 한정한다.** 이유: 두 방향을 동시에 구현하며 위 구조 원칙(트리 비-스왑 등)이 실제로 지켜지는지 검증하려면 다뤄야 할 표면적이 두 배가 되어, "각 단계가 실기기에서 검증 가능한 상태로 끝난다"는 원칙에 어긋난다. 대신 Portrait 구현을 완주하는 동안 구조 자체는 처음부터 다른 모드를 배제하지 않는 형태로 짠다 — 그래야 P1에서 Landscape를 추가할 때 "자리를 채우는 작업"이지 "구조를 다시 만드는 작업"이 되지 않는다.
+**카메라/LUT P0 검증은 Portrait부터 시작한다.** 다만 현재 사용자 요구에 따라 3-region UI의 방향별 배치는 PreviewView 단계부터 구현·검증한다. 이것은 CameraX `targetRotation` 또는 GL texture transform 구현을 앞당기지 않는다.
 
 ## 7. Foldable 정책
 

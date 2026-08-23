@@ -87,11 +87,12 @@ SurfaceProvider 구현체
 
 ```
 Window / layout 크기, foldable posture   →  CameraLayoutMode를 결정한다        (§6)
+Display rotation                          →  ControlEdgeOrder를 결정한다 (UI의 Start/End 위치)
 Display rotation                          →  CameraX targetRotation을 결정한다
 CameraX TransformationInfo                →  GL texture transform(crop/rotate/mirror)을 결정한다
 ```
 
-`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `targetRotation`은 `Display.rotation`(또는 그에 준하는 리스너)만 입력으로 받는다. 이 둘 사이에 코드 의존성을 만들지 않는다 — 하나가 다른 하나의 값을 계산하는 데 쓰이지 않는다.
+`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 `targetRotation`은 각자 `Display.rotation`(또는 그에 준하는 리스너)을 읽을 수 있지만, 서로의 값을 계산하지 않는다. UI order와 CameraX/GL transform 사이에도 코드 의존성을 만들지 않는다.
 
 ## 6. 적응형 레이아웃 — 확장 가능한 타입, 아직 확정하지 않는 구체 형태
 

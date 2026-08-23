@@ -10,6 +10,7 @@
 ## Step 1 — CameraX Preview 최소 표시
 - 목표: `ProcessCameraProvider` 획득, `Preview` UseCase를 임시로 표준 `PreviewView`에 바인딩. 카메라가 화면에 보이는 것까지만.
 - 개념: `ProcessCameraProvider.getInstance()`가 비동기라는 것(`02` §1), `bindToLifecycle()`, 카메라 권한.
+- UI: 현재 사용자 요구에 따라 3-region control 배치가 display rotation별로 올바른 물리적 edge에 놓이는지 함께 확인한다. CameraX `targetRotation` 구현은 이 단계 범위 밖이다.
 - 완료 기준: 후면 카메라 영상이 화면에 뜬다.
 - 검증: 실기기 실행.
 
@@ -71,8 +72,8 @@
 - 검증: `05` §5의 로깅 체크리스트로 반복 테스트(Home↔Resume, 화면 전환 왕복).
 - 이 단계를 통과하면 P0 완료(`00` §3 8개 항목 전부 충족).
 
-## Step 12 — Landscape 추가
-- 목표: `CameraLayoutMode.Landscape` 분기를 채운다(`04` §6).
+## Step 12 — Landscape Preview lifecycle 검증
+- 목표: 이미 추가된 `CameraLayoutMode.Landscape`/ControlEdgeOrder 분기가 GLSurfaceView 기반 Preview에서도 불필요한 재생성 없이 동작하는지 검증한다(`04` §6).
 - 이 단계에서 실제로 답해야 하는 것: `Column ↔ Row` 전환이 Preview `AndroidView`를 재생성시키는지, 재생성이 체감되는지 — `04` §6의 4단계 절차(단순 구현 → 로그 검증 → 문제없으면 유지/있으면 `movableContentOf`나 custom `Layout` 검토)를 그대로 실행한다.
 - 검증: 실기기 회전, `05` §3 매트릭스 기준 로그 관찰.
 

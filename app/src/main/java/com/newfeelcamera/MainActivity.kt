@@ -11,7 +11,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.newfeelcamera.camera.CameraController
@@ -23,32 +22,36 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val context = LocalContext.current
-            // CameraController는 여기(MainActivity)에서 생성해서 CameraScreen에 전달한다 —
-            // CameraScreen 내부에서 생성하지 않는다.
-            val cameraController = remember { CameraController(context.applicationContext) }
 
-            var hasCameraPermission by remember {
+            val cameraController = remember {
+                CameraController(this@MainActivity.applicationContext)
+            }
+
+            var hasCameraPermission = remember {
                 mutableStateOf(
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                        PackageManager.PERMISSION_GRANTED,
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA,
+                    ) == PackageManager.PERMISSION_GRANTED,
                 )
             }
+
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission(),
-            ) { granted -> hasCameraPermission = granted }
+            ) { granted ->
+                hasCameraPermission.value = granted
+            }
 
             LaunchedEffect(Unit) {
-                if (!hasCameraPermission) {
+                if (!hasCameraPermission.value) {
                     permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }
 
-            if (hasCameraPermission) {
-                CameraScreen(cameraController = cameraController)
-            }
-            // TODO(P0-CAMERA-03 / Roadmap Step 1):
-            // 권한이 거부됐을 때 보여줄 UI(재요청 안내 등)는 아직 없다 — 화면이 비어있는 상태로 둔다.
-            // 관련: 00-product-requirements.md §3 항목1.
+            CameraScreen(
+                cameraController = cameraController,
+                hasCameraPermission = hasCameraPermission.value,
+            )
         }
     }
 }
