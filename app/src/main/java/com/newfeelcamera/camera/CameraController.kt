@@ -11,9 +11,11 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
-class CameraController(
-    private val appContext: Context,
+class CameraController @Inject constructor (
+    @param:ApplicationContext private val appContext: Context,
 ) {
 
     private var imageCapture: ImageCapture? = null

@@ -33,8 +33,9 @@ com.<app>/
 
 | 객체 | 책임 | Lifetime |
 |---|---|---|
-| `CameraScreen` (Composable) | UI 트리 구성, ViewModel 구독 | Composition을 따름 — 화면 이탈/복귀마다 재생성될 수 있다 |
-| `CameraViewModel` | UI State/Intent/Effect 매핑 | ViewModel 스코프 — Composition 재생성에서 살아남는다 |
+| `CameraRoute` (Composable) | ViewModel 구독, 권한 요청 결과와 UI event 연결 | Navigation destination의 `NavBackStackEntry`를 따름 |
+| `CameraScreen` (Composable) | UI 트리 구성, 상태 표시, event callback 전달 | Composition을 따름 — 화면 이탈/복귀마다 재생성될 수 있다 |
+| `CameraViewModel` | UI State/Intent/Effect 매핑 | Camera navigation destination 스코프 — Composition 재생성에서 살아남고 destination이 back stack에서 제거되면 정리된다 |
 | `CameraController` | `ProcessCameraProvider` 획득, UseCase(Preview/ImageCapture) 구성, bind/unbind | ViewModel과 동일 스코프로 유지 — Composable이 재생성될 때마다 새로 만들지 않는다 |
 | Preview 렌더링 View (예: GLSurfaceView 기반) | OES `SurfaceTexture` 보유, GL 렌더링 | `AndroidView` 팩토리가 관리 — View 시스템 lifecycle을 따르며 Composition보다 하위 개념 |
 | `Renderer` | 셰이더 컴파일, draw call | 소유 View의 EGL context lifetime을 따름 |
@@ -160,9 +161,9 @@ P0는 이 리스트가 정확히 2개다(`00` §3) — 런타임 필터 조합/�
 
 "현재 선택된 Film"은 이 목록과 별개의 상태다 — 어떤 `FilmFilter`가 지금 활성인지를 가리키는 값이며, `00` §1/§10의 source of truth가 바로 이 값이다. 이 상태는 UI State(`CameraViewModel`, §2)가 들고 있고, Preview 렌더러와 Capture 측 filter 적용기(§2)는 둘 다 이 값을 읽기만 한다 — 각자 자기만의 "현재 필터" 사본을 갖지 않는다.
 
-## 9. DI — 지금 프레임워크를 고정하지 않는다
+## 9. DI — Hilt constructor injection부터 사용한다
 
-`CameraController`/`Renderer`/`ViewModel` 등 객체 간 배선을 어떤 메커니즘으로 할지(수동 생성자 호출 vs Hilt 등)는 `00`에 요구사항이 없고, 지금 정해도 나중에 바꾸는 비용이 낮다(Later/Verify First). §2의 책임 분리 원칙(UI lifecycle과 카메라 세션 lifecycle을 같은 객체가 담당하지 않는다)만 지금 지키면, 배선 메커니즘은 실제 클래스 그래프가 나온 뒤 정해도 충분하다.
+`CameraController`처럼 Hilt가 생성할 수 있는 클래스는 `@Inject constructor`와 `@ApplicationContext`로 주입한다. Module은 `ProcessCameraProvider`/Executor처럼 생성자를 직접 호출할 수 없는 객체를 제공하거나, 인터페이스 구현을 교체해야 할 때만 추가한다. Controller는 camera session 상태를 가지므로 `@Singleton`으로 만들지 않고, `CameraViewModel` 생성자에 주입된 인스턴스를 해당 화면 범위에서 사용한다.
 
 ## 10. 알려진 오픈 아이템 요약
 
