@@ -5,6 +5,7 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
+import android.util.Log
 import android.view.Surface
 import androidx.camera.core.SurfaceRequest
 import kotlinx.coroutines.Runnable
@@ -27,14 +28,19 @@ class CameraRenderer(
     private data class SurfaceBinding(
         val request: SurfaceRequest,
         val surface: Surface,
-        val surfaceTexture: SurfaceTexture
+        val surfaceTexture: SurfaceTexture,
+        val glContextGeneration: Int,
     )
 
     private val frameAvailable = AtomicBoolean(false)
     private val textureTransform = FloatArray(16)
 
+    private var glContextGeneration = 0
     private var oesTextureId = 0
     private var inputSurfaceTexture: SurfaceTexture? = null
+    private var cameraTransformSnapshot: CameraTransformSnapshot? = null
+    private var shouldLogTextureTransform = false
+
     private var pendingRequest: SurfaceRequest? = null
     private var activeBinding: SurfaceBinding? = null
     private val retiredBindings = mutableListOf<SurfaceBinding>()
@@ -54,6 +60,13 @@ class CameraRenderer(
         }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        glContextGeneration += 1
+
+        Log.d(
+            TAG,
+            "onSurfaceCreated generation=$glContextGeneration thread=${Thread.currentThread().name}",
+        )
+
         // EGL context 재생성됐다면 기존 SurfaceRequest는 새 SurfaceTexture를 사용할 수 없으므로 invalidate
         retireActiveBinding()
 
@@ -92,6 +105,16 @@ class CameraRenderer(
         if (frameAvailable.compareAndSet(true, false)){
             surfaceTexture.updateTexImage()
             surfaceTexture.getTransformMatrix(textureTransform)
+
+            if(shouldLogTextureTransform){
+                Log.d(
+                    TAG,
+                    "surfaceTextureTransform=" +
+                            textureTransform.contentToString(),
+                )
+
+                shouldLogTextureTransform = false
+            }
         }
 
         drawCameraTexture()
@@ -99,12 +122,57 @@ class CameraRenderer(
 
     // GL Thread에서 실행
     fun onSurfaceRequest(surfaceRequest: SurfaceRequest) {
-        pendingRequest?.willNotProvideSurface()
+        Log.d(
+            TAG,
+            "onSurfaceRequest request=${System.identityHashCode(surfaceRequest)} " +
+                    "resolution=${surfaceRequest.resolution} " +
+                    "generation=$glContextGeneration " +
+                    "thread=${Thread.currentThread().name}",
+        )
+
+        pendingRequest?.let { request ->
+            request.clearTransformationInfoListener()
+            request.willNotProvideSurface()
+        }
 
         retireActiveBinding()
 
+        cameraTransformSnapshot = null
         pendingRequest = surfaceRequest
+
+        if(inputSurfaceTexture == null){
+            frameAvailable.store(false)
+            createInputSurfaceTexture()
+        }
+
         providePendingSurfaceIfPossible()
+    }
+
+    fun onTransformationInfo(
+        request: SurfaceRequest,
+        snapshot: CameraTransformSnapshot,
+    ) {
+        val isCurrentRequest =
+            pendingRequest === request ||
+                    activeBinding?.request === request
+
+        if (!isCurrentRequest) return
+
+        cameraTransformSnapshot = snapshot
+        shouldLogTextureTransform = true
+
+        Log.d(
+            TAG,
+            "onTransformationInfo " +
+                    "request=${System.identityHashCode(request)} " +
+                    "cropRect=${snapshot.cropRect} " +
+                    "rotationDegrees=${snapshot.rotationDegrees} " +
+                    "hasCameraTransform=${snapshot.hasCameraTransform} " +
+                    "isMirroring=${snapshot.isMirroring} " +
+                    "thread=${Thread.currentThread().name}",
+        )
+
+        requestRender()
     }
 
     private fun createInputSurfaceTexture() {
@@ -164,6 +232,7 @@ class CameraRenderer(
             request = request,
             surface = surface,
             surfaceTexture = surfaceTexture,
+            glContextGeneration = glContextGeneration,
         )
 
         pendingRequest = null
@@ -176,9 +245,7 @@ class CameraRenderer(
             // CameraX 가 더 이상 이 Surface를 쓰지 않는 시점
             // GL 관련 상태 변경은 다시 GL 쓰레드에서 처리한다.
             queueOnGlThread {
-                Runnable {
-                    releaseBinding(binding)
-                }
+                releaseBinding(binding)
             }
         }
     }
@@ -194,13 +261,19 @@ class CameraRenderer(
             oesTextureId = 0
         }
 
+        binding.request.clearTransformationInfoListener()
         binding.request.invalidate()
     }
 
     private fun releaseBinding(binding: SurfaceBinding){
+        binding.request.clearTransformationInfoListener()
         binding.surface.release()
-        binding.surfaceTexture.release()
 
+        if (binding.glContextGeneration == glContextGeneration) {
+            binding.surfaceTexture.detachFromGLContext()
+        }
+
+        binding.surfaceTexture.release()
         retiredBindings.remove(binding)
 
         if (activeBinding === binding){
@@ -358,5 +431,7 @@ class CameraRenderer(
                 outColor = texture(uCameraTexture, vTexCoord);
             }
         """.trimIndent()
+
+        private const val TAG = "CameraRenderer"
     }
 }
