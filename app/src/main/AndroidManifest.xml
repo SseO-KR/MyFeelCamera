@@ -15,8 +15,9 @@
         android:theme="@style/Theme.NewFeelCamera">
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize"
             android:exported="true"
-            android:screenOrientation="fullUser"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.NewFeelCamera">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

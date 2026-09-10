@@ -10,7 +10,7 @@
 ## Step 1 — CameraX Preview 최소 표시
 - 목표: `ProcessCameraProvider` 획득, `Preview` UseCase를 임시로 표준 `PreviewView`에 바인딩. 카메라가 화면에 보이는 것까지만.
 - 개념: `ProcessCameraProvider.getInstance()`가 비동기라는 것(`02` §1), `bindToLifecycle()`, 카메라 권한.
-- UI: 현재 사용자 요구에 따라 3-region control 배치가 display rotation별로 올바른 물리적 edge에 놓이는지 함께 확인한다. CameraX `targetRotation` 구현은 이 단계 범위 밖이다.
+- UI: 기준 Portrait의 3-region control 배치를 확인한다. 기기 방향에 따른 content 회전과 CameraX `targetRotation`은 Step 13 범위다.
 - 완료 기준: 후면 카메라 영상이 화면에 뜬다.
 - 검증: 실기기 실행.
 
@@ -72,12 +72,19 @@
 - 검증: `05` §5의 로깅 체크리스트로 반복 테스트(Home↔Resume, 화면 전환 왕복).
 - 이 단계를 통과하면 P0 완료(`00` §3 8개 항목 전부 충족).
 
-## Step 12 — Landscape Preview lifecycle 검증
-- 목표: 이미 추가된 `CameraLayoutMode.Landscape`/ControlEdgeOrder 분기가 GLSurfaceView 기반 Preview에서도 불필요한 재생성 없이 동작하는지 검증한다(`04` §6).
-- 이 단계에서 실제로 답해야 하는 것: `Column ↔ Row` 전환이 Preview `AndroidView`를 재생성시키는지, 재생성이 체감되는지 — `04` §6의 4단계 절차(단순 구현 → 로그 검증 → 문제없으면 유지/있으면 `movableContentOf`나 custom `Layout` 검토)를 그대로 실행한다.
-- 검증: 실기기 회전, `05` §3 매트릭스 기준 로그 관찰.
+## Step 12 — Preview identity / Surface lifecycle 검증
+- 목표: 고정된 `Box` 구조에서 recomposition과 실제 Window 크기 변경이 Preview를 불필요하게 재생성하지 않는지 검증한다(`04` §6).
+- 확인 결과: 일반 회전 로그에서 같은 Preview/ImageCapture/SurfaceRequest/GL thread가 유지됐다. 별도로 SurfaceRequest 재요청과 EGL 재생성 복구 경로를 확인했다.
+- 남은 검증: Phone Portrait 고정 적용 후 물리적 회전에서 Preview 크기와 `AndroidView` identity가 유지되는지, 실제 Window resize에서는 adaptive fallback이 동작하는지 확인한다.
 
-## Step 13 — Large screen / Foldable
+## Step 13 — Camera rotation policy & transform
+- 목표: Phone에는 Portrait orientation을 요청하고, Window가 유지되는 동안 PreviewSlot/Rail 배치를 고정한다. Preview는 display 좌표계와 정렬하고, 개별 control content와 Capture는 물리적 기기 방향을 반영한다.
+- 정책 근거: 이 요청은 GL/CameraX 객체가 반드시 재생성되기 때문에 넣는 것이 아니다. Phone Camera 화면에서 Window 축 교환에 따른 전체 remeasure, Preview 크기 변경, rail 재배치의 체감 지연을 없애기 위한 UX 선택이다. 앱의 다른 화면은 회전을 허용하며, Navigation 도입 시 orientation 요청을 Camera destination lifecycle로 한정한다.
+- 구현 범위: Portrait orientation 요청, display rotation 관찰과 `Preview.targetRotation` 갱신, `OrientationEventListener` 관찰과 `ImageCapture.targetRotation` 및 UI content 회전 갱신, `SurfaceRequest.TransformationInfo` 전달. GL에서는 SurfaceTexture transform의 담당 범위를 확인한 뒤 필요한 crop / mirror / viewport만 조건부 합성한다.
+- 완료 기준: Phone의 0/90/180/270도에서 PreviewSlot과 Rail 배치는 앱 좌표상 유지되고 버튼·텍스트는 읽기 좋은 방향을 향한다. 저장 사진의 EXIF/방향은 실제 촬영 방향과 일치하며, rotation 갱신만으로 `CameraController.bind()`가 다시 실행되지 않는다. 실제 Window가 바뀌면 adaptive layout이 동작한다.
+- 검증: Phone 4방향 회전에서 Preview 크기·identity·저장 결과를 확인한다. 별도로 multi-window/large-screen Window resize에서 adaptive 배치, Preview 방향·비율·crop을 확인한다. `hasCameraTransform`, `TransformationInfo`, 실제 모서리 패턴을 함께 비교해 회전·crop·mirror가 중복 적용되지 않는지 확인한다.
+
+## Step 14 — Large screen / Foldable
 - 목표: `01` §6이 열어둔 Foldable 케이스(Tabletop/Book 등)의 구체 형태를 `androidx.window` 실제 이벤트와 실제 UI 요구사항을 보고 정한다.
 - 이 단계 전까지는 손대지 않는다 — 추측성 설계를 피하기 위해서다(`01` §6, `04` §4).
 

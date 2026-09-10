@@ -88,9 +88,9 @@
 ## 현재 상태 (수시 갱신)
 
 - 설계 문서 `00`~`06` 확정.
-- Gradle 프로젝트 골격 생성 및 `./gradlew :app:assembleDebug` 빌드 성공 확인(AGP 9.3.1, Kotlin 내장, compileSdk/targetSdk 37, minSdk 29, CameraX 1.6.1, Compose BOM 2026.08.00).
-- Skeleton 3개 파일 존재, 둘 다 핵심 로직 TODO 상태: `camera/CameraController.kt`(`bind()`), `ui/camera/CameraScreen.kt`.
-- **현재 Roadmap Step: 1** — `ProcessCameraProvider` 획득 + `Preview`를 임시 `PreviewView`에 bind. 다음 작업은 이 범위를 벗어나지 않는다(`06` Step 1).
+- Gradle/Hilt 설정이 완료되어 있으며, `NewFeelCameraApp`은 `@HiltAndroidApp`, `MainActivity`는 `@AndroidEntryPoint`, `CameraController`는 `@Inject constructor`, `CameraViewModel`은 `@HiltViewModel`을 사용한다. KSP가 AGP 9 내장 Kotlin의 source-set DSL을 아직 완전히 지원하지 않아 `gradle.properties`에 `android.disallowKotlinSourceSets=false`(AGP 공식 과도기 escape hatch)가 있다.
+- `CameraController`는 `Preview`와 `ImageCapture`를 함께 bind하고 `takePhoto()`로 MediaStore 저장을 수행한다. `CameraScreen`은 고정된 `Box` 안에서 `CameraGlSurfaceView`를 유지하며, GL Preview는 `CameraSurfaceProvider` → OES `SurfaceTexture` → `CameraRenderer` 경로로 표시된다.
+- **현재 Roadmap Step: Step 4와 Step 12의 Surface lifecycle 검증을 마쳤고, Step 13에서 Phone Portrait 요청·control content 회전·Preview/Capture rotation 신호 분리를 구현했다. Phone 4방향 저장 결과와 실제 Window resize의 adaptive fallback 실기기 검증이 남아 있다.**
 
 ---
 

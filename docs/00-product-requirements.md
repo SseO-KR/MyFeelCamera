@@ -64,11 +64,12 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 
 - 레이아웃을 표현하는 타입(모드 구분)은 처음부터 Portrait 외의 모드를 포함한 형태로 정의한다. 아직 구현하지 않는 모드는 타입 자리는 있되 내부 구현이 `TODO()`인 상태로 둔다 — 타입 자체가 없는 상태로 두지 않는다.
 - UI를 구성하는 Composable 트리는 모드에 따라 통째로 스왑되지 않고, 하나의 트리를 유지한 채 measure/place만 모드별로 달라지는 구조를 전제로 한다. (세부 타입/Composable 설계는 `01-architecture.md`에서 다룬다.)
-- 전 기기 방향 잠금 해제(`fullUser`)를 목표로 하되, Activity `configChanges`로 재생성을 막는 것을 정상 동작의 전제 조건으로 삼지 않는다 — "재생성되지 않는 구조"가 아니라 "재생성돼도 복구되는 구조"를 원칙으로 한다(§9).
-- 카메라 UI의 기준 배치는 Portrait다: StartControls는 상단, Preview는 중앙, EndControls는 하단이다. 기기를 왼쪽으로 90° 돌리면 StartControls/EndControls는 각각 좌/우로, 오른쪽으로 90° 돌리면 각각 우/좌로 이동한다. 180°에서는 각각 하/상으로 이동한다. Preview는 항상 두 control 영역 사이의 남는 공간을 차지한다.
-- Window/layout 신호(화면 크기, foldable posture), UI control의 display rotation, 카메라 sensor rotation 신호(`targetRotation`)는 별개다. display rotation은 UI의 Start/End 물리적 위치를 정할 수 있지만, 그 값으로 layout mode나 camera target rotation을 계산하지 않는다.
+- 앱의 일반 화면은 시스템 회전을 허용하고 실제 Window 크기에 적응하는 것을 기본 정책으로 삼는다. 다만 Camera 화면의 Phone UX는 Portrait orientation을 요청하는 명시적 예외다. 회전 때 Window의 width/height 교환으로 화면 전체가 remeasure되고 Preview 크기와 control 배치가 함께 바뀌는 체감 지연을 피하면서, 기본 카메라처럼 촬영 프레임은 유지하고 읽기 방향이 있는 content만 회전시키기 위해서다. 이는 모든 환경에서 Window 방향을 보장하는 아키텍처 불변식이 아니다. 멀티 윈도우, 제조사 정책, API 37 large screen처럼 요청이 적용되지 않아 실제 Window가 바뀌면 adaptive layout이 동작해야 한다.
+- Portrait 요청이 적용돼 Window가 유지되는 동안 StartControls는 앱 좌표상 상단, Preview는 중앙, EndControls는 하단에 고정한다. 기기를 오른쪽으로 돌리면 고정된 하단 EndControls가 사용자 기준 왼쪽에, 왼쪽으로 돌리면 오른쪽에, 180°에서는 위쪽에 보인다. 이 효과를 만들기 위해 Rail이나 Preview를 기기 방향에 따라 재배치하지 않는다.
+- Rail 배경과 PreviewSlot은 회전시키지 않는다. 버튼 아이콘·레이블, Film Header, Preview overlay text처럼 읽기 방향이 있는 개별 콘텐츠만 실제 기기 방향을 따라 회전한다. `OrientationEventListener`의 물리 각도와 CameraX target rotation은 반대 방향 규약이므로, UI 각도는 실제 display rotation과 양자화된 device target rotation의 규약을 변환해 합성한다.
+- Window/layout 신호, display rotation, 물리적 기기 방향은 별개다. 실제 Window 크기와 posture는 `CameraLayoutMode`를, display rotation은 adaptive fallback의 UI 좌표계와 `Preview.targetRotation`을 결정한다. `ImageCapture.targetRotation`은 기기 방향 관찰값을 `Surface.ROTATION_*`으로 양자화한 신호를 사용한다. Preview와 ImageCapture가 항상 같은 회전 source를 쓴다고 가정하지 않는다.
 
-**카메라/LUT P0 검증은 Portrait부터 시작한다.** 다만 현재 사용자 요구에 따라 3-region UI의 방향별 배치는 PreviewView 단계부터 구현·검증한다. 이것은 CameraX `targetRotation` 또는 GL texture transform 구현을 앞당기지 않는다.
+**카메라/LUT P0 검증은 Portrait부터 시작한다.** 다만 현재 사용자 요구에 따라 3-region UI의 방향별 배치는 PreviewView 단계부터 구현·검증한다. CameraX `targetRotation`과 GL texture transform은 UI layout과 별도의 카메라 회전 단계에서 구현·검증한다.
 
 ## 7. Foldable 정책
 

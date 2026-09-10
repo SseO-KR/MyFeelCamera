@@ -88,12 +88,18 @@ SurfaceProvider 구현체
 
 ```
 Window / layout 크기, foldable posture   →  CameraLayoutMode를 결정한다        (§6)
-Display rotation                          →  ControlEdgeOrder를 결정한다 (UI의 Start/End 위치)
-Display rotation                          →  CameraX targetRotation을 결정한다
-CameraX TransformationInfo                →  GL texture transform(crop/rotate/mirror)을 결정한다
+Display rotation                          →  adaptive fallback의 ControlEdgeOrder와 Preview targetRotation을 결정한다
+Display rotation + device target rotation  →  개별 control content의 화면상 회전각을 결정한다
+기기 방향 관찰값(양자화)                   →  device target rotation과 ImageCapture targetRotation을 결정한다
+CameraX TransformationInfo                →  GL texture transform 정책을 결정한다
+SurfaceTexture transform + 위 정책        →  Preview 최종 GL transform을 결정한다
 ```
 
-`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 `targetRotation`은 각자 `Display.rotation`(또는 그에 준하는 리스너)을 읽을 수 있지만, 서로의 값을 계산하지 않는다. UI order와 CameraX/GL transform 사이에도 코드 의존성을 만들지 않는다.
+Phone UX는 Activity에 Portrait orientation을 요청한다. 요청이 적용돼 Window가 유지되는 동안 Portrait의 Start/Preview/End 앱 좌표 배치를 그대로 유지하고, 읽기 방향이 있는 개별 control content만 기기 방향을 따라 회전한다. Portrait 요청은 멀티 윈도우·large screen·제조사 동작까지 고정하는 보장이 아니므로, 실제 Window가 바뀌면 `CameraLayoutMode`와 `ControlEdgeOrder`가 adaptive fallback을 담당한다.
+
+`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 Preview target rotation은 observable display rotation을 읽고, ImageCapture target rotation은 기기 방향 listener를 읽는다. `UseCase.snapToSurfaceRotation()`이 만든 device target rotation은 물리 각도를 CameraX target 방향으로 뒤집은 값이므로, control content는 display rotation과 device target rotation을 실제 각도로 바꿔 더한 뒤 정규화한다. UI 배치와 CameraX/GL transform 사이에는 코드 의존성을 만들지 않는다.
+
+`ImageCapture.targetRotation`은 `OrientationEventListener`의 양자화된 기기 방향을 사용한다. `Preview.targetRotation`은 화면 좌표계에 맞도록 실제 display rotation을 사용한다. Portrait 요청이 적용된 Phone에서는 display가 유지되어 Preview도 유지되지만 Capture와 control content는 물리적 기기 방향을 계속 반영한다. 각 신호는 독립적으로 구독하고 수명 관리한다.
 
 ## 6. 적응형 레이아웃 — 확장 가능한 타입, 아직 확정하지 않는 구체 형태
 

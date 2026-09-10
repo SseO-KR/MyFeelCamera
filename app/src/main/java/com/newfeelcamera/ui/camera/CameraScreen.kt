@@ -1,8 +1,8 @@
 package com.newfeelcamera.ui.camera
 
+import android.hardware.display.DisplayManager
 import android.view.Surface
 import androidx.camera.core.Preview
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,14 +27,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -81,13 +86,73 @@ private fun CameraPreviewBindingEffect(
 }
 
 @Composable
+private fun rememberDisplayRotation(): Int {
+    val context = LocalContext.current
+    val view = LocalView.current
+
+    val displayManager = remember(context) {
+        context.getSystemService(DisplayManager::class.java)
+    }
+
+    var displayRotation by remember(view) {
+        mutableIntStateOf(
+            view.display?.rotation ?: Surface.ROTATION_0,
+        )
+    }
+
+    DisposableEffect(
+        displayManager,
+        view,
+    ) {
+        fun updateDisplayRotation() {
+            displayRotation =
+                view.display?.rotation ?: Surface.ROTATION_0
+        }
+
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(displayId: Int) = Unit
+
+            override fun onDisplayRemoved(displayId: Int) = Unit
+
+            override fun onDisplayChanged(displayId: Int) {
+                if (displayId == view.display?.displayId) {
+                    updateDisplayRotation()
+                }
+            }
+        }
+
+        displayManager.registerDisplayListener(
+            listener,
+            null,
+        )
+
+        updateDisplayRotation()
+
+        onDispose {
+            displayManager.unregisterDisplayListener(listener)
+        }
+    }
+
+    return displayRotation
+}
+
+@Composable
 fun CameraScreen(
     uiState: CameraUiState,
     onBindCamera: (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
+    onDisplayRotationChanged: (Int) -> Unit,
     onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val displayRotation = LocalView.current.display?.rotation ?: Surface.ROTATION_0
+    val displayRotation = rememberDisplayRotation()
+    val contentRotationDegrees = uiContentRotationDegrees(
+        displayRotation = displayRotation,
+        deviceTargetRotation = uiState.deviceTargetRotation,
+    )
+
+    LaunchedEffect(displayRotation) {
+        onDisplayRotationChanged(displayRotation)
+    }
 
     val surfaceProvider = remember {
         mutableStateOf<Preview.SurfaceProvider?>(null)
@@ -110,6 +175,7 @@ fun CameraScreen(
                 height = maxHeight,
             ),
             displayRotation = displayRotation,
+            contentRotationDegrees = contentRotationDegrees,
             showCameraPreview = uiState.hasCameraPermission,
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
@@ -126,6 +192,7 @@ fun CameraScreen(
 private fun CameraControlLayout(
     layoutMode: CameraLayoutMode,
     displayRotation: Int,
+    contentRotationDegrees: Float,
     showCameraPreview: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
@@ -133,167 +200,101 @@ private fun CameraControlLayout(
     onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (layoutMode) {
-        CameraLayoutMode.Portrait -> PortraitCameraLayout(
-            startOnTop = displayRotation != Surface.ROTATION_180,
-            showCameraPreview = showCameraPreview,
-            onSurfaceProviderReady = onSurfaceProviderReady,
-            isCapturing = isCapturing,
-            capturedPhotoCount = capturedPhotoCount,
-            onShutterClick = onShutterClick,
-            modifier = modifier,
-        )
+    val isPortrait = layoutMode == CameraLayoutMode.Portrait
+    val horizontalRailHeight = 96.dp
+    val verticalRailWidth = 72.dp
 
-        CameraLayoutMode.Landscape -> LandscapeCameraLayout(
-            startOnLeft = displayRotation != Surface.ROTATION_270,
-            showCameraPreview = showCameraPreview,
-            onSurfaceProviderReady = onSurfaceProviderReady,
-            isCapturing = isCapturing,
-            capturedPhotoCount = capturedPhotoCount,
-            onShutterClick = onShutterClick,
-            modifier = modifier,
-        )
-    }
-}
-
-@Composable
-private fun PortraitCameraLayout(
-    startOnTop: Boolean,
-    showCameraPreview: Boolean,
-    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
-    isCapturing: Boolean,
-    capturedPhotoCount: Int,
-    onShutterClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (startOnTop) {
-            StartControlRail(
-                isVertical = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .background(Rail),
-            )
-        } else {
-            EndControlRail(
-                isVertical = false,
-                isCapturing = isCapturing,
-                onShutterClick = onShutterClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .background(Rail),
-            )
+    val startRailAlignment = when (layoutMode) {
+        CameraLayoutMode.Portrait -> {
+            if (displayRotation == Surface.ROTATION_180) Alignment.BottomCenter else Alignment.TopCenter
         }
 
-        CameraStage(
-            previewAspectRatio = 3f / 4f,
-            showCameraPreview = showCameraPreview,
-            onSurfaceProviderReady = onSurfaceProviderReady,
-            capturedPhotoCount = capturedPhotoCount,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-        )
-
-        if (startOnTop) {
-            EndControlRail(
-                isVertical = false,
-                isCapturing = isCapturing,
-                onShutterClick = onShutterClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .background(Rail),
-            )
-        } else {
-            StartControlRail(
-                isVertical = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .background(Rail),
-            )
+        CameraLayoutMode.Landscape -> {
+            if (displayRotation == Surface.ROTATION_270) Alignment.CenterEnd else Alignment.CenterStart
         }
     }
-}
 
-@Composable
-private fun LandscapeCameraLayout(
-    startOnLeft: Boolean,
-    showCameraPreview: Boolean,
-    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
-    isCapturing: Boolean,
-    capturedPhotoCount: Int,
-    onShutterClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (startOnLeft) {
-            StartControlRail(
-                isVertical = true,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(72.dp)
-                    .background(Rail),
-            )
-        } else {
-            EndControlRail(
-                isVertical = true,
-                isCapturing = isCapturing,
-                onShutterClick = onShutterClick,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(72.dp)
-                    .background(Rail),
-            )
+    val endRailAlignment = when (layoutMode) {
+        CameraLayoutMode.Portrait -> {
+            if (displayRotation == Surface.ROTATION_180) Alignment.TopCenter else Alignment.BottomCenter
         }
 
+        CameraLayoutMode.Landscape -> {
+            if (displayRotation == Surface.ROTATION_270) Alignment.CenterStart else Alignment.CenterEnd
+        }
+    }
+
+    Box(modifier = modifier) {
+        // 이 호출 위치를 고정해 방향 전환에도 PreviewSlot의 AndroidView identity를 유지한다.
         CameraStage(
-            previewAspectRatio = 3f / 2f,
+            previewAspectRatio = if (isPortrait) 3f / 4f else 3f / 2f,
+            contentRotationDegrees = contentRotationDegrees,
             showCameraPreview = showCameraPreview,
             onSurfaceProviderReady = onSurfaceProviderReady,
-            capturedPhotoCount = capturedPhotoCount,
             modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
+                .fillMaxSize()
+                .padding(
+                    horizontal = if (isPortrait) 0.dp else verticalRailWidth,
+                    vertical = if (isPortrait) horizontalRailHeight else 0.dp,
+                ),
         )
 
-        if (startOnLeft) {
-            EndControlRail(
-                isVertical = true,
-                isCapturing = isCapturing,
-                onShutterClick = onShutterClick,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(72.dp)
-                    .background(Rail),
-            )
-        } else {
-            StartControlRail(
-                isVertical = true,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(72.dp)
-                    .background(Rail),
-            )
-        }
+        FilmHeader(
+            capturedPhotoCount = capturedPhotoCount,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = if (isPortrait) horizontalRailHeight + 8.dp else 12.dp)
+                .graphicsLayer(rotationZ = contentRotationDegrees),
+        )
+
+        StartControlRail(
+            isVertical = !isPortrait,
+            contentRotationDegrees = contentRotationDegrees,
+            modifier = Modifier
+                .align(startRailAlignment)
+                .then(
+                    if (isPortrait) {
+                        Modifier
+                            .fillMaxWidth()
+                            .height(horizontalRailHeight)
+                    } else {
+                        Modifier
+                            .fillMaxHeight()
+                            .width(verticalRailWidth)
+                    },
+                )
+                .background(Rail),
+        )
+
+        EndControlRail(
+            isVertical = !isPortrait,
+            contentRotationDegrees = contentRotationDegrees,
+            isCapturing = isCapturing,
+            onShutterClick = onShutterClick,
+            modifier = Modifier
+                .align(endRailAlignment)
+                .then(
+                    if (isPortrait) {
+                        Modifier
+                            .fillMaxWidth()
+                            .height(horizontalRailHeight)
+                    } else {
+                        Modifier
+                            .fillMaxHeight()
+                            .width(verticalRailWidth)
+                    },
+                )
+                .background(Rail),
+        )
     }
 }
 
 @Composable
 private fun CameraStage(
     previewAspectRatio: Float,
+    contentRotationDegrees: Float,
     showCameraPreview: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
-    capturedPhotoCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -301,14 +302,13 @@ private fun CameraStage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        ShotCounter(capturedPhotoCount = capturedPhotoCount)
-        Spacer(modifier = Modifier.height(12.dp))
         PreviewSlot(
             modifier = Modifier
                 .widthIn(max = 280.dp)
                 .fillMaxWidth()
                 .aspectRatio(previewAspectRatio),
             showCameraPreview = showCameraPreview,
+            contentRotationDegrees = contentRotationDegrees,
             onSurfaceProviderReady = onSurfaceProviderReady,
         )
     }
@@ -317,6 +317,7 @@ private fun CameraStage(
 @Composable
 private fun StartControlRail(
     isVertical: Boolean,
+    contentRotationDegrees: Float,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -325,9 +326,15 @@ private fun StartControlRail(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
-            RailLabel(text = "FILM")
-            FilmDial()
-            ZoomControl(isVertical = true)
+            RailLabel(
+                text = "FILM",
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+            )
+            FilmDial(contentRotationDegrees = contentRotationDegrees)
+            ZoomControl(
+                isVertical = true,
+                contentRotationDegrees = contentRotationDegrees,
+            )
         }
     } else {
         Row(
@@ -335,11 +342,17 @@ private fun StartControlRail(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 RailLabel(text = "FILM")
                 FilmDial()
             }
-            ZoomControl(isVertical = false)
+            ZoomControl(
+                isVertical = false,
+                contentRotationDegrees = contentRotationDegrees,
+            )
         }
     }
 }
@@ -347,6 +360,7 @@ private fun StartControlRail(
 @Composable
 private fun EndControlRail(
     isVertical: Boolean,
+    contentRotationDegrees: Float,
     isCapturing: Boolean,
     onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -359,6 +373,7 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
             )
         }
@@ -370,6 +385,7 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
             )
         }
@@ -379,9 +395,13 @@ private fun EndControlRail(
 @Composable
 private fun EndRailActions(
     isCapturing: Boolean,
+    contentRotationDegrees: Float,
     onShutterClick: () -> Unit,
 ) {
-    RailAction(label = "FLASH") {
+    RailAction(
+        label = "FLASH",
+        contentRotationDegrees = contentRotationDegrees,
+    ) {
         Text(
             text = "ϟ",
             color = Ink,
@@ -390,26 +410,34 @@ private fun EndRailActions(
     }
     ShutterButton(
         isCapturing = isCapturing,
+        contentRotationDegrees = contentRotationDegrees,
         onClick = onShutterClick,
     )
-    RailAction(label = "GALLERY") {
+    RailAction(
+        label = "GALLERY",
+        contentRotationDegrees = contentRotationDegrees,
+    ) {
         GalleryThumbnail()
     }
-    RailAction(label = "SETTINGS") {
+    RailAction(
+        label = "SETTINGS",
+        contentRotationDegrees = contentRotationDegrees,
+    ) {
         SettingsGlyph()
     }
 }
 
 @Composable
-private fun ShotCounter(
+private fun FilmHeader(
     capturedPhotoCount: Int,
+    modifier: Modifier = Modifier,
 ) {
     val frameNumber = (capturedPhotoCount + 1)
         .toString()
         .padStart(2, '0')
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .background(
                 color = Color(0x73000000),
                 shape = RoundedCornerShape(20.dp),
@@ -456,6 +484,7 @@ private fun ShotCounter(
 @Composable
 private fun PreviewSlot(
     showCameraPreview: Boolean,
+    contentRotationDegrees: Float,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -521,7 +550,8 @@ private fun PreviewSlot(
             fontSize = 9.sp,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 10.dp, top = 8.dp),
+                .padding(start = 10.dp, top = 8.dp)
+                .graphicsLayer(rotationZ = contentRotationDegrees),
         )
         MonoText(
             text = "1.0X",
@@ -529,7 +559,8 @@ private fun PreviewSlot(
             fontSize = 9.sp,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 10.dp, top = 8.dp),
+                .padding(end = 10.dp, top = 8.dp)
+                .graphicsLayer(rotationZ = contentRotationDegrees),
         )
         MonoText(
             text = "REAR CAMERA",
@@ -538,7 +569,8 @@ private fun PreviewSlot(
             letterSpacing = 2.4.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 10.dp),
+                .padding(bottom = 10.dp)
+                .graphicsLayer(rotationZ = contentRotationDegrees),
         )
     }
 }
@@ -667,7 +699,9 @@ private fun ReticleArm(
 }
 
 @Composable
-private fun FilmDial() {
+private fun FilmDial(
+    contentRotationDegrees: Float = 0f,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -678,23 +712,35 @@ private fun FilmDial() {
                 color = Accent,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
             )
         }
-        MonoText(text = "WARM", color = InkDim, fontSize = 8.sp)
+        MonoText(
+            text = "WARM",
+            color = InkDim,
+            fontSize = 8.sp,
+            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+        )
     }
 }
 
 @Composable
-private fun ZoomControl(isVertical: Boolean) {
+private fun ZoomControl(
+    isVertical: Boolean,
+    contentRotationDegrees: Float,
+) {
     if (isVertical) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ZoomIncreaseButton()
-            ZoomValue()
-            ZoomDecreaseButton()
-            RailLabel(text = "ZOOM")
+            ZoomIncreaseButton(contentRotationDegrees)
+            ZoomValue(contentRotationDegrees)
+            ZoomDecreaseButton(contentRotationDegrees)
+            RailLabel(
+                text = "ZOOM",
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+            )
         }
     } else {
         Column(
@@ -705,50 +751,75 @@ private fun ZoomControl(isVertical: Boolean) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ZoomIncreaseButton()
-                ZoomValue()
-                ZoomDecreaseButton()
+                ZoomIncreaseButton(contentRotationDegrees)
+                ZoomValue(contentRotationDegrees)
+                ZoomDecreaseButton(contentRotationDegrees)
             }
-            RailLabel(text = "ZOOM")
+            RailLabel(
+                text = "ZOOM",
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+            )
         }
     }
 }
 
 @Composable
-private fun ZoomIncreaseButton() {
+private fun ZoomIncreaseButton(contentRotationDegrees: Float) {
     DialCircle {
-        Text(text = "+", color = Ink, fontSize = 22.sp)
+        Text(
+            text = "+",
+            color = Ink,
+            fontSize = 22.sp,
+            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+        )
     }
 }
 
 @Composable
-private fun ZoomValue() {
+private fun ZoomValue(contentRotationDegrees: Float) {
     MonoText(
         text = "1.0X",
         color = Ink,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
+        modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
     )
 }
 
 @Composable
-private fun ZoomDecreaseButton() {
+private fun ZoomDecreaseButton(contentRotationDegrees: Float) {
     DialCircle {
-        Text(text = "−", color = Ink, fontSize = 22.sp)
+        Text(
+            text = "−",
+            color = Ink,
+            fontSize = 22.sp,
+            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+        )
     }
 }
 
 @Composable
 private fun RailAction(
     label: String,
+    contentRotationDegrees: Float,
     content: @Composable () -> Unit,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        DialCircle(content = content)
-        RailLabel(text = label)
+        DialCircle {
+            Box(
+                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+                contentAlignment = Alignment.Center,
+            ) {
+                content()
+            }
+        }
+        RailLabel(
+            text = label,
+            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+        )
     }
 }
 
@@ -769,6 +840,7 @@ private fun DialCircle(
 @Composable
 private fun ShutterButton(
     isCapturing: Boolean,
+    contentRotationDegrees: Float,
     onClick: () -> Unit,
 ) {
     Column(
@@ -796,6 +868,7 @@ private fun ShutterButton(
         }
         RailLabel(
             text = if (isCapturing) "SAVING" else "SHUTTER",
+            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
         )
     }
 }
@@ -825,15 +898,40 @@ private fun SettingsGlyph() {
 }
 
 @Composable
-private fun RailLabel(text: String) {
+private fun RailLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     MonoText(
         text = text,
         color = InkDim,
         fontSize = 8.sp,
         letterSpacing = 1.sp,
         textAlign = TextAlign.Center,
+        modifier = modifier,
     )
 }
+
+private fun uiContentRotationDegrees(
+    displayRotation: Int,
+    deviceTargetRotation: Int,
+): Float {
+    // snapToSurfaceRotation()은 물리 각도의 반대 방향인 CameraX target rotation을 반환한다.
+    // Window가 함께 회전하면 display rotation과 상쇄되고, 고정 Window에서는 UI 보정각이 된다.
+    val combinedRotation =
+        surfaceRotationDegrees(displayRotation) + surfaceRotationDegrees(deviceTargetRotation)
+
+    return ((combinedRotation + 540) % 360 - 180).toFloat()
+}
+
+private fun surfaceRotationDegrees(rotation: Int): Int =
+    when (rotation) {
+        Surface.ROTATION_0 -> 0
+        Surface.ROTATION_90 -> 90
+        Surface.ROTATION_180 -> 180
+        Surface.ROTATION_270 -> 270
+        else -> 0
+    }
 
 @Composable
 private fun MonoText(

@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import android.view.Surface
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 import androidx.camera.core.CameraSelector
@@ -18,7 +19,11 @@ class CameraController @Inject constructor (
     @param:ApplicationContext private val appContext: Context,
 ) {
 
+    private var preview: Preview? = null
     private var imageCapture: ImageCapture? = null
+
+    private var previewTargetRotation = Surface.ROTATION_0
+    private var imageCaptureTargetRotation = Surface.ROTATION_0
 
     fun bind(
         lifecycleOwner: LifecycleOwner,
@@ -29,27 +34,58 @@ class CameraController @Inject constructor (
         providerFuture.addListener({
             val cameraProvider = providerFuture.get()
 
-            val preview = Preview.Builder()
+            val previewUseCase = Preview.Builder()
+                .setTargetRotation(previewTargetRotation)
                 .build()
                 .apply {
                     setSurfaceProvider(surfaceProvider)
                 }
 
-            val capture = ImageCapture.Builder().build()
+            val capture = ImageCapture.Builder()
+                .setTargetRotation(imageCaptureTargetRotation)
+                .build()
 
             cameraProvider.unbindAll()
 
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                preview,
+                previewUseCase,
                 capture,
             )
 
+            preview = previewUseCase
             imageCapture = capture
         },
             ContextCompat.getMainExecutor(appContext)
         )
+    }
+
+    private fun isSurfaceRotation(rotation: Int): Boolean =
+        when (rotation) {
+            Surface.ROTATION_0,
+            Surface.ROTATION_90,
+            Surface.ROTATION_180,
+            Surface.ROTATION_270,
+                -> true
+
+            else -> false
+        }
+
+    fun updateImageCaptureTargetRotation(rotation: Int) {
+        if (!isSurfaceRotation(rotation)) return
+        if (imageCaptureTargetRotation == rotation) return
+
+        imageCaptureTargetRotation = rotation
+        imageCapture?.targetRotation = rotation
+    }
+
+    fun updatePreviewTargetRotation(rotation: Int) {
+        if (!isSurfaceRotation(rotation)) return
+        if (previewTargetRotation == rotation) return
+
+        previewTargetRotation = rotation
+        preview?.targetRotation = rotation
     }
 
     fun takePhoto(

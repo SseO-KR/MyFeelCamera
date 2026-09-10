@@ -37,6 +37,8 @@ Camera device
 | 이벤트 | 강제로 유발하는 것 | 강제하지 않는 것 |
 |---|---|---|
 | Recomposition (구조 변경 없음) | 없음 | View/Surface/EGL/SurfaceTexture/CameraX 전부 그대로 |
+| Portrait Window가 유지된 상태의 물리적 기기 회전 | UI content rotation state 갱신, `ImageCapture.targetRotation` 갱신 | Window 크기, PreviewSlot, View/Surface/EGL/SurfaceTexture, `Preview.targetRotation`은 그대로 |
+| 실제 Window 크기/display rotation 변경 | Compose remeasure, adaptive 배치, `Preview.targetRotation` 갱신 | 구조적으로 같은 `AndroidView`의 factory 재실행이나 CameraX 전체 rebind를 강제하지 않는다 |
 | `AndroidView` 노드가 구조적으로 제거됐다 다시 추가됨(예: `04` §6의 `Column`↔`Row` 전환이 실제로 이렇게 동작한다면) | View 재생성(factory 재실행) → 새 Surface → EGL Context 재생성 → SurfaceTexture 재생성 → CameraX에 새 Surface 재공급 필요 | CameraX UseCase 전체 rebind는 강제하지 않는다 — `01` §4 Fix Now대로 같은 `SurfaceProvider`가 새 요청을 처리하면 된다 |
 | View는 살아있는데 Surface만 파괴됨(예: 백그라운드 전환) | EGL Context 파괴(`preserveEGLContextOnPause` 없으면) → SurfaceTexture 무효 → 새 Surface 재공급 필요 | View 객체 자체, Composition은 그대로 |
 | CameraX UseCase를 명시적으로 다시 bind | 새 `SurfaceRequest` 발생 → Surface 재공급 필요 | View/EGL/SurfaceTexture를 강제로 재생성하지 않는다 — 기존에 유효한 SurfaceTexture 기반 Surface를 그대로 다시 공급할 수 있는지는 §7에서 다룬다 |

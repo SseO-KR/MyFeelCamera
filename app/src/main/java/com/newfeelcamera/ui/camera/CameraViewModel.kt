@@ -14,7 +14,12 @@ sealed interface CameraAction {
     data class CameraPermissionChanged(
         val granted: Boolean,
     ) : CameraAction
-
+    data class DisplayRotationChanged(  // 현재 화면이 어느 방향으로 표시되는가
+        val rotation: Int,
+    ) : CameraAction
+    data class DeviceOrientationChanged( // 물리 방향을 CameraX target rotation으로 양자화한 값
+        val targetRotation: Int,
+    ) : CameraAction
     data object ShutterClicked : CameraAction
 }
 
@@ -33,7 +38,19 @@ class CameraViewModel @Inject constructor(
                     hasCameraPermission = intent.granted
                 )
             }
-
+            is CameraAction.DisplayRotationChanged -> {
+                cameraController.updatePreviewTargetRotation(
+                    intent.rotation,
+                )
+            }
+            is CameraAction.DeviceOrientationChanged -> {
+                _uiState.update {
+                    it.copy(deviceTargetRotation = intent.targetRotation)
+                }
+                cameraController.updateImageCaptureTargetRotation(
+                    intent.targetRotation,
+                )
+            }
             CameraAction.ShutterClicked -> capturePhoto()
         }
     }
