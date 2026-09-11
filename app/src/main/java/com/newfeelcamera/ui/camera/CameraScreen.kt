@@ -39,8 +39,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -239,17 +242,10 @@ private fun CameraControlLayout(
                 ),
         )
 
-        FilmHeader(
-            capturedPhotoCount = capturedPhotoCount,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = if (isPortrait) horizontalRailHeight + 8.dp else 12.dp)
-                .graphicsLayer(rotationZ = contentRotationDegrees),
-        )
-
         StartControlRail(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
+            capturedPhotoCount = capturedPhotoCount,
             modifier = Modifier
                 .align(startRailAlignment)
                 .then(
@@ -318,6 +314,7 @@ private fun CameraStage(
 private fun StartControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
+    capturedPhotoCount: Int,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -331,6 +328,9 @@ private fun StartControlRail(
                 modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
             )
             FilmDial(contentRotationDegrees = contentRotationDegrees)
+            RotationAwareContent(rotationDegrees = contentRotationDegrees) {
+                ShotCounter(capturedPhotoCount = capturedPhotoCount)
+            }
             ZoomControl(
                 isVertical = true,
                 contentRotationDegrees = contentRotationDegrees,
@@ -348,6 +348,9 @@ private fun StartControlRail(
             ) {
                 RailLabel(text = "FILM")
                 FilmDial()
+            }
+            RotationAwareContent(rotationDegrees = contentRotationDegrees) {
+                ShotCounter(capturedPhotoCount = capturedPhotoCount)
             }
             ZoomControl(
                 isVertical = false,
@@ -399,7 +402,7 @@ private fun EndRailActions(
     onShutterClick: () -> Unit,
 ) {
     RailAction(
-        label = "FLASH",
+        accessibilityLabel = "Flash",
         contentRotationDegrees = contentRotationDegrees,
     ) {
         Text(
@@ -410,17 +413,16 @@ private fun EndRailActions(
     }
     ShutterButton(
         isCapturing = isCapturing,
-        contentRotationDegrees = contentRotationDegrees,
         onClick = onShutterClick,
     )
     RailAction(
-        label = "GALLERY",
+        accessibilityLabel = "Gallery",
         contentRotationDegrees = contentRotationDegrees,
     ) {
         GalleryThumbnail()
     }
     RailAction(
-        label = "SETTINGS",
+        accessibilityLabel = "Settings",
         contentRotationDegrees = contentRotationDegrees,
     ) {
         SettingsGlyph()
@@ -428,7 +430,7 @@ private fun EndRailActions(
 }
 
 @Composable
-private fun FilmHeader(
+private fun ShotCounter(
     capturedPhotoCount: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -451,11 +453,6 @@ private fun FilmHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(7.dp)
-                .background(Accent, CircleShape),
-        )
         MonoText(
             text = frameNumber,
             color = Ink,
@@ -464,19 +461,6 @@ private fun FilmHeader(
         )
         MonoText(text = "/", color = InkDim, fontSize = 13.sp)
         MonoText(text = "24", color = InkDim, fontSize = 13.sp)
-        Box(
-            modifier = Modifier
-                .height(14.dp)
-                .width(1.dp)
-                .background(Hair),
-        )
-        CondensedText(
-            text = "WARM",
-            color = InkDim,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 1.2.sp,
-        )
     }
 }
 
@@ -544,34 +528,43 @@ private fun PreviewSlot(
 
         FocusReticle(modifier = Modifier.align(Alignment.Center))
 
-        MonoText(
-            text = "EV +0.0",
-            color = Ink.copy(alpha = 0.55f),
-            fontSize = 9.sp,
+        RotationAwareContent(
+            rotationDegrees = contentRotationDegrees,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 10.dp, top = 8.dp)
-                .graphicsLayer(rotationZ = contentRotationDegrees),
-        )
-        MonoText(
-            text = "1.0X",
-            color = Ink.copy(alpha = 0.55f),
-            fontSize = 9.sp,
+                .padding(start = 10.dp, top = 8.dp),
+        ) {
+            MonoText(
+                text = "EV +0.0",
+                color = Ink.copy(alpha = 0.55f),
+                fontSize = 9.sp,
+            )
+        }
+        RotationAwareContent(
+            rotationDegrees = contentRotationDegrees,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 10.dp, top = 8.dp)
-                .graphicsLayer(rotationZ = contentRotationDegrees),
-        )
-        MonoText(
-            text = "REAR CAMERA",
-            color = Ink.copy(alpha = 0.28f),
-            fontSize = 9.sp,
-            letterSpacing = 2.4.sp,
+                .padding(end = 10.dp, top = 8.dp),
+        ) {
+            MonoText(
+                text = "1.0X",
+                color = Ink.copy(alpha = 0.55f),
+                fontSize = 9.sp,
+            )
+        }
+        RotationAwareContent(
+            rotationDegrees = contentRotationDegrees,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 10.dp)
-                .graphicsLayer(rotationZ = contentRotationDegrees),
-        )
+                .padding(bottom = 10.dp),
+        ) {
+            MonoText(
+                text = "REAR CAMERA",
+                color = Ink.copy(alpha = 0.28f),
+                fontSize = 9.sp,
+                letterSpacing = 2.4.sp,
+            )
+        }
     }
 }
 
@@ -731,34 +724,27 @@ private fun ZoomControl(
 ) {
     if (isVertical) {
         Column(
+            modifier = Modifier.semantics {
+                contentDescription = "Zoom"
+            },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ZoomIncreaseButton(contentRotationDegrees)
             ZoomValue(contentRotationDegrees)
             ZoomDecreaseButton(contentRotationDegrees)
-            RailLabel(
-                text = "ZOOM",
-                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
-            )
         }
     } else {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        Row(
+            modifier = Modifier.semantics {
+                contentDescription = "Zoom"
+            },
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ZoomIncreaseButton(contentRotationDegrees)
-                ZoomValue(contentRotationDegrees)
-                ZoomDecreaseButton(contentRotationDegrees)
-            }
-            RailLabel(
-                text = "ZOOM",
-                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
-            )
+            ZoomIncreaseButton(contentRotationDegrees)
+            ZoomValue(contentRotationDegrees)
+            ZoomDecreaseButton(contentRotationDegrees)
         }
     }
 }
@@ -800,35 +786,31 @@ private fun ZoomDecreaseButton(contentRotationDegrees: Float) {
 
 @Composable
 private fun RailAction(
-    label: String,
+    accessibilityLabel: String,
     contentRotationDegrees: Float,
     content: @Composable () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    DialCircle(
+        modifier = Modifier.semantics {
+            contentDescription = accessibilityLabel
+        },
     ) {
-        DialCircle {
-            Box(
-                modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
-                contentAlignment = Alignment.Center,
-            ) {
-                content()
-            }
-        }
-        RailLabel(
-            text = label,
+        Box(
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
     }
 }
 
 @Composable
 private fun DialCircle(
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(44.dp)
             .background(Color(0x05FFFFFF), CircleShape)
             .border(1.dp, Hair, CircleShape),
@@ -840,35 +822,28 @@ private fun DialCircle(
 @Composable
 private fun ShutterButton(
     isCapturing: Boolean,
-    contentRotationDegrees: Float,
     onClick: () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    Box(
+        modifier = Modifier
+            .size(68.dp)
+            .semantics {
+                contentDescription = if (isCapturing) "Saving" else "Shutter"
+            }
+            .clickable(
+                enabled = !isCapturing,
+                onClick = onClick,
+            )
+            .border(3.dp, Ink.copy(alpha = 0.85f), CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(68.dp)
-                .clickable(
-                    enabled = !isCapturing,
-                    onClick = onClick,
-                )
-                .border(3.dp, Ink.copy(alpha = 0.85f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(
-                        color = if (isCapturing) Ink.copy(alpha = 0.35f) else Color.White,
-                        shape = CircleShape,
-                    ),
-            )
-        }
-        RailLabel(
-            text = if (isCapturing) "SAVING" else "SHUTTER",
-            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+                .size(52.dp)
+                .background(
+                    color = if (isCapturing) Ink.copy(alpha = 0.35f) else Color.White,
+                    shape = CircleShape,
+                ),
         )
     }
 }
@@ -922,6 +897,59 @@ private fun uiContentRotationDegrees(
         surfaceRotationDegrees(displayRotation) + surfaceRotationDegrees(deviceTargetRotation)
 
     return ((combinedRotation + 540) % 360 - 180).toFloat()
+}
+
+@Composable
+private fun RotationAwareContent(
+    rotationDegrees: Float,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Layout(
+        modifier = modifier,
+        content = content,
+    ) { measurables, constraints ->
+        val placeable = measurables.single().measure(
+            constraints.copy(
+                minWidth = 0,
+                minHeight = 0,
+            ),
+        )
+
+        val normalizedRotation =
+            ((rotationDegrees.toInt() % 360) + 360) % 360
+        val swapsWidthAndHeight =
+            normalizedRotation == 90 || normalizedRotation == 270
+
+        val measuredWidth = if (swapsWidthAndHeight) {
+            placeable.height
+        } else {
+            placeable.width
+        }
+        val measuredHeight = if (swapsWidthAndHeight) {
+            placeable.width
+        } else {
+            placeable.height
+        }
+
+        val layoutWidth = measuredWidth.coerceIn(
+            minimumValue = constraints.minWidth,
+            maximumValue = constraints.maxWidth,
+        )
+        val layoutHeight = measuredHeight.coerceIn(
+            minimumValue = constraints.minHeight,
+            maximumValue = constraints.maxHeight,
+        )
+
+        layout(layoutWidth, layoutHeight) {
+            placeable.placeRelativeWithLayer(
+                x = (layoutWidth - placeable.width) / 2,
+                y = (layoutHeight - placeable.height) / 2,
+            ) {
+                rotationZ = rotationDegrees
+            }
+        }
+    }
 }
 
 private fun surfaceRotationDegrees(rotation: Int): Int =

@@ -9,7 +9,7 @@
 - 아키텍처는 Portrait 외 모드를 배제하지 않는 구조여야 한다 — "Portrait 전용을 먼저 만들고 나중에 adaptive하게 리팩터링"하는 방식은 피한다. **(`00` §6)**
 - Phone은 Portrait orientation을 요청한다. 요청이 적용돼 Window가 유지되는 동안 3-region 구조를 앱 좌표상 StartControls=상단, Preview=중앙, EndControls=하단으로 유지한다. 기기를 돌렸을 때의 사용자 기준 물리적 위치는 이 고정 배치에서 자연스럽게 결정하며, Rail과 Preview를 기기 방향만으로 다시 배치하지 않는다. **(Product Requirement)**
 - 이 고정 요청은 앱 전체의 공통 정책이 아니라 Camera 화면의 Phone UX에만 적용하는 예외다. 다른 화면은 시스템 회전을 허용하고 실제 Window에 적응한다. **(Product Requirement)**
-- 버튼 아이콘·레이블, Film Header, Preview overlay text처럼 읽기 방향이 있는 개별 content는 실제 display rotation과 CameraX 규약으로 양자화된 device target rotation을 합성해 회전한다. Rail 배경과 PreviewSlot은 회전하지 않는다. **(Product Requirement, Implementation Decision)**
+- 버튼 아이콘, Film 정보와 촬영 수, Preview overlay text처럼 읽기 방향이 있는 개별 content는 실제 display rotation과 CameraX 규약으로 양자화된 device target rotation을 합성해 회전한다. Rail 배경과 PreviewSlot은 회전하지 않는다. Flash/Shutter/Gallery/Settings/Zoom의 반복적인 시각 레이블은 표시하지 않고 아이콘·형태와 접근성 설명으로 역할을 전달한다. 촬영 수는 Preview 위에 겹치지 않고 Start 패널의 Film과 Zoom 사이에 `현재 수 / 최대 수`만 표시한다. Film 이름은 Film 영역의 `WARM` 표기를 재사용한다. **(Product Requirement, Implementation Decision)**
 - Portrait 요청이 적용되지 않아 실제 Window 크기나 방향이 바뀌면 `CameraLayoutMode`와 기존 `Box` 배치가 adaptive fallback을 담당한다. Phone 여부만으로 Window가 항상 Portrait라고 가정하지 않는다. **(Product Requirement, Android Window API Contract)**
 
 ## 2. 신호 재확인 — Window Size ≠ Camera Rotation
@@ -50,6 +50,8 @@
 현재는 `MainActivity`에 Camera 화면 하나만 있으므로 Manifest가 Portrait orientation을 요청하고 `orientation|screenSize` configuration change를 처리한다. 여러 destination을 한 Activity에서 운영하는 Navigation 단계에서는 Activity 전체를 잠그지 않도록 이 요청을 Camera destination의 lifecycle 범위로 옮기고, 화면을 떠날 때 이전 orientation 정책을 복원한다. 방향 요청이 무시되거나 Window가 외부 요인으로 바뀔 수 있으므로, 이 설정을 정상 동작의 전제 조건으로 삼지 않는다. Activity나 Surface/EGL이 재생성되는 경우에도 Preview가 복구되어야 한다. **(Implementation Decision, Later — Navigation 도입 시 요청 범위 변경)**
 
 Portrait 요청의 직접 목적을 "카메라·GL 객체의 재생성을 막는다"고 표현하지 않는다. 고정 `Box` 적용 후의 로그에서는 일반 회전에도 같은 Preview, ImageCapture, SurfaceRequest, GL thread가 유지됐다. Portrait 요청은 Window 축 교환에 따른 Compose 전체 remeasure, Preview 크기 변경, adaptive rail 재배치를 Phone Camera UX에서 피하기 위한 정책이다. 실제 객체 재생성 여부와 화면 재측정은 별개의 문제다. **(실기기 관찰, Implementation Decision)**
+
+`graphicsLayer(rotationZ)`는 그리기 결과만 회전시키며 Compose에 보고하는 측정 너비·높이는 바꾸지 않는다. 따라서 촬영 수나 Preview 모서리 overlay처럼 경계에 가까운 content는 90°/270°에서 회전된 그림이 rail 또는 Preview의 clip 영역 밖으로 나갈 수 있다. 이런 content는 회전만 적용하지 않고, 90°/270°일 때 자식의 측정 너비와 높이를 서로 바꿔 보고하는 rotation-aware wrapper 안에 배치한다. Rail/Preview 자체의 배치와 `AndroidView` identity는 변경하지 않는다. **(Compose API Contract, Implementation Decision)**
 
 Phone에서 기기만 회전할 때는 Preview 크기와 `AndroidView` identity가 유지되고 `CameraController.bind`가 다시 실행되지 않는지 확인한다. 실제 Window resize/rotation에서는 같은 View가 유지된 채 `onSurfaceChanged()`로 처리되는지 확인한다. 시스템이 Surface/EGL을 재생성하면 `onSurfaceCreated`와 새 `SurfaceRequest`가 발생해도 되며, CameraX 전체 rebind 없이 Preview가 복구되는지 확인한다. **(Verify First)**
 
