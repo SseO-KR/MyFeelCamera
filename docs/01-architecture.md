@@ -16,16 +16,16 @@
 
 ```
 com.<app>/
-├─ camera/    CameraX 세팅, Surface/SurfaceTexture 소유 — UI를 모른다
-├─ gl/        GLSurfaceView(또는 대응 View), Renderer, shader 로딩 — 레이아웃을 모른다
-├─ filter/    Filter/LUT 모델 — 이상적으로는 Android 프레임워크 비의존
+├─ camera/    CameraX 실행과 카메라 Preview/Filter 파이프라인 — UI를 모른다
+│  ├─ gl/     카메라 전용 GLSurfaceView, SurfaceProvider, Renderer, shader 로딩
+│  └─ filter/ Film/LUT 모델 — Android 프레임워크 비의존
 ├─ capture/   촬영 트리거·저장
 ├─ layout/    window size/posture → CameraLayoutMode 판정 (순수 함수에 가깝게)
 ├─ ui/        Compose Screen, ViewModel
 └─ di/        DI 배선 (프레임워크 선택은 §9)
 ```
 
-경계는 지금은 "모듈"이 아니라 "패키지 + import 규율"로 지킨다 — 예를 들어 `filter/`는 `android.*`를 import하지 않는다, `gl/`은 `layout/`을 import하지 않는다 같은 규칙. 실제로 재사용 대상이 생기거나 빌드 시간이 문제가 되면 `:domain`/`:data`로 승격하는 것은 기계적인 리팩터링이라 나중으로 미룬다(Later).
+경계는 지금은 "모듈"이 아니라 "패키지 + import 규율"로 지킨다. `camera/filter/`는 `android.*`를 import하지 않고, `camera/gl/`은 Compose·디자인·레이아웃을 import하지 않는다. UI는 `camera/gl/`의 Preview View를 사용하지만 GL/CameraX 구현은 UI를 역으로 알지 않는다. 실제로 재사용 대상이 생기거나 빌드 시간이 문제가 되면 `:domain`/`:data`로 승격하는 것은 기계적인 리팩터링이라 나중으로 미룬다(Later).
 
 ## 2. 카메라 아키텍처 — 객체 책임과 Lifetime
 
@@ -143,7 +143,7 @@ Child composable 트리는 `layoutMode`와 무관하게 항상 동일하게 유�
 `00` §10을 그대로 옮긴다: 공유해야 하는 것은 **입력**이지 **실행 방식**이 아니다.
 
 ```
-FilmFilter / FilterParams (filter/ 패키지, 단일 source of truth)
+FilmFilter / FilterParams (camera/filter/ 패키지, 단일 source of truth)
       │
       ├── Preview 실행 경로   ← 아직 미정
       └── Capture 실행 경로   ← 아직 미정

@@ -2,6 +2,7 @@ package com.newfeelcamera.ui.camera
 
 import android.net.Uri
 import android.view.Surface
+import com.newfeelcamera.camera.filter.FilmPreset
 
 data class CameraUiState(
     val hasCameraPermission: Boolean = false,
@@ -10,4 +11,5 @@ data class CameraUiState(
     val latestPhotoUri: Uri? = null,
     val captureErrorMessage: String? = null,
     val deviceTargetRotation: Int = Surface.ROTATION_0,
+    val selectedFilm: FilmPreset = FilmPreset.WARM,
 )

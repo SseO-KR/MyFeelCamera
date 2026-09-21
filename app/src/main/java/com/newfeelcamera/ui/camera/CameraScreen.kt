@@ -55,7 +55,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.newfeelcamera.ui.camera.gl.CameraGlSurfaceView
+import com.newfeelcamera.camera.filter.FilmPreset
+import com.newfeelcamera.camera.gl.CameraGlSurfaceView
 import com.newfeelcamera.ui.camera.layout.CameraLayoutMode
 import com.newfeelcamera.ui.camera.layout.cameraLayoutModeFor
 import com.newfeelcamera.ui.design.Accent
@@ -144,6 +145,7 @@ fun CameraScreen(
     uiState: CameraUiState,
     onBindCamera: (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
     onDisplayRotationChanged: (Int) -> Unit,
+    onFilmSelected: (FilmPreset) -> Unit,
     onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -183,6 +185,8 @@ fun CameraScreen(
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
             capturedPhotoCount = uiState.capturedPhotoCount,
+            selectedFilm = uiState.selectedFilm,
+            onFilmSelected = onFilmSelected,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
@@ -200,6 +204,8 @@ private fun CameraControlLayout(
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
     capturedPhotoCount: Int,
+    selectedFilm: FilmPreset,
+    onFilmSelected: (FilmPreset) -> Unit,
     onShutterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -233,6 +239,7 @@ private fun CameraControlLayout(
             previewAspectRatio = if (isPortrait) 3f / 4f else 3f / 2f,
             contentRotationDegrees = contentRotationDegrees,
             showCameraPreview = showCameraPreview,
+            selectedFilm = selectedFilm,
             onSurfaceProviderReady = onSurfaceProviderReady,
             modifier = Modifier
                 .fillMaxSize()
@@ -246,6 +253,8 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             capturedPhotoCount = capturedPhotoCount,
+            selectedFilm = selectedFilm,
+            onFilmSelected = onFilmSelected,
             modifier = Modifier
                 .align(startRailAlignment)
                 .then(
@@ -290,6 +299,7 @@ private fun CameraStage(
     previewAspectRatio: Float,
     contentRotationDegrees: Float,
     showCameraPreview: Boolean,
+    selectedFilm: FilmPreset,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -305,6 +315,7 @@ private fun CameraStage(
                 .aspectRatio(previewAspectRatio),
             showCameraPreview = showCameraPreview,
             contentRotationDegrees = contentRotationDegrees,
+            selectedFilm = selectedFilm,
             onSurfaceProviderReady = onSurfaceProviderReady,
         )
     }
@@ -315,6 +326,8 @@ private fun StartControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
     capturedPhotoCount: Int,
+    selectedFilm: FilmPreset,
+    onFilmSelected: (FilmPreset) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -327,7 +340,11 @@ private fun StartControlRail(
                 text = "FILM",
                 modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
             )
-            FilmDial(contentRotationDegrees = contentRotationDegrees)
+            FilmDial(
+                selectedFilm = selectedFilm,
+                onFilmSelected = onFilmSelected,
+                contentRotationDegrees = contentRotationDegrees,
+                )
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
                 ShotCounter(capturedPhotoCount = capturedPhotoCount)
             }
@@ -347,7 +364,10 @@ private fun StartControlRail(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RailLabel(text = "FILM")
-                FilmDial()
+                FilmDial(
+                    selectedFilm = selectedFilm,
+                    onFilmSelected = onFilmSelected,
+                )
             }
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
                 ShotCounter(capturedPhotoCount = capturedPhotoCount)
@@ -470,6 +490,7 @@ private fun PreviewSlot(
     showCameraPreview: Boolean,
     contentRotationDegrees: Float,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
+    selectedFilm: FilmPreset,
     modifier: Modifier = Modifier,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -518,6 +539,9 @@ private fun PreviewSlot(
                         glViewState.value = glView
                         onSurfaceProviderReady(glView.surfaceProvider)
                     }
+                },
+                update = { glView ->
+                    glView.setFilmPreset(selectedFilm)
                 }
             )
         } else {
@@ -693,15 +717,29 @@ private fun ReticleArm(
 
 @Composable
 private fun FilmDial(
+    selectedFilm: FilmPreset,
+    onFilmSelected: (FilmPreset) -> Unit,
     contentRotationDegrees: Float = 0f,
 ) {
+    val nextFilm = when (selectedFilm){
+        FilmPreset.WARM -> FilmPreset.DUSK
+        FilmPreset.DUSK -> FilmPreset.WARM
+    }
+
     Column(
+        modifier = Modifier
+            .semantics {
+                contentDescription = "Film ${selectedFilm.displayName}"
+            }
+            .clickable {
+                onFilmSelected(nextFilm)
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         DialCircle {
             CondensedText(
-                text = "W",
+                text = selectedFilm.displayName.first().toString(),
                 color = Accent,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -709,7 +747,7 @@ private fun FilmDial(
             )
         }
         MonoText(
-            text = "WARM",
+            text = selectedFilm.displayName,
             color = InkDim,
             fontSize = 8.sp,
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),

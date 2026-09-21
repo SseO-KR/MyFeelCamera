@@ -1,4 +1,4 @@
-package com.newfeelcamera.ui.camera.gl
+package com.newfeelcamera.camera.gl
 
 import android.graphics.Rect
 import androidx.camera.core.Preview

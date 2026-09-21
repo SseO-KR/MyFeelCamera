@@ -126,6 +126,9 @@ fun CameraRoute(
                 CameraAction.DisplayRotationChanged(rotation),
             )
         },
+        onFilmSelected = { film ->
+            viewModel.onIntent(CameraAction.FilmSelected(film))
+        },
         onShutterClick = {
             viewModel.onIntent(CameraAction.ShutterClicked)
         },

@@ -4,6 +4,7 @@ import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import com.newfeelcamera.camera.CameraController
+import com.newfeelcamera.camera.filter.FilmPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +20,9 @@ sealed interface CameraAction {
     ) : CameraAction
     data class DeviceOrientationChanged( // 물리 방향을 CameraX target rotation으로 양자화한 값
         val targetRotation: Int,
+    ) : CameraAction
+    data class FilmSelected(
+        val film: FilmPreset,
     ) : CameraAction
     data object ShutterClicked : CameraAction
 }
@@ -50,6 +54,13 @@ class CameraViewModel @Inject constructor(
                 cameraController.updateImageCaptureTargetRotation(
                     intent.targetRotation,
                 )
+            }
+            is CameraAction.FilmSelected -> {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        selectedFilm = intent.film,
+                    )
+                }
             }
             CameraAction.ShutterClicked -> capturePhoto()
         }
