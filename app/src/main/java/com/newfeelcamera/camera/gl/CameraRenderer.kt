@@ -1,7 +1,10 @@
 package com.newfeelcamera.camera.gl
 
 import android.content.res.AssetManager
+import android.graphics.Rect
 import android.graphics.SurfaceTexture
+import android.opengl.EGL14
+import android.opengl.EGLContext
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
@@ -10,39 +13,48 @@ import android.util.Log
 import android.view.Surface
 import androidx.camera.core.SurfaceRequest
 import com.newfeelcamera.camera.filter.FilmPreset
-import kotlinx.coroutines.Runnable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.concurrent.Executor
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.concurrent.atomics.AtomicBoolean
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
-@OptIn(ExperimentalAtomicApi::class)
 class CameraRenderer(
     private val assetManager: AssetManager,
     private val requestRender: () -> Unit,
-    private val queueOnGlThread: (Runnable) -> Unit,
     private val resultExecutor: Executor,
 ) : GLSurfaceView.Renderer {
 
-    private data class SurfaceBinding(
+    private class SurfaceBinding(
         val request: SurfaceRequest,
         val surface: Surface,
         val surfaceTexture: SurfaceTexture,
+        val textureId: Int,
         val glContextGeneration: Int,
-    )
+    ) {
+        var released = false
+    }
 
-    private val frameAvailable = AtomicBoolean(false)
+    private data class PendingGlDelete(val textureId: Int, val generation: Int)
+
+    // CameraX 완료/프레임 콜백과 draw/폐기를 직렬화한다.
+    // 이 lock을 잡은 상태에서 GL Thread 종료를 기다리면 안 된다.
+    private val resourceLock = Any()
+    private var frameAvailable = false
     private val textureTransform = FloatArray(16)
+    private val previewTransform = PreviewTextureTransform()
+    private var displayRotation = Surface.ROTATION_0
+    private var outputWidth = 0
+    private var outputHeight = 0
 
     private var glContextGeneration = 0
-    private var oesTextureId = 0
+    private var ownerContext: EGLContext = EGL14.EGL_NO_CONTEXT
+    private var viewAttached = false
+    private var closed = false
+    private val pendingGlDeletes = mutableListOf<PendingGlDelete>()
     private var selectedFilm = FilmPreset.WARM
     private var lutTextureIds: Map<FilmPreset, Int> = emptyMap()
-    private var inputSurfaceTexture: SurfaceTexture? = null
     private var cameraTransformSnapshot: CameraTransformSnapshot? = null
     private var shouldLogTextureTransform = false
 
@@ -68,8 +80,14 @@ class CameraRenderer(
             position(0)
         }
 
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) = synchronized(resourceLock) {
         glContextGeneration += 1
+        ownerContext = EGL14.eglGetCurrentContext()
+        check(ownerContext != EGL14.EGL_NO_CONTEXT)
+        // 새 Context에는 이전 texture/program ID를 적용하지 않는다.
+        pendingGlDeletes.clear()
+        program = 0
+        lutTextureIds = emptyMap()
 
         Log.d(
             TAG,
@@ -78,15 +96,9 @@ class CameraRenderer(
 
         // EGL context 재생성됐다면 기존 SurfaceRequest는 새 SurfaceTexture를 사용할 수 없으므로 invalidate
         retireActiveBinding()
-
-        inputSurfaceTexture?.release()
-        inputSurfaceTexture = null
-        oesTextureId = 0
-
-        frameAvailable.store(false)
+        frameAvailable = false
         Matrix.setIdentityM(textureTransform, 0)
-
-        createInputSurfaceTexture()
+        if (closed) return@synchronized
 
         lutTextureIds = FilmPreset.entries.associateWith { film ->
             createLutTexture(assetPath = film.lutAssetPath)
@@ -170,7 +182,10 @@ class CameraRenderer(
         providePendingSurfaceIfPossible()
     }
 
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) = synchronized(resourceLock) {
+        if (closed) return@synchronized
+        outputWidth = width
+        outputHeight = height
         GLES30.glViewport(0, 0, width, height)
 
         if (height > 0) {
@@ -182,11 +197,21 @@ class CameraRenderer(
         }
     }
 
-    override fun onDrawFrame(gl: GL10?) {
+    override fun onDrawFrame(gl: GL10?) = synchronized(resourceLock) {
+        // 프리뷰가 없거나 최종 폐기된 경우에도 GL 삭제는 먼저 처리한다.
+        drainPendingGlDeletes()
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
+        if (closed) {
+            releaseProgramAndLuts()
+            return@synchronized
+        }
+        if (!viewAttached) return@synchronized
+        providePendingSurfaceIfPossible()
 
-        val surfaceTexture = inputSurfaceTexture ?: return
-        if (frameAvailable.compareAndSet(true, false)){
+        val binding = activeBinding ?: return@synchronized
+        val surfaceTexture = binding.surfaceTexture
+        if (frameAvailable) {
+            frameAvailable = false
             surfaceTexture.updateTexImage()
             surfaceTexture.getTransformMatrix(textureTransform)
 
@@ -201,11 +226,24 @@ class CameraRenderer(
             }
         }
 
-        drawCameraTexture()
+        val info = cameraTransformSnapshot ?: return@synchronized
+        previewTransform.update(
+            surfaceTextureMatrix = textureTransform,
+            displayRotation = displayRotation,
+            info = info,
+            bufferSize = binding.request.resolution,
+            outputWidth = outputWidth,
+            outputHeight = outputHeight,
+        )
+        drawCameraTexture(binding.textureId)
     }
 
-    // GL Thread에서 실행
-    fun onSurfaceRequest(surfaceRequest: SurfaceRequest) {
+    // GL 준비 여부와 무관하게 요청을 받아 보관한다. GL 생성은 Renderer 콜백에서만 한다.
+    fun onSurfaceRequest(surfaceRequest: SurfaceRequest) = synchronized(resourceLock) {
+        if (closed) {
+            surfaceRequest.willNotProvideSurface()
+            return@synchronized
+        }
         Log.d(
             TAG,
             "onSurfaceRequest request=${System.identityHashCode(surfaceRequest)} " +
@@ -223,18 +261,37 @@ class CameraRenderer(
 
         cameraTransformSnapshot = null
         pendingRequest = surfaceRequest
-
-        if(inputSurfaceTexture == null){
-            frameAvailable.store(false)
-            createInputSurfaceTexture()
+        surfaceRequest.setTransformationInfoListener(resultExecutor) { info ->
+            onTransformationInfo(
+                surfaceRequest,
+                CameraTransformSnapshot(
+                    cropRect = Rect(info.cropRect),
+                    rotationDegrees = info.rotationDegrees,
+                    hasCameraTransform = info.hasCameraTransform(),
+                    isMirroring = info.isMirroring,
+                ),
+            )
         }
-
-        providePendingSurfaceIfPossible()
+        surfaceRequest.addRequestCancellationListener(resultExecutor) {
+            synchronized(resourceLock) {
+                if (pendingRequest === surfaceRequest) {
+                    pendingRequest = null
+                    surfaceRequest.clearTransformationInfoListener()
+                }
+            }
+        }
+        requestRender()
     }
 
-    // GL thread에서 호출
-    fun setFilmPreset(film: FilmPreset) {
-        if (selectedFilm == film) return
+    fun setDisplayRotation(rotation: Int) = synchronized(resourceLock) {
+        if (closed || displayRotation == rotation) return@synchronized
+        displayRotation = rotation
+        Log.d(TAG, "Preview displayRotation=$rotation")
+        requestRender()
+    }
+
+    fun setFilmPreset(film: FilmPreset) = synchronized(resourceLock) {
+        if (closed || selectedFilm == film) return@synchronized
 
         val previousFilm = selectedFilm
         selectedFilm = film
@@ -250,15 +307,15 @@ class CameraRenderer(
         requestRender()
     }
 
-    fun onTransformationInfo(
+    private fun onTransformationInfo(
         request: SurfaceRequest,
         snapshot: CameraTransformSnapshot,
-    ) {
+    ) = synchronized(resourceLock) {
         val isCurrentRequest =
             pendingRequest === request ||
                     activeBinding?.request === request
 
-        if (!isCurrentRequest) return
+        if (closed || !isCurrentRequest) return@synchronized
 
         cameraTransformSnapshot = snapshot
         shouldLogTextureTransform = true
@@ -277,15 +334,16 @@ class CameraRenderer(
         requestRender()
     }
 
-    private fun createInputSurfaceTexture() {
+    private fun createOesTexture(): Int {
         val textureIds = IntArray(1)
 
         GLES30.glGenTextures(1, textureIds, 0)
-        oesTextureId = textureIds[0]
+        val textureId = textureIds[0]
+        check(textureId != 0) { "Failed to create camera OES texture" }
 
         GLES30.glBindTexture(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            oesTextureId,
+            textureId,
         )
         GLES30.glTexParameteri(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
@@ -308,19 +366,20 @@ class CameraRenderer(
             GLES30.GL_CLAMP_TO_EDGE,
         )
 
-        inputSurfaceTexture = SurfaceTexture(oesTextureId).also { surfaceTexture ->
-            surfaceTexture.setOnFrameAvailableListener {
-                frameAvailable.store(true)
-
-                // 콜백은 GL 스레드가 아닐 수 있음
-                requestRender()
-            }
-        }
+        return textureId
     }
 
-    private fun providePendingSurfaceIfPossible(){
+    private fun providePendingSurfaceIfPossible() {
+        if (closed || !viewAttached) return
+        checkOwnerContextCurrent()
         val request = pendingRequest ?: return
-        val surfaceTexture = inputSurfaceTexture ?: return
+        val textureId = createOesTexture()
+        val surfaceTexture = try {
+            SurfaceTexture(textureId)
+        } catch (error: Throwable) {
+            GLES30.glDeleteTextures(1, intArrayOf(textureId), 0)
+            throw error
+        }
 
         val resolution = request.resolution
 
@@ -334,19 +393,31 @@ class CameraRenderer(
             request = request,
             surface = surface,
             surfaceTexture = surfaceTexture,
+            textureId = textureId,
             glContextGeneration = glContextGeneration,
         )
 
         pendingRequest = null
         activeBinding = binding
+        frameAvailable = false
+        Matrix.setIdentityM(textureTransform, 0)
+        surfaceTexture.setOnFrameAvailableListener {
+            synchronized(resourceLock) {
+                // listener 제거 전에 이미 전달 중이던 옛 프레임도 무시한다.
+                if (!closed && activeBinding === binding && !binding.released) {
+                    frameAvailable = true
+                    requestRender()
+                }
+            }
+        }
 
         request.provideSurface(
             surface,
             resultExecutor,
-        ) {
-            // CameraX 가 더 이상 이 Surface를 쓰지 않는 시점
-            // GL 관련 상태 변경은 다시 GL 쓰레드에서 처리한다.
-            queueOnGlThread {
+        ) { result ->
+            // GL Thread가 종료돼도 실행되는 완료 콜백. draw와 같은 lock으로 보호한다.
+            synchronized(resourceLock) {
+                Log.d(TAG, "Surface completed request=${System.identityHashCode(request)} result=${result.resultCode}")
                 releaseBinding(binding)
             }
         }
@@ -357,41 +428,103 @@ class CameraRenderer(
 
         activeBinding = null
         retiredBindings += binding
-
-        if(inputSurfaceTexture === binding.surfaceTexture){
-            inputSurfaceTexture = null
-            oesTextureId = 0
-        }
-
+        frameAvailable = false
+        binding.surfaceTexture.setOnFrameAvailableListener(null)
         binding.request.clearTransformationInfoListener()
         binding.request.invalidate()
     }
 
-    private fun releaseBinding(binding: SurfaceBinding){
-        binding.request.clearTransformationInfoListener()
-        binding.surface.release()
-
-        if (binding.glContextGeneration == glContextGeneration) {
-            binding.surfaceTexture.detachFromGLContext()
-        }
-
-        binding.surfaceTexture.release()
-        retiredBindings.remove(binding)
-
-        if (activeBinding === binding){
+    // resourceLock 안에서만 호출. 이 함수에는 GL 호출을 넣지 않는다.
+    private fun releaseBinding(binding: SurfaceBinding) {
+        if (binding.released) return
+        binding.released = true
+        if (activeBinding === binding) {
             activeBinding = null
-            inputSurfaceTexture = null
-            oesTextureId = 0
+            frameAvailable = false
+        }
+        retiredBindings.remove(binding)
+        binding.request.clearTransformationInfoListener()
+        binding.surfaceTexture.setOnFrameAvailableListener(null)
+        binding.surface.release()
+        binding.surfaceTexture.release()
+
+        if (ownerContext != EGL14.EGL_NO_CONTEXT &&
+            binding.glContextGeneration == glContextGeneration
+        ) {
+            pendingGlDeletes += PendingGlDelete(binding.textureId, binding.glContextGeneration)
+            requestRender()
+        }
+        Log.d(TAG, "Binding released request=${System.identityHashCode(binding.request)} " +
+            "generation=${binding.glContextGeneration} pendingDeletes=${pendingGlDeletes.size} " +
+            "retired=${retiredBindings.size} thread=${Thread.currentThread().name}")
+    }
+
+    fun onViewAttached() = synchronized(resourceLock) {
+        if (!closed) {
+            viewAttached = true
+            requestRender()
         }
     }
 
-    private fun drawCameraTexture() {
+    // GLSurfaceView의 GL Thread 종료가 완료된 뒤 호출한다. 일시 detach는 재연결 가능하다.
+    fun onViewDetached() = synchronized(resourceLock) {
+        viewAttached = false
+        ownerContext = EGL14.EGL_NO_CONTEXT
+        pendingGlDeletes.clear()
+        program = 0
+        lutTextureIds = emptyMap()
+        retireActiveBinding()
+        Log.d(TAG, "View detached generation=$glContextGeneration retired=${retiredBindings.size}")
+    }
+
+    // Compose가 View를 최종 폐기한다. CameraX 완료 전에는 binding의 Surface를 해제하지 않는다.
+    fun close() = synchronized(resourceLock) {
+        if (closed) return@synchronized
+        closed = true
+        pendingRequest?.let {
+            it.clearTransformationInfoListener()
+            it.willNotProvideSurface()
+        }
+        pendingRequest = null
+        retireActiveBinding()
+        requestRender()
+        Log.d(TAG, "Renderer closed retired=${retiredBindings.size}")
+    }
+
+    private fun checkOwnerContextCurrent() {
+        check(ownerContext != EGL14.EGL_NO_CONTEXT && EGL14.eglGetCurrentContext() == ownerContext) {
+            "Camera GL operation requires its current EGL Context"
+        }
+    }
+
+    private fun drainPendingGlDeletes() {
+        checkOwnerContextCurrent()
+        for (pending in pendingGlDeletes) {
+            if (pending.generation == glContextGeneration) {
+                GLES30.glDeleteTextures(1, intArrayOf(pending.textureId), 0)
+                Log.d(TAG, "OES deleted texture=${pending.textureId} generation=${pending.generation}")
+            }
+        }
+        pendingGlDeletes.clear()
+    }
+
+    private fun releaseProgramAndLuts() {
+        if (program != 0) GLES30.glDeleteProgram(program)
+        program = 0
+        if (lutTextureIds.isNotEmpty()) {
+            val ids = lutTextureIds.values.toIntArray()
+            GLES30.glDeleteTextures(ids.size, ids, 0)
+            lutTextureIds = emptyMap()
+        }
+    }
+
+    private fun drawCameraTexture(textureId: Int) {
         GLES30.glUseProgram(program)
 
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            oesTextureId,
+            textureId,
         )
         GLES30.glUniform1i(
             cameraTextureLocation,
@@ -421,7 +554,7 @@ class CameraRenderer(
             textureTransformLocation,
             1,
             false,
-            textureTransform,
+            previewTransform.matrix,
             0,
         )
 

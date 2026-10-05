@@ -3,8 +3,6 @@ package com.newfeelcamera.camera.gl
 import android.graphics.Rect
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
-import kotlinx.coroutines.Runnable
-import java.util.concurrent.Executor
 
 data class CameraTransformSnapshot(
     val cropRect: Rect,
@@ -14,33 +12,10 @@ data class CameraTransformSnapshot(
 )
 
 class CameraSurfaceProvider(
-    private val queueOnGlThread: (Runnable) -> Unit,
     private val renderer: CameraRenderer,
 ) : Preview.SurfaceProvider {
-
-    private val glExecutor = Executor { command ->
-        queueOnGlThread(command)
-    }
-
     override fun onSurfaceRequested(request: SurfaceRequest) {
-        queueOnGlThread(
-            Runnable {
-                renderer.onSurfaceRequest(request)
-            },
-        )
-
-        request.setTransformationInfoListener(
-            glExecutor,
-        ) { info ->
-            renderer.onTransformationInfo(
-                request = request,
-                snapshot = CameraTransformSnapshot(
-                    cropRect = Rect(info.cropRect),
-                    rotationDegrees = info.rotationDegrees,
-                    hasCameraTransform = info.hasCameraTransform(),
-                    isMirroring = info.isMirroring,
-                ),
-            )
-        }
+        // Renderer가 요청만 기록한다. EGL 준비 전에도 안전하며 종료된 View는 즉시 거절한다.
+        renderer.onSurfaceRequest(request)
     }
 }

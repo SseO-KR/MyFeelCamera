@@ -6,12 +6,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.newfeelcamera.ui.camera.CameraRoute
+import com.newfeelcamera.ui.settings.SettingsRoute
 
 private const val CameraDestination = "camera"
+private const val SettingsDestination = "settings"
 
 @Composable
 fun FeelCameraNavHost(
     modifier: Modifier = Modifier,
+    registerVolumeShutterHandler: (() -> Unit) -> (() -> Unit),
 ) {
     val navController = rememberNavController()
 
@@ -21,7 +24,19 @@ fun FeelCameraNavHost(
         modifier = modifier,
     ) {
         composable(CameraDestination) {
-            CameraRoute()
+            CameraRoute(
+                registerVolumeShutterHandler = registerVolumeShutterHandler,
+                onOpenSettings = {
+                    navController.navigate(SettingsDestination) {
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+        composable(SettingsDestination) {
+            SettingsRoute(
+                onBackClick = { navController.popBackStack() },
+            )
         }
     }
 }

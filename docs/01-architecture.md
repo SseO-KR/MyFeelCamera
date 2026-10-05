@@ -18,14 +18,14 @@
 com.<app>/
 ├─ camera/    CameraX 실행과 카메라 Preview/Filter 파이프라인 — UI를 모른다
 │  ├─ gl/     카메라 전용 GLSurfaceView, SurfaceProvider, Renderer, shader 로딩
-│  └─ filter/ Film/LUT 모델 — Android 프레임워크 비의존
-├─ capture/   촬영 트리거·저장
+│  ├─ filter/ Film/LUT 모델 — Android 프레임워크 비의존
+│  └─ capture/ ImageCapture 입력, 오프스크린 GL 처리, MediaStore 저장
 ├─ layout/    window size/posture → CameraLayoutMode 판정 (순수 함수에 가깝게)
 ├─ ui/        Compose Screen, ViewModel
 └─ di/        DI 배선 (프레임워크 선택은 §9)
 ```
 
-경계는 지금은 "모듈"이 아니라 "패키지 + import 규율"로 지킨다. `camera/filter/`는 `android.*`를 import하지 않고, `camera/gl/`은 Compose·디자인·레이아웃을 import하지 않는다. UI는 `camera/gl/`의 Preview View를 사용하지만 GL/CameraX 구현은 UI를 역으로 알지 않는다. 실제로 재사용 대상이 생기거나 빌드 시간이 문제가 되면 `:domain`/`:data`로 승격하는 것은 기계적인 리팩터링이라 나중으로 미룬다(Later).
+경계는 지금은 "모듈"이 아니라 "패키지 + import 규율"로 지킨다. `camera/filter/`는 `android.*`를 import하지 않고, `camera/gl/`과 `camera/capture/`는 Compose·디자인·레이아웃을 import하지 않는다. UI는 `camera/gl/`의 Preview View를 사용하지만 GL/CameraX 구현은 UI를 역으로 알지 않는다. 실제로 재사용 대상이 생기거나 빌드 시간이 문제가 되면 `:domain`/`:data`로 승격하는 것은 기계적인 리팩터링이라 나중으로 미룬다(Later).
 
 ## 2. 카메라 아키텍처 — 객체 책임과 Lifetime
 
@@ -40,8 +40,8 @@ com.<app>/
 | Preview 렌더링 View (예: GLSurfaceView 기반) | OES `SurfaceTexture` 보유, GL 렌더링 | `AndroidView` 팩토리가 관리 — View 시스템 lifecycle을 따르며 Composition보다 하위 개념 |
 | `Renderer` | 셰이더 컴파일, draw call | 소유 View의 EGL context lifetime을 따름 |
 | `SurfaceProvider` 구현체 | CameraX에 카메라 입력 `Surface`를 공급 | §4 참고 — 정확한 안정성 수준은 아직 미정 |
-| Capture 파이프라인 | 촬영 트리거, 원본 이미지 획득 | 거의 stateless — ViewModel 스코프에서 주입받아 사용 |
-| Capture 측 filter 적용기(가칭) | Preview와 같은 filter 파라미터를 입력받아 캡처 결과에 적용 | 호출 단위 — 실행 방식은 §7에서 미정으로 남김 |
+| Capture 파이프라인 | 촬영 시점의 `FilmPreset`을 snapshot으로 고정하고, `ImageCapture`에서 원본 `ImageProxy` 획득과 MediaStore 저장을 조정 | `CameraController`와 같은 Camera destination/ViewModel 스코프 |
+| Capture GL 처리기(가칭) | 촬영 이미지를 2D texture로 업로드하고 별도 offscreen EGL/FBO에서 LUT를 적용 | Camera destination 범위의 단일 Executor 기반 CoroutineDispatcher/EGL Context를 소유하고 lazy 초기화·명시적 해제. 외부에는 main-safe suspend 작업을 제공하고, 입력·출력 image buffer는 촬영 호출 단위로 해제 |
 
 이 표의 핵심은 **각 객체의 lifetime을 Composable 트리의 lifetime과 동일시하지 않는다**는 것이다. 특히 `CameraController`/`SurfaceProvider`는 `CameraScreen`이 재구성되어도 살아남아야 한다 — 그래야 `00` §9의 "재생성돼도 복구" 원칙을 카메라 세션 레벨에서 지킬 수 있다.
 
@@ -89,7 +89,7 @@ SurfaceProvider 구현체
 ```
 Window / layout 크기, foldable posture   →  CameraLayoutMode를 결정한다        (§6)
 Display rotation                          →  adaptive fallback의 ControlEdgeOrder와 Preview targetRotation을 결정한다
-Display rotation + device target rotation  →  개별 control content의 화면상 회전각을 결정한다
+Device target rotation − display rotation →  개별 control content의 화면상 회전각을 결정한다
 기기 방향 관찰값(양자화)                   →  device target rotation과 ImageCapture targetRotation을 결정한다
 CameraX TransformationInfo                →  GL texture transform 정책을 결정한다
 SurfaceTexture transform + 위 정책        →  Preview 최종 GL transform을 결정한다
@@ -97,7 +97,7 @@ SurfaceTexture transform + 위 정책        →  Preview 최종 GL transform을
 
 Phone UX는 Activity에 Portrait orientation을 요청한다. 요청이 적용돼 Window가 유지되는 동안 Portrait의 Start/Preview/End 앱 좌표 배치를 그대로 유지하고, 읽기 방향이 있는 개별 control content만 기기 방향을 따라 회전한다. Portrait 요청은 멀티 윈도우·large screen·제조사 동작까지 고정하는 보장이 아니므로, 실제 Window가 바뀌면 `CameraLayoutMode`와 `ControlEdgeOrder`가 adaptive fallback을 담당한다.
 
-`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 Preview target rotation은 observable display rotation을 읽고, ImageCapture target rotation은 기기 방향 listener를 읽는다. `UseCase.snapToSurfaceRotation()`이 만든 device target rotation은 물리 각도를 CameraX target 방향으로 뒤집은 값이므로, control content는 display rotation과 device target rotation을 실제 각도로 바꿔 더한 뒤 정규화한다. UI 배치와 CameraX/GL transform 사이에는 코드 의존성을 만들지 않는다.
+`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 Preview target rotation은 observable display rotation을 읽고, ImageCapture target rotation은 기기 방향 listener를 읽는다. `UseCase.snapToSurfaceRotation()` 결과와 display rotation은 같은 Surface 회전 규약이다. control content는 두 값을 각도로 바꾼 뒤 `device target rotation − display rotation`을 정규화한다. 기기를 따라 Window도 회전하면 추가 UI 회전은 0이다. UI 배치와 CameraX/GL transform 사이에는 코드 의존성을 만들지 않는다.
 
 `ImageCapture.targetRotation`은 `OrientationEventListener`의 양자화된 기기 방향을 사용한다. `Preview.targetRotation`은 화면 좌표계에 맞도록 실제 display rotation을 사용한다. Portrait 요청이 적용된 Phone에서는 display가 유지되어 Preview도 유지되지만 Capture와 control content는 물리적 기기 방향을 계속 반영한다. 각 신호는 독립적으로 구독하고 수명 관리한다.
 
@@ -138,20 +138,25 @@ Child composable 트리는 `layoutMode`와 무관하게 항상 동일하게 유�
 
 **Material3 Adaptive 라이브러리(`SupportingPaneScaffold` 등)는 채택하지 않는다.** 그 라이브러리는 list-detail 내비게이션 UI를 위해 설계된 것이라, 고정 3-region(StartControls/Preview/EndControls) 카메라 레이아웃엔 맞지 않는다. `androidx.window`(`WindowInfoTracker`, `FoldingFeature`)는 posture 감지에만 쓰고, 레이아웃 자체는 위 스케치처럼 직접 만든다.
 
-## 7. Filter / LUT 아키텍처 — 공유 지점과 미정 지점
+## 7. Filter / LUT 아키텍처 — 공유 입력과 분리된 실행 경로
 
 `00` §10을 그대로 옮긴다: 공유해야 하는 것은 **입력**이지 **실행 방식**이 아니다.
 
 ```
-FilmFilter / FilterParams (camera/filter/ 패키지, 단일 source of truth)
+CameraUiState.selectedFilm (단일 source of truth)
       │
-      ├── Preview 실행 경로   ← 아직 미정
-      └── Capture 실행 경로   ← 아직 미정
+      ├── Preview snapshot
+      │     └── GLSurfaceView EGL Context + OES texture + preview fragment shader
+      │
+      └── Shutter 시점 snapshot
+            └── ImageProxy + 별도 offscreen EGL Context + 2D texture + capture fragment shader
 ```
 
-**지금 확정하는 것(Fix Now)**: Preview 경로와 Capture 경로는 이 모델의 **같은 인스턴스**를 참조한다. 이 모델은 적용 중인 필터를 완전히 표현한다(LUT asset 참조 포함).
+**P0 Implementation Decision**: Preview와 Capture는 같은 `FilmPreset` 값과 그 값이 가리키는 동일한 LUT asset, LUT 해석 규칙, 색보정 의미를 공유한다. 다만 EGL Context, GL program, texture ID, framebuffer 같은 실행 자원은 공유하지 않는다. Preview는 화면의 `GLSurfaceView` Context에서 연속 프레임을 처리하고, Capture는 `camera/capture/`의 단일 Executor 기반 CoroutineDispatcher가 소유한 별도 offscreen Context에서 셔터 1회의 이미지를 처리한다. 코루틴은 촬영→처리→저장의 구조화된 흐름과 오류 전파를 담당하고, 전용 Executor는 EGL/GL 호출의 물리 스레드 고정을 담당한다. 이 결정의 렌더링 근거와 아직 검증할 차이는 `03` §6~§7에 둔다.
 
-**지금 확정하지 않는 것(Verify First)**: 두 경로가 셰이더 코드/GL 파이프라인을 공유하는지, 완전히 독립적으로 구현되는지. 이건 다음 두 가지가 먼저 나와야 판단 가능하다 — (1) LUT 실물 파일의 포맷(`00` §11, 아직 미도착), (2) Preview 쪽 기본 shader 파이프라인을 실제로 구현해 본 경험. 두 조건이 갖춰진 뒤 결정하고, 그 결과는 `03-rendering-and-lut.md`에 기록한다.
+`CameraUiState.selectedFilm`만 선택 상태의 권위 있는 원본이다. Preview Renderer가 draw를 위해 보관하는 값과 Capture가 셔터 순간 전달받는 값은 이 원본에서 파생된 작업용 snapshot이며, 독립적으로 변경되는 또 다른 source of truth가 아니다. Capture가 진행되는 동안 UI 선택이 바뀌더라도 이미 시작된 사진은 셔터 순간의 snapshot을 끝까지 사용한다.
+
+설정의 `startFilm`은 DataStore에 저장하는 **다음 Camera 진입의 초기값**이며 촬영 중 선택된 Film의 또 다른 원본이 아니다. CameraViewModel은 설정을 처음 읽을 때 초기 선택에 반영하고, 설정 화면에서 `startFilm`이 변경되면 현재 선택에도 한 번 반영한다. Camera 화면에서 Film을 바꾸는 동작은 `startFilm`을 저장하지 않는다. `showGrid`는 UI Preview 오버레이만 제어하며 GL/CameraX와 Capture 결과에 전달하지 않는다. **(Product Requirement: `00` §4 / Implementation Decision)**
 
 ## 8. Filter 모델 확장성
 
@@ -165,7 +170,7 @@ data class FilmFilter(
 
 P0는 이 리스트가 정확히 2개다(`00` §3) — 런타임 필터 조합/블렌딩 파이프라인은 만들지 않는다. 목록을 늘리는 것은 P1이다(`00` §4).
 
-"현재 선택된 Film"은 이 목록과 별개의 상태다 — 어떤 `FilmFilter`가 지금 활성인지를 가리키는 값이며, `00` §1/§10의 source of truth가 바로 이 값이다. 이 상태는 UI State(`CameraViewModel`, §2)가 들고 있고, Preview 렌더러와 Capture 측 filter 적용기(§2)는 둘 다 이 값을 읽기만 한다 — 각자 자기만의 "현재 필터" 사본을 갖지 않는다.
+"현재 선택된 Film"은 이 목록과 별개의 상태다 — 어떤 `FilmFilter`가 지금 활성인지를 가리키는 값이며, `00` §1/§10의 source of truth가 바로 이 값이다. 이 상태는 UI State(`CameraViewModel`, §2)가 들고 있고, Preview와 Capture는 §7의 규칙대로 작업용 snapshot만 전달받는다.
 
 ## 9. DI — Hilt constructor injection부터 사용한다
 
@@ -177,7 +182,5 @@ P0는 이 리스트가 정확히 2개다(`00` §3) — 런타임 필터 조합/�
 |---|---|---|
 | minSdk | TBD — skeleton 생성 전 확정 | `00` §2 |
 | SurfaceProvider 재사용 필요 여부·정도 | Verify First | `05-lifecycle-and-resource-ownership.md` |
-| Preview/Capture 셰이더·GL 파이프라인 공유 여부 | Verify First | `03-rendering-and-lut.md` |
-| LUT 포맷/차원/ordering/GPU representation | 파일 도착 후 결정 | `03-rendering-and-lut.md` |
 | `Tabletop`/`Book`의 구체적 배치 계산 | Verify First (P1) | `04-adaptive-layout.md` |
 | DI 프레임워크·scope | Verify First | 구현 시점 |

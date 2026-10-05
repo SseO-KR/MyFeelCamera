@@ -5,11 +5,14 @@ import android.view.Surface
 import com.newfeelcamera.camera.filter.FilmPreset
 
 data class CameraUiState(
+    val isSettingsLoaded: Boolean = false,
     val hasCameraPermission: Boolean = false,
+    val isQuotaLoaded: Boolean = false,
     val isCapturing: Boolean = false,
     val capturedPhotoCount: Int = 0,
     val latestPhotoUri: Uri? = null,
     val captureErrorMessage: String? = null,
     val deviceTargetRotation: Int = Surface.ROTATION_0,
     val selectedFilm: FilmPreset = FilmPreset.WARM,
+    val showGrid: Boolean = true,
 )

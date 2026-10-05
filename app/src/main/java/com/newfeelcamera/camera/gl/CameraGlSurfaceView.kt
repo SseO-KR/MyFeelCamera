@@ -15,12 +15,10 @@ class CameraGlSurfaceView @JvmOverloads constructor(
     private val renderer = CameraRenderer(
         assetManager = context.assets,
         requestRender = ::requestRender,
-        queueOnGlThread = ::queueEvent,
         resultExecutor = ContextCompat.getMainExecutor(context),
     )
 
     val surfaceProvider: Preview.SurfaceProvider = CameraSurfaceProvider(
-        queueOnGlThread = ::queueEvent,
         renderer = renderer,
     )
 
@@ -34,8 +32,25 @@ class CameraGlSurfaceView @JvmOverloads constructor(
     }
 
     fun setFilmPreset(film: FilmPreset) {
-        queueEvent {
-            renderer.setFilmPreset(film)
-        }
+        renderer.setFilmPreset(film)
+    }
+
+    fun setDisplayRotation(rotation: Int) {
+        renderer.setDisplayRotation(rotation)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        renderer.onViewAttached()
+    }
+
+    override fun onDetachedFromWindow() {
+        // superclass가 GL Thread 종료/EGL 해제를 기다린다. Renderer lock 밖에서 실행한다.
+        super.onDetachedFromWindow()
+        renderer.onViewDetached()
+    }
+
+    fun release() {
+        renderer.close()
     }
 }

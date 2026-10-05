@@ -25,7 +25,9 @@
 | `docs/03-rendering-and-lut.md` | LUT/셰이더 계층(Resource Contract → Rendering Contract → Current Shader Implementation), Preview/Capture 일치 A/B/C |
 | `docs/04-adaptive-layout.md` | Portrait/Landscape 배치 메커니즘, window size/posture 신호, custom Layout 필요 여부 |
 | `docs/05-lifecycle-and-resource-ownership.md` | 8개 레이어(Composition~Camera device) 소유권, 이벤트 전파 매트릭스 |
-| `docs/06-implementation-roadmap.md` | Step 1~13 구현 순서. **지금 작업 범위는 이 문서의 "현재 Step"을 기준으로 정한다** |
+| `docs/06-implementation-roadmap.md` | 단계별 구현 순서. **지금 작업 범위는 이 문서의 "현재 Step"을 기준으로 정한다** |
+| `docs/features/one-time-unlimited-purchase.md` | 별도 결제 Feature의 정책, 책임 경계, 구현 순서, 미정 사항·검증 목록. 아직 구현되지 않은 계획이다 |
+| `docs/features/firebase-monitoring.md` | Firebase 기본 연결, 공개 소스 빌드 경로, 자동 수집 정책·검증 목록 |
 | `new_feelcamera_filter_assets/` | 실제 LUT(`lut/*.bin`)·shader(`shader/*.glsl`) 리소스 원본 |
 
 ---
@@ -50,7 +52,7 @@
 
 ## 핵심 협업 규칙
 
-**1. 설계는 `docs/00~06`을 근거로 한다.** 새 판단은 관련 섹션을 인용한다. 문서에 없는 결정은 문서를 먼저 갱신하고 코드에 반영한다 — 반대 순서로 하지 않는다.
+**1. 설계는 `docs/00~06`을 근거로 한다.** 개별 Feature의 세부는 해당 문서에서 연결한 `docs/features/` 문서를 함께 확인한다. 새 판단은 관련 섹션을 인용한다. 문서에 없는 결정은 문서를 먼저 갱신하고 코드에 반영한다 — 반대 순서로 하지 않는다.
 
 **2. 핵심 CameraX/Compose/GL 코드는 사용자가 직접 구현한다.** 위 "AI 역할 경계" 목록에 있는 것은 항상 TODO로 남긴다. TODO에는 Roadmap Step, 학습 포인트, 관련 문서 섹션을 남긴다(`06` Step 4의 TODO 형식 참고).
 
@@ -89,8 +91,9 @@
 
 - 설계 문서 `00`~`06` 확정.
 - Gradle/Hilt 설정이 완료되어 있으며, `NewFeelCameraApp`은 `@HiltAndroidApp`, `MainActivity`는 `@AndroidEntryPoint`, `CameraController`는 `@Inject constructor`, `CameraViewModel`은 `@HiltViewModel`을 사용한다. KSP가 AGP 9 내장 Kotlin의 source-set DSL을 아직 완전히 지원하지 않아 `gradle.properties`에 `android.disallowKotlinSourceSets=false`(AGP 공식 과도기 escape hatch)가 있다.
-- `CameraController`는 `Preview`와 `ImageCapture`를 함께 bind하고 `takePhoto()`로 MediaStore 저장을 수행한다. `CameraScreen`은 고정된 `Box` 안에서 `CameraGlSurfaceView`를 유지하며, GL Preview는 `CameraSurfaceProvider` → OES `SurfaceTexture` → `CameraRenderer` 경로로 표시된다.
-- **현재 Roadmap Step: Step 4와 Step 12의 Surface lifecycle 검증을 마쳤고, Step 13에서 Phone Portrait 요청·control content 회전·Preview/Capture rotation 신호 분리를 구현했다. Phone 4방향 저장 결과와 실제 Window resize의 adaptive fallback 실기기 검증이 남아 있다.**
+- `CameraController`는 `Preview`와 `ImageCapture`를 함께 bind한다. `CameraScreen`은 고정된 `Box` 안에서 `CameraGlSurfaceView`를 유지하며, GL Preview는 `CameraSurfaceProvider` → OES `SurfaceTexture` → `CameraRenderer` 경로로 표시된다. Warm/Dusk LUT는 Preview EGL Context에 미리 업로드되고 `CameraUiState.selectedFilm` 변경에 따라 texture binding이 즉시 전환된다.
+- **현재 작업: Roadmap Step 19의 로컬 무료 촬영 24장 한도를 연결한다. 저장 성공 횟수를 영속화하고 `24/24`에서 화면·볼륨 키 셔터를 차단한다. 결제·Entitlement·계정/서버 검증은 포함하지 않는다.**
+- **다음 별도 Feature: Step 20의 일회성 무제한 구매 정책을 `docs/features/one-time-unlimited-purchase.md`에 정리했다. 로컬 무료 횟수 초기화를 허용하고 백업은 유지한다. 결제 코드는 아직 없으며, 사용자의 Feature 구현 시작 지시 전에는 Step 20을 미리 구현하지 않는다.**
 
 ---
 

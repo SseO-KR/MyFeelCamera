@@ -80,10 +80,13 @@ Resource Contract를 실시간 GPU 렌더링에 쓰려 할 때 일반적으로 �
 
 - P0는 §5에 기술된 현재 제공된 shader asset을 초기 구현에 그대로 사용한다. 그 결과 P0는 LUT를 `GL_TEXTURE_3D` + `sampler3D`로 업로드·샘플링한다. **(Implementation Decision)**
 - 이 결정의 근거는 §3(Resource Contract)이나 §4(Rendering Contract)가 3D 텍스처를 요구해서가 아니라, P0가 §5의 shader를 그대로 채택했기 때문이다 — §3/§4의 구분(3D 텍스처는 LUT 데이터도 Rendering Contract도 강제하지 않는다는 것)은 그대로 유지된다.
-- P0는 Warm/Dusk 두 LUT를 각 EGL Context의 `onSurfaceCreated()`에서 모두 `GL_TEXTURE_3D`로 미리 업로드한다. LUT 하나는 98,304 byte이므로 두 개의 원본 payload 합계도 196,608 byte로 현재 P0 범위에서는 부담이 매우 작다. Film 선택 시마다 asset을 다시 읽거나 `glTexImage3D()`로 GPU에 재업로드하지 않고, 이미 생성된 texture ID의 binding만 바꿔 Preview가 즉시 반응하게 하기 위한 선택이다. **(Implementation Decision)**
+- P0는 Warm/Dusk 두 LUT를 각 장기 EGL Context의 초기화 시점에 모두 `GL_TEXTURE_3D`로 미리 업로드한다. Preview Context에서는 `onSurfaceCreated()`, Capture Context에서는 offscreen Context 초기화 직후가 그 시점이다. LUT 하나는 98,304 byte이므로 두 개의 원본 payload 합계도 196,608 byte로 현재 P0 범위에서는 부담이 매우 작다. Film 선택 시마다 asset을 다시 읽거나 `glTexImage3D()`로 GPU에 재업로드하지 않고, 이미 생성된 texture ID의 binding만 바꾸기 위한 선택이다. **(Implementation Decision)**
 - 이 선업로드 정책은 현재의 32³ RGB8 LUT 두 개라는 작은 규모에 한정한다. Preset 수나 LUT 해상도가 증가해 GPU 메모리 사용량 또는 초기화 시간이 의미 있게 커지면 실제 측정 결과를 바탕으로 on-demand 업로드와 cache/eviction 정책을 재검토한다. **(Later)**
-- EGL Context가 재생성되면 기존 Context에 속했던 texture ID는 더 이상 사용할 수 없으므로, 두 LUT도 새 Context의 `onSurfaceCreated()`에서 다시 업로드한다. **(Android/OpenGL API Contract)**
+- EGL Context가 재생성되면 기존 Context에 속했던 texture ID는 더 이상 사용할 수 없으므로, 두 LUT도 새 Context의 초기화 callback에서 다시 업로드한다. **(Android/OpenGL API Contract)**
 - 2D atlas 등 다른 LUT representation을 지원하기 위한 추상화(교체 가능한 인터페이스, representation을 감추는 레이어 등)는 지금 만들지 않는다. **(Later)** 실제로 다른 representation이 필요해지는 요구사항(예: 3D 텍스처 미지원 기기 대응, 다른 출처의 LUT 포맷 도입)이 생기면 그때 재검토한다 — 지금은 그 가능성만으로 architecture를 복잡하게 만들지 않는다.
+- Capture는 `OnImageCapturedCallback`의 `ImageProxy`를 CPU에서 접근 가능한 image로 materialize한 뒤 `GL_TEXTURE_2D`에 업로드하고, 별도 offscreen EGL Context/FBO에서 `filter_capture_fragment.glsl`을 실행한다. 렌더 결과를 JPEG로 인코딩한 뒤에만 MediaStore에 저장 완료로 공개한다. **(Implementation Decision)**
+- Preview와 Capture는 EGL Context와 GL 객체를 공유하지 않는다. 따라서 Preview의 LUT texture ID나 shader program ID를 Capture에서 재사용하지 않고, 각 Context가 같은 shader/LUT asset으로 자기 GL 객체를 만든다. 공유하는 것은 `FilmPreset`, asset, half-texel 샘플링 규칙과 색보정 의미다. **(Implementation Decision, Android/OpenGL API Contract)**
+- Capture worker는 한 번에 사진 하나만 직렬 처리하고, source/output full-resolution buffer는 촬영마다 즉시 해제한다. `ImageProxy` decode, GPU upload/FBO, readback, JPEG encode의 peak memory와 지연은 실제 촬영 해상도에서 측정하며, 문제가 확인되기 전에는 범용 cache나 tile renderer를 미리 만들지 않는다. **(Implementation Decision, Verify First — 메모리·지연 실측)**
 
 ## 7. Preview / Capture 일치 — 무엇이 같아야 하고 무엇은 달라도 되는가
 
@@ -95,7 +98,7 @@ Resource Contract를 실시간 GPU 렌더링에 쓰려 할 때 일반적으로 �
 
 **B. 서로 달라도 되는 것** — Current Shader Implementation 계층의 자유도
 - source 텍스처 타입(OES vs 2D)
-- rendering execution path(Preview·Capture가 파이프라인을 공유하는지 여부 자체가 Verify First — `01` §7)
+- rendering execution path — P0는 Preview `GLSurfaceView` Context와 Capture offscreen Context를 분리하기로 결정했다(`01` §7, §6)
 - shader entry point(파일이 몇 개든 무관)
 - Preview/Capture의 처리 시점(연속 스트림 vs 셔터 1회)
 

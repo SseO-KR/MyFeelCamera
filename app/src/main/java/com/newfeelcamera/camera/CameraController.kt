@@ -1,9 +1,8 @@
 package com.newfeelcamera.camera
 
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.provider.MediaStore
+import android.util.Log
 import android.view.Surface
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
@@ -11,13 +10,19 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.takePicture
 import androidx.core.content.ContextCompat
+import com.newfeelcamera.camera.capture.CaptureException
+import com.newfeelcamera.camera.capture.CaptureProcessor
+import com.newfeelcamera.camera.filter.FilmPreset
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.Closeable
 import javax.inject.Inject
 
 class CameraController @Inject constructor (
     @param:ApplicationContext private val appContext: Context,
-) {
+    private val captureProcessor: CaptureProcessor,
+): Closeable {
 
     private var preview: Preview? = null
     private var imageCapture: ImageCapture? = null
@@ -43,6 +48,7 @@ class CameraController @Inject constructor (
 
             val capture = ImageCapture.Builder()
                 .setTargetRotation(imageCaptureTargetRotation)
+                .setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG)
                 .build()
 
             cameraProvider.unbindAll()
@@ -88,36 +94,31 @@ class CameraController @Inject constructor (
         preview?.targetRotation = rotation
     }
 
-    fun takePhoto(
-        onPhotoSaved: (Uri?) -> Unit,
-        onError: (Throwable) -> Unit,
-    ) {
-        val capture = imageCapture ?: return onError(IllegalStateException("Camera is not ready."))
+    suspend fun takePhoto(
+        film: FilmPreset,
+    ): Uri {
+        val capture = imageCapture
+            ?: throw CaptureException.CameraNotReady()
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "FeelCamera_${System.currentTimeMillis()}")
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/FeelCamera")
+        Log.d(TAG, "takePhoto film=$film")
+
+        val imageProxy = try {
+            capture.takePicture()
+        } catch (error: ImageCaptureException) {
+            throw CaptureException.CameraCaptureFailed(error)
         }
 
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(
-            appContext.contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues,
-        ).build()
-
-        capture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(appContext),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    onPhotoSaved(outputFileResults.savedUri)
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    onError(exception)
-                }
-            },
+        return captureProcessor.processAndSave(
+            imageProxy = imageProxy,
+            film = film,
         )
+    }
+
+    override fun close() {
+        captureProcessor.close()
+    }
+
+    companion object {
+        private const val TAG = "CameraController"
     }
 }

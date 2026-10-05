@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -41,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -57,6 +57,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.camera.gl.CameraGlSurfaceView
+import com.newfeelcamera.data.quota.FREE_CAPTURE_LIMIT
 import com.newfeelcamera.ui.camera.layout.CameraLayoutMode
 import com.newfeelcamera.ui.camera.layout.cameraLayoutModeFor
 import com.newfeelcamera.ui.design.Accent
@@ -147,8 +148,14 @@ fun CameraScreen(
     onDisplayRotationChanged: (Int) -> Unit,
     onFilmSelected: (FilmPreset) -> Unit,
     onShutterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (!uiState.isSettingsLoaded) {
+        Box(modifier = modifier.fillMaxSize().background(Background))
+        return
+    }
+
     val displayRotation = rememberDisplayRotation()
     val contentRotationDegrees = uiContentRotationDegrees(
         displayRotation = displayRotation,
@@ -181,16 +188,20 @@ fun CameraScreen(
             ),
             displayRotation = displayRotation,
             contentRotationDegrees = contentRotationDegrees,
+            previewMaxWidth = if (minOf(maxWidth, maxHeight) >= 600.dp) 900.dp else 360.dp,
             showCameraPreview = uiState.hasCameraPermission,
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
+            isQuotaLoaded = uiState.isQuotaLoaded,
             capturedPhotoCount = uiState.capturedPhotoCount,
             selectedFilm = uiState.selectedFilm,
+            showGrid = uiState.showGrid,
             onFilmSelected = onFilmSelected,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             onShutterClick = onShutterClick,
+            onSettingsClick = onSettingsClick,
         )
     }
 }
@@ -200,18 +211,22 @@ private fun CameraControlLayout(
     layoutMode: CameraLayoutMode,
     displayRotation: Int,
     contentRotationDegrees: Float,
+    previewMaxWidth: Dp,
     showCameraPreview: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
+    isQuotaLoaded: Boolean,
     capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
+    showGrid: Boolean,
     onFilmSelected: (FilmPreset) -> Unit,
     onShutterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isPortrait = layoutMode == CameraLayoutMode.Portrait
     val horizontalRailHeight = 96.dp
-    val verticalRailWidth = 72.dp
+    val verticalRailWidth = 104.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
     val startRailAlignment = when (layoutMode) {
         CameraLayoutMode.Portrait -> {
@@ -237,9 +252,12 @@ private fun CameraControlLayout(
         // 이 호출 위치를 고정해 방향 전환에도 PreviewSlot의 AndroidView identity를 유지한다.
         CameraStage(
             previewAspectRatio = if (isPortrait) 3f / 4f else 3f / 2f,
+            previewMaxWidth = previewMaxWidth,
+            displayRotation = displayRotation,
             contentRotationDegrees = contentRotationDegrees,
             showCameraPreview = showCameraPreview,
             selectedFilm = selectedFilm,
+            showGrid = showGrid,
             onSurfaceProviderReady = onSurfaceProviderReady,
             modifier = Modifier
                 .fillMaxSize()
@@ -252,6 +270,7 @@ private fun CameraControlLayout(
         StartControlRail(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
+            isQuotaLoaded = isQuotaLoaded,
             capturedPhotoCount = capturedPhotoCount,
             selectedFilm = selectedFilm,
             onFilmSelected = onFilmSelected,
@@ -275,7 +294,10 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             isCapturing = isCapturing,
+            isShutterAvailable = isQuotaLoaded && capturedPhotoCount < FREE_CAPTURE_LIMIT,
+            isLimitReached = isQuotaLoaded && capturedPhotoCount >= FREE_CAPTURE_LIMIT,
             onShutterClick = onShutterClick,
+            onSettingsClick = onSettingsClick,
             modifier = Modifier
                 .align(endRailAlignment)
                 .then(
@@ -297,25 +319,28 @@ private fun CameraControlLayout(
 @Composable
 private fun CameraStage(
     previewAspectRatio: Float,
+    previewMaxWidth: Dp,
+    displayRotation: Int,
     contentRotationDegrees: Float,
     showCameraPreview: Boolean,
     selectedFilm: FilmPreset,
+    showGrid: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    BoxWithConstraints(
         modifier = modifier.padding(horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        contentAlignment = Alignment.Center,
     ) {
+        val previewWidth = minOf(maxWidth, maxHeight * previewAspectRatio, previewMaxWidth)
         PreviewSlot(
             modifier = Modifier
-                .widthIn(max = 280.dp)
-                .fillMaxWidth()
-                .aspectRatio(previewAspectRatio),
+                .size(width = previewWidth, height = previewWidth / previewAspectRatio),
+            displayRotation = displayRotation,
             showCameraPreview = showCameraPreview,
             contentRotationDegrees = contentRotationDegrees,
             selectedFilm = selectedFilm,
+            showGrid = showGrid,
             onSurfaceProviderReady = onSurfaceProviderReady,
         )
     }
@@ -325,6 +350,7 @@ private fun CameraStage(
 private fun StartControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
+    isQuotaLoaded: Boolean,
     capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
     onFilmSelected: (FilmPreset) -> Unit,
@@ -346,7 +372,10 @@ private fun StartControlRail(
                 contentRotationDegrees = contentRotationDegrees,
                 )
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
-                ShotCounter(capturedPhotoCount = capturedPhotoCount)
+                ShotCounter(
+                    isQuotaLoaded = isQuotaLoaded,
+                    capturedPhotoCount = capturedPhotoCount,
+                )
             }
             ZoomControl(
                 isVertical = true,
@@ -370,7 +399,10 @@ private fun StartControlRail(
                 )
             }
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
-                ShotCounter(capturedPhotoCount = capturedPhotoCount)
+                ShotCounter(
+                    isQuotaLoaded = isQuotaLoaded,
+                    capturedPhotoCount = capturedPhotoCount,
+                )
             }
             ZoomControl(
                 isVertical = false,
@@ -385,7 +417,10 @@ private fun EndControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
     isCapturing: Boolean,
+    isShutterAvailable: Boolean,
+    isLimitReached: Boolean,
     onShutterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -396,8 +431,11 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                isShutterAvailable = isShutterAvailable,
+                isLimitReached = isLimitReached,
                 contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
+                onSettingsClick = onSettingsClick,
             )
         }
     } else {
@@ -408,8 +446,11 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                isShutterAvailable = isShutterAvailable,
+                isLimitReached = isLimitReached,
                 contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
+                onSettingsClick = onSettingsClick,
             )
         }
     }
@@ -418,8 +459,11 @@ private fun EndControlRail(
 @Composable
 private fun EndRailActions(
     isCapturing: Boolean,
+    isShutterAvailable: Boolean,
+    isLimitReached: Boolean,
     contentRotationDegrees: Float,
     onShutterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
 ) {
     RailAction(
         accessibilityLabel = "Flash",
@@ -433,6 +477,8 @@ private fun EndRailActions(
     }
     ShutterButton(
         isCapturing = isCapturing,
+        isShutterAvailable = isShutterAvailable,
+        isLimitReached = isLimitReached,
         onClick = onShutterClick,
     )
     RailAction(
@@ -444,6 +490,7 @@ private fun EndRailActions(
     RailAction(
         accessibilityLabel = "Settings",
         contentRotationDegrees = contentRotationDegrees,
+        onClick = onSettingsClick,
     ) {
         SettingsGlyph()
     }
@@ -451,12 +498,15 @@ private fun EndRailActions(
 
 @Composable
 private fun ShotCounter(
+    isQuotaLoaded: Boolean,
     capturedPhotoCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    val frameNumber = (capturedPhotoCount + 1)
-        .toString()
-        .padStart(2, '0')
+    val usedShots = if (isQuotaLoaded) {
+        capturedPhotoCount.coerceIn(0, FREE_CAPTURE_LIMIT).toString().padStart(2, '0')
+    } else {
+        "--"
+    }
 
     Row(
         modifier = modifier
@@ -474,13 +524,21 @@ private fun ShotCounter(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         MonoText(
-            text = frameNumber,
+            text = usedShots,
             color = Ink,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
         )
-        MonoText(text = "/", color = InkDim, fontSize = 13.sp)
-        MonoText(text = "24", color = InkDim, fontSize = 13.sp)
+        MonoText(text = "/", color = InkDim, fontSize = 13.sp, maxLines = 1, softWrap = false)
+        MonoText(
+            text = FREE_CAPTURE_LIMIT.toString(),
+            color = InkDim,
+            fontSize = 13.sp,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
@@ -488,9 +546,11 @@ private fun ShotCounter(
 @Composable
 private fun PreviewSlot(
     showCameraPreview: Boolean,
+    displayRotation: Int,
     contentRotationDegrees: Float,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     selectedFilm: FilmPreset,
+    showGrid: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -540,7 +600,10 @@ private fun PreviewSlot(
                         onSurfaceProviderReady(glView.surfaceProvider)
                     }
                 },
+                onReset = null,
+                onRelease = { glView -> glView.release() },
                 update = { glView ->
+                    glView.setDisplayRotation(displayRotation)
                     glView.setFilmPreset(selectedFilm)
                 }
             )
@@ -548,7 +611,9 @@ private fun PreviewSlot(
             PreviewPlaceholderScene(Modifier.fillMaxSize())
         }
 
-        RuleOfThirdsGrid(Modifier.fillMaxSize())
+        if (showGrid) {
+            RuleOfThirdsGrid(Modifier.fillMaxSize())
+        }
 
         FocusReticle(modifier = Modifier.align(Alignment.Center))
 
@@ -826,12 +891,13 @@ private fun ZoomDecreaseButton(contentRotationDegrees: Float) {
 private fun RailAction(
     accessibilityLabel: String,
     contentRotationDegrees: Float,
+    onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     DialCircle(
         modifier = Modifier.semantics {
             contentDescription = accessibilityLabel
-        },
+        }.then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
     ) {
         Box(
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
@@ -860,16 +926,25 @@ private fun DialCircle(
 @Composable
 private fun ShutterButton(
     isCapturing: Boolean,
+    isShutterAvailable: Boolean,
+    isLimitReached: Boolean,
     onClick: () -> Unit,
 ) {
+    val isEnabled = isShutterAvailable && !isCapturing
+
     Box(
         modifier = Modifier
             .size(68.dp)
             .semantics {
-                contentDescription = if (isCapturing) "Saving" else "Shutter"
+                contentDescription = when {
+                    isLimitReached -> "Free capture limit reached"
+                    !isShutterAvailable -> "Checking free captures"
+                    isCapturing -> "Saving"
+                    else -> "Shutter"
+                }
             }
             .clickable(
-                enabled = !isCapturing,
+                enabled = isEnabled,
                 onClick = onClick,
             )
             .border(3.dp, Ink.copy(alpha = 0.85f), CircleShape),
@@ -879,7 +954,7 @@ private fun ShutterButton(
             modifier = Modifier
                 .size(52.dp)
                 .background(
-                    color = if (isCapturing) Ink.copy(alpha = 0.35f) else Color.White,
+                    color = if (isEnabled) Color.White else Ink.copy(alpha = 0.35f),
                     shape = CircleShape,
                 ),
         )
@@ -925,14 +1000,13 @@ private fun RailLabel(
     )
 }
 
-private fun uiContentRotationDegrees(
+internal fun uiContentRotationDegrees(
     displayRotation: Int,
     deviceTargetRotation: Int,
 ): Float {
-    // snapToSurfaceRotation()은 물리 각도의 반대 방향인 CameraX target rotation을 반환한다.
-    // Window가 함께 회전하면 display rotation과 상쇄되고, 고정 Window에서는 UI 보정각이 된다.
+    // 두 입력 모두 Surface 회전 규약이다. Window가 이미 돌려준 만큼을 뺀다.
     val combinedRotation =
-        surfaceRotationDegrees(displayRotation) + surfaceRotationDegrees(deviceTargetRotation)
+        surfaceRotationDegrees(deviceTargetRotation) - surfaceRotationDegrees(displayRotation)
 
     return ((combinedRotation + 540) % 360 - 180).toFloat()
 }
@@ -947,17 +1021,17 @@ private fun RotationAwareContent(
         modifier = modifier,
         content = content,
     ) { measurables, constraints ->
-        val placeable = measurables.single().measure(
-            constraints.copy(
-                minWidth = 0,
-                minHeight = 0,
-            ),
-        )
-
         val normalizedRotation =
             ((rotationDegrees.toInt() % 360) + 360) % 360
         val swapsWidthAndHeight =
             normalizedRotation == 90 || normalizedRotation == 270
+
+        val placeable = measurables.single().measure(
+            Constraints(
+                maxWidth = if (swapsWidthAndHeight) constraints.maxHeight else constraints.maxWidth,
+                maxHeight = if (swapsWidthAndHeight) constraints.maxWidth else constraints.maxHeight,
+            ),
+        )
 
         val measuredWidth = if (swapsWidthAndHeight) {
             placeable.height
@@ -1008,9 +1082,13 @@ private fun MonoText(
     fontWeight: FontWeight = FontWeight.Normal,
     letterSpacing: androidx.compose.ui.unit.TextUnit = 0.sp,
     textAlign: TextAlign? = null,
+    maxLines: Int = Int.MAX_VALUE,
+    softWrap: Boolean = true,
 ) {
     Text(
         text = text,
+        maxLines = maxLines,
+        softWrap = softWrap,
         modifier = modifier,
         color = color,
         fontFamily = FontFamily.Monospace,

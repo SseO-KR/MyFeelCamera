@@ -1,14 +1,23 @@
 package com.newfeelcamera.ui.camera
 
+import android.util.Log
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.newfeelcamera.camera.CameraController
+import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.filter.FilmPreset
+import com.newfeelcamera.data.quota.FREE_CAPTURE_LIMIT
+import com.newfeelcamera.data.quota.FreeCaptureQuotaRepository
+import com.newfeelcamera.data.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface CameraAction {
@@ -30,10 +39,52 @@ sealed interface CameraAction {
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     private val cameraController: CameraController,
+    private val settingsRepository: AppSettingsRepository,
+    private val freeCaptureQuotaRepository: FreeCaptureQuotaRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CameraUiState())
     val uiState = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            var lastStartFilm: FilmPreset? = null
+            settingsRepository.settings.collect { settings ->
+                val startFilmChanged = lastStartFilm != settings.startFilm
+                lastStartFilm = settings.startFilm
+
+                _uiState.update { current ->
+                    current.copy(
+                        isSettingsLoaded = true,
+                        selectedFilm = if (startFilmChanged) settings.startFilm else current.selectedFilm,
+                        showGrid = settings.showGrid,
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            freeCaptureQuotaRepository.usedShots
+                .catch { error ->
+                    if (error is CancellationException) throw error
+                    Log.e(TAG, "Unable to read free capture count", error)
+                    _uiState.update {
+                        it.copy(
+                            isQuotaLoaded = false,
+                            captureErrorMessage = "무료 촬영 횟수를 확인하지 못했습니다.",
+                        )
+                    }
+                }
+                .collect { usedShots ->
+                    _uiState.update {
+                        it.copy(
+                            isQuotaLoaded = true,
+                            capturedPhotoCount = usedShots,
+                        )
+                    }
+                }
+        }
+    }
 
     fun onIntent(intent: CameraAction){
         when (intent){
@@ -77,14 +128,33 @@ class CameraViewModel @Inject constructor(
     }
 
     private fun capturePhoto() {
-        if (_uiState.value.isCapturing) return
+        val stateAtShutter = _uiState.value
 
-        if (!_uiState.value.hasCameraPermission) {
+        if (!stateAtShutter.isSettingsLoaded) return
+        if (stateAtShutter.isCapturing) return
+
+        if (!stateAtShutter.isQuotaLoaded) {
+            _uiState.update {
+                it.copy(captureErrorMessage = "무료 촬영 횟수를 확인하지 못했습니다.")
+            }
+            return
+        }
+
+        if (stateAtShutter.capturedPhotoCount >= FREE_CAPTURE_LIMIT) {
+            _uiState.update {
+                it.copy(captureErrorMessage = "무료 촬영 24장을 모두 사용했습니다.")
+            }
+            return
+        }
+
+        if (!stateAtShutter.hasCameraPermission) {
             _uiState.update {
                 it.copy(captureErrorMessage = "카메라 권한이 필요합니다.")
             }
             return
         }
+
+        val filmAtShutter = stateAtShutter.selectedFilm
 
         _uiState.update {
             it.copy(
@@ -93,24 +163,64 @@ class CameraViewModel @Inject constructor(
             )
         }
 
-        cameraController.takePhoto(
-            onPhotoSaved = { uri ->
+        viewModelScope.launch {
+            try {
+                val uri = cameraController.takePhoto(
+                    film = filmAtShutter,
+                )
+
+                val usedShots = try {
+                    freeCaptureQuotaRepository.recordSavedPhoto()
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Exception) {
+                    Log.e(TAG, "Photo saved but free capture count was not recorded: uri=$uri", error)
+                    _uiState.update {
+                        it.copy(
+                            isQuotaLoaded = false,
+                            latestPhotoUri = uri,
+                            captureErrorMessage = "사진은 저장되었지만 촬영 횟수 기록에 실패했습니다.",
+                        )
+                    }
+                    return@launch
+                }
+
                 _uiState.update {
                     it.copy(
-                        isCapturing = false,
-                        capturedPhotoCount = it.capturedPhotoCount + 1,
+                        capturedPhotoCount = usedShots,
                         latestPhotoUri = uri,
                     )
                 }
-            },
-            onError = { error ->
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                handleCaptureFailure(error)
+            } finally {
                 _uiState.update {
-                    it.copy(
-                        isCapturing = false,
-                        captureErrorMessage = error.message ?: "사진 저장에 실패했습니다.",
-                    )
+                    it.copy(isCapturing = false)
                 }
-            },
-        )
+            }
+        }
+    }
+
+    private fun handleCaptureFailure(error: Exception) {
+        Log.e(TAG, "Capture failed", error)
+
+        val errorMessage = when (error) {
+            is CaptureException -> error.userMessage
+            else -> "사진 처리 중 알 수 없는 오류가 발생했습니다."
+        }
+
+        _uiState.update {
+            it.copy(captureErrorMessage = errorMessage)
+        }
+    }
+
+    override fun onCleared() {
+        cameraController.close()
+    }
+
+    private companion object {
+        const val TAG = "CameraViewModel"
     }
 }

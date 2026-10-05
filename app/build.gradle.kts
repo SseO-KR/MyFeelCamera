@@ -3,10 +3,25 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-    // AGP 9.0+는 Kotlin 컴파일러가 내장이라 org.jetbrains.kotlin.android는 적용하지 않는다(적용 시 에러).
-    // Compose 컴파일러 플러그인(kotlin.plugin.compose)은 실기기 검증 결과 여전히 필요했다.
-    // https://developer.android.com/build/releases/agp-9-0-0-release-notes#android-gradle-plugin-built-in-kotlin
 }
+
+// 공개 저장소에는 JSON을 포함하지 않는다. 파일이 없으면 Firebase 없이 빌드한다.
+val firebaseEnabled = providers.gradleProperty("firebaseEnabled")
+    .map(String::toBoolean)
+    .getOrElse(true) && file("google-services.json").isFile
+val firebaseDebugCollectionEnabled = firebaseEnabled &&
+    providers.gradleProperty("firebaseDebugCollectionEnabled")
+        .map(String::toBoolean)
+        .getOrElse(false)
+
+if (firebaseEnabled) {
+    pluginManager.apply("com.google.gms.google-services")
+    pluginManager.apply("com.google.firebase.crashlytics")
+}
+
+val playBillingPublicKey = providers.gradleProperty("playBillingPublicKey")
+    .map(String::trim)
+    .getOrElse("")
 
 android {
     namespace = "com.newfeelcamera"
@@ -18,10 +33,17 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PLAY_BILLING_PUBLIC_KEY", "\"$playBillingPublicKey\"")
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["firebaseCollectionEnabled"] = firebaseDebugCollectionEnabled.toString()
+        }
         release {
+            manifestPlaceholders["firebaseCollectionEnabled"] = firebaseEnabled.toString()
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -39,10 +61,17 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
+    if (firebaseEnabled) {
+        implementation(platform(libs.firebase.bom))
+        implementation(libs.firebase.analytics)
+        implementation(libs.firebase.crashlytics)
+    }
+
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -55,6 +84,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.camerax.core)
     implementation(libs.camerax.camera2)
@@ -63,7 +95,14 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.androidx.hilt.compiler)
+
+    implementation(libs.androidx.datastore.preferences)
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+
+    implementation(libs.billing.ktx)
 }

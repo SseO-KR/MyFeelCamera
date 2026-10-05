@@ -3,7 +3,7 @@
 precision highp float;
 
 uniform sampler2D uSourceTexture;
-uniform sampler3D uLut;
+uniform highp sampler3D uLut;
 
 uniform float uLutStrength;
 uniform float uGrainAmount;

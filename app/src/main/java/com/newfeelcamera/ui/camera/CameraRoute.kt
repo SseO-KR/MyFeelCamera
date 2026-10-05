@@ -3,6 +3,7 @@ package com.newfeelcamera.ui.camera
 import android.Manifest
 import android.content.pm.PackageManager
 import android.view.OrientationEventListener
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.UseCase
@@ -12,12 +13,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
@@ -84,12 +88,40 @@ fun DeviceOrientationEffect(
         }
     }
 }
+
 @Composable
 fun CameraRoute(
+    onOpenSettings: () -> Unit,
+    registerVolumeShutterHandler: (() -> Unit) -> (() -> Unit),
     viewModel: CameraViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // 화면에 다시 들어올 때 이전 촬영 결과를 새 알림으로 표시하지 않는다.
+    var lastNotifiedPhotoUri by remember { mutableStateOf(uiState.latestPhotoUri) }
+    var lastNotifiedError by remember { mutableStateOf(uiState.captureErrorMessage) }
+
+    LaunchedEffect(uiState.latestPhotoUri, uiState.captureErrorMessage) {
+        val photoUri = uiState.latestPhotoUri
+        val errorMessage = uiState.captureErrorMessage
+
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            when {
+                errorMessage != null && errorMessage != lastNotifiedError -> {
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                }
+
+                photoUri != null && photoUri != lastNotifiedPhotoUri -> {
+                    Toast.makeText(context, "사진이 저장되었습니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        lastNotifiedPhotoUri = photoUri
+        lastNotifiedError = errorMessage
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -118,6 +150,13 @@ fun CameraRoute(
         viewModel.onIntent(CameraAction.DeviceOrientationChanged(targetRotation))
     }
 
+    LifecycleResumeEffect(viewModel) {
+        val unregister = registerVolumeShutterHandler {
+            viewModel.onIntent(CameraAction.ShutterClicked)
+        }
+        onPauseOrDispose { unregister() }
+    }
+
     CameraScreen(
         uiState = uiState,
         onBindCamera = viewModel::bindCamera,
@@ -132,5 +171,6 @@ fun CameraRoute(
         onShutterClick = {
             viewModel.onIntent(CameraAction.ShutterClicked)
         },
+        onSettingsClick = onOpenSettings,
     )
 }

@@ -47,12 +47,19 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 - 필터를 여러 개로 확장, 필터 선택 UI 고도화
 - 성능 수치 목표 설정 및 튜닝(§12)
 - 카운터/설정 등 영속화
+- 설정 화면은 카메라 화면에서 열고 뒤로 돌아올 수 있어야 한다. Phone에서는 설정 화면도 Camera와 같은 Portrait 요청을 유지해 화면 이동만으로 Window 방향이 바뀌지 않도록 한다. 복귀 시 카메라 Preview가 정상적으로 다시 표시되어야 한다. 첫 단계에서는 화면 이동과 방향 정책을 연결하고, 볼륨 버튼 동작·격자 표시·시작 필름의 설정값 저장은 이어지는 단계에서 구현한다.
+- Camera 화면이 활성화된 동안 볼륨 ↑/↓ 버튼을 셔터로 사용한다. Settings에서는 시스템 음량 조절을 유지하며, 화면 셔터와 동일한 촬영 경로를 사용한다.
+- 사진 저장이 성공하면 촬영을 막지 않는 짧은 안내 문구를 표시하고, 실패하면 기존 촬영 오류 메시지를 사용자에게 보여준다.
+- 설정 화면에서 시작 필름(Warm/Dusk)과 프리뷰 격자 표시 여부를 변경하고 앱 재실행 후에도 유지한다. 시작 필름은 카메라 화면의 초기 선택값이며, 카메라 화면에서 일시적으로 필름을 바꾸는 동작은 설정값을 덮어쓰지 않는다. 격자 설정은 Preview 위 UI 오버레이만 제어하고 저장 사진에는 영향을 주지 않는다.
+- 무료 촬영 한도는 필름 프리셋과 무관하게 앱 전체에서 저장 성공한 사진 24장이다. 카운터는 사용 완료 횟수로 `00/24`에서 시작해 저장 성공 후에만 증가하며, 무제한 구매 권한이 없는 사용자는 `24/24`에서 화면·볼륨 키 셔터 모두 새 촬영을 시작하지 못한다. 실패한 촬영이나 기존 사진 삭제로 횟수를 조정하지 않는다. 사용 횟수는 기기 내부에서 관리하며 앱 데이터 삭제·재설치에 의한 초기화를 허용한다. 기존 Android 백업 정책은 유지하므로 재설치 후 초기화를 보장하지 않고, 백업에서 기존 횟수가 복원되는 것도 허용한다. 무료 횟수 보호를 위한 로그인·서버 카운터·기기 식별은 도입하지 않는다.
+- 공식 Google Play 배포판은 비소모성 일회성 구매로 촬영 제한을 해제한다. 구독이나 추가 촬영 장수 판매는 제공하지 않는다. 클라이언트에서 구매 완료 확인·승인 처리·구매 복구·대기/취소/실패 처리를 구현한다. 유료 촬영은 무료 횟수를 추가 차감하지 않는다. 서버 없는 구현의 보안·오프라인/환불 반영 한계를 구분하고, 연결 성공을 구매 권한으로 취급하지 않는다. 별도 Feature의 범위와 미정 사항은 [일회성 무제한 구매 설계](features/one-time-unlimited-purchase.md)를 따른다.
+- GitHub에 소스를 공개하고 직접 빌드하거나 촬영 제한을 수정해 사용하는 것을 막지 않는다. 공식 배포판의 유료 권한 제공과 소스 수정 방지는 다른 목표로 취급한다. README 안내 문구와 공개 라이선스는 출시 전에 별도로 확정한다.
 
 ## 5. Later (지금 구현을 막지 않는 범위에서 뒤로 미룸)
 
-- 결제 / Entitlement / 무료 장수 제한, 온보딩 플로우
+- 계정·서버 기반 구매 검증과 사용량 관리, 온보딩 플로우 — 현재 일회성 구매 Feature에는 포함하지 않는다. 무료 횟수 우회 방지는 제품 목표가 아니다.
 - RAW, manual exposure, manual focus, 고급 color management
-- 볼륨 버튼 셔터, 셔터음·암전·필름 감기 인터랙션
+- 셔터음·암전·필름 감기 인터랙션
 - 범용 필터 체인, 런타임 필터 강도 슬라이더, 커스텀 필터 에디터
 - grain/vignette 등 LUT 외 필름 효과의 제품 채택 여부 — 제공된 shader는 지원하지만 P0 요구사항은 아니다
 - CameraX/GL 계층에 대한 자동화된 계측(instrumented) 테스트 하네스 — 로그 기반 수동 검증을 우선한다
@@ -64,7 +71,7 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 
 - 레이아웃을 표현하는 타입(모드 구분)은 처음부터 Portrait 외의 모드를 포함한 형태로 정의한다. 아직 구현하지 않는 모드는 타입 자리는 있되 내부 구현이 `TODO()`인 상태로 둔다 — 타입 자체가 없는 상태로 두지 않는다.
 - UI를 구성하는 Composable 트리는 모드에 따라 통째로 스왑되지 않고, 하나의 트리를 유지한 채 measure/place만 모드별로 달라지는 구조를 전제로 한다. (세부 타입/Composable 설계는 `01-architecture.md`에서 다룬다.)
-- 앱의 일반 화면은 시스템 회전을 허용하고 실제 Window 크기에 적응하는 것을 기본 정책으로 삼는다. 다만 Camera 화면의 Phone UX는 Portrait orientation을 요청하는 명시적 예외다. 회전 때 Window의 width/height 교환으로 화면 전체가 remeasure되고 Preview 크기와 control 배치가 함께 바뀌는 체감 지연을 피하면서, 기본 카메라처럼 촬영 프레임은 유지하고 읽기 방향이 있는 content만 회전시키기 위해서다. 이는 모든 환경에서 Window 방향을 보장하는 아키텍처 불변식이 아니다. 멀티 윈도우, 제조사 정책, API 37 large screen처럼 요청이 적용되지 않아 실제 Window가 바뀌면 adaptive layout이 동작해야 한다.
+- 현재 Camera와 Settings가 같은 `MainActivity`를 사용하므로 Phone에서는 Activity의 Portrait orientation을 요청한다. 설정 이동 시에도 방향 요청을 바꾸지 않아 Window 축 교환에 따른 전체 remeasure, Preview 크기 변경과 control 재배치의 체감 지연을 피한다. 기본 카메라처럼 촬영 프레임은 유지하고 읽기 방향이 있는 content만 기기 방향을 따라 회전시킨다. 이 요청은 모든 환경에서 Window 방향을 보장하는 아키텍처 불변식이 아니다. 큰 화면·폴드·멀티윈도우·제조사 정책 등으로 요청이 적용되지 않아 실제 Window가 바뀌면 Camera와 Settings 모두 실제 크기/방향에 대응해야 한다.
 - Portrait 요청이 적용돼 Window가 유지되는 동안 StartControls는 앱 좌표상 상단, Preview는 중앙, EndControls는 하단에 고정한다. 기기를 오른쪽으로 돌리면 고정된 하단 EndControls가 사용자 기준 왼쪽에, 왼쪽으로 돌리면 오른쪽에, 180°에서는 위쪽에 보인다. 이 효과를 만들기 위해 Rail이나 Preview를 기기 방향에 따라 재배치하지 않는다.
 - Rail 배경과 PreviewSlot은 회전시키지 않는다. 버튼 아이콘, Film 정보와 촬영 수, Preview overlay text처럼 읽기 방향이 있는 개별 콘텐츠만 실제 기기 방향을 따라 회전한다. `OrientationEventListener`의 물리 각도와 CameraX target rotation은 반대 방향 규약이므로, UI 각도는 실제 display rotation과 양자화된 device target rotation의 규약을 변환해 합성한다.
 - Window/layout 신호, display rotation, 물리적 기기 방향은 별개다. 실제 Window 크기와 posture는 `CameraLayoutMode`를, display rotation은 adaptive fallback의 UI 좌표계와 `Preview.targetRotation`을 결정한다. `ImageCapture.targetRotation`은 기기 방향 관찰값을 `Surface.ROTATION_*`으로 양자화한 신호를 사용한다. Preview와 ImageCapture가 항상 같은 회전 source를 쓴다고 가정하지 않는다.
