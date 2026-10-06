@@ -1,0 +1,17 @@
+Generation mode: built-in image_gen
+Design asset: newfeel-camera-icon-v1.png
+Status: selected app launcher icon.
+Launcher artwork: app/src/main/res/drawable-nodpi/ic_launcher_artwork.png (432 x 432, resized from this original).
+Adaptive icon: app/src/main/res/mipmap-anydpi/ic_launcher.xml (90dp artwork within the 108dp layer).
+Themed icon: app/src/main/res/drawable/ic_launcher_monochrome.xml (matching simplified silhouette).
+
+Use case: logo-brand
+Asset type: a finished square Android app icon design for NewFeelCamera, an understated analog film camera app with WARM and DUSK film looks.
+Primary request: design one distinctive, beautifully balanced camera app icon with a warm analog sensibility. One icon only, no presentation sheet.
+Scene/backdrop: full-bleed matte near-black charcoal #0D0D0D background across the entire square canvas.
+Subject: a bold, compact ivory #F5F0E8 camera silhouette with softly rounded corners, viewed straight on. A large circular dark lens inset dominates the camera, containing a luminous warm amber #D4A853 glass center with a subtle burnt-orange lower rim and one restrained creamy reflection. A tiny charcoal horizontal viewfinder inset and a simple amber shutter tab finish the silhouette. The silhouette should be a memorable reduced geometric mark with generous visual weight, not a detailed illustration.
+Style/medium: polished premium app icon, precision graphic geometry with extremely restrained tactile depth inside the optical glass only. Warm, quiet, nostalgic, confident. Mostly flat matte surfaces, crisp anti-aliased contours.
+Composition/framing: exact square image, centered optical balance, camera mark fits entirely inside the central 62 percent of canvas width and central 54 percent of height; generous charcoal negative space so circular or rounded-square launcher masks do not crop any of the camera. Camera lens is large and readable at tiny launcher sizes.
+Materials/textures: near-flat ivory body, matte charcoal backdrop, a soft amber glass glow limited to the lens. No background texture that would impair small-size readability.
+Text: none.
+Constraints: export artwork itself edge-to-edge on a square opaque canvas, preferably 1024 by 1024 pixels or higher. Do not draw an outer rounded-square tile, do not add a surrounding page, no phone, no mockup, no app name, no letters, no caption, no watermark, no grid, no extra icons. No photorealistic physical camera, no complex mechanical details, no rainbow gradients, no excessive shine, no external drop shadow.

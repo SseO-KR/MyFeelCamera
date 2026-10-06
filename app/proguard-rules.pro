@@ -5,4 +5,5 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# release minify는 아직 꺼져 있다(isMinifyEnabled = false) — 지금은 규칙이 필요 없다.
+# Release uses R8. Add narrowly scoped keep rules only when an actual
+# reflection or runtime failure shows that the library's consumer rules are insufficient.

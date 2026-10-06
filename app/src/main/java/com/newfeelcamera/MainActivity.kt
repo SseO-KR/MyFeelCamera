@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.ui.navigation.FeelCameraNavHost
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,9 +22,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        hideSystemBars()
         setContent {
             FeelCameraNavHost(
                 registerVolumeShutterHandler = ::registerVolumeShutterHandler,
+                onPurchaseUnlimited = { billingRepository.launchUnlimitedPurchase(this) },
             )
         }
     }
@@ -54,7 +60,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        hideSystemBars()
         billingRepository.refreshPurchases()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
+    }
+
+    private fun hideSystemBars() {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     override fun onDestroy() {

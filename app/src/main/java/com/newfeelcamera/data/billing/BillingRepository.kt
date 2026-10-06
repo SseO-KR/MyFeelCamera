@@ -1,10 +1,12 @@
 package com.newfeelcamera.data.billing
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
@@ -44,6 +46,12 @@ sealed interface UnlimitedProductState {
     data class Failed(val responseCode: Int) : UnlimitedProductState
 }
 
+sealed interface PurchaseLaunchState {
+    data object Idle : PurchaseLaunchState
+    data object Loading : PurchaseLaunchState
+    data class Failed(val responseCode: Int) : PurchaseLaunchState
+}
+
 @ActivityRetainedScoped
 class BillingRepository @Inject constructor(
     @param:ApplicationContext private val context: Context
@@ -66,6 +74,10 @@ class BillingRepository @Inject constructor(
         MutableStateFlow<UnlimitedProductState>(UnlimitedProductState.NotLoaded)
     val productState = _productState.asStateFlow()
 
+    private val _purchaseLaunchState =
+        MutableStateFlow<PurchaseLaunchState>(PurchaseLaunchState.Idle)
+    val purchaseLaunchState = _purchaseLaunchState.asStateFlow()
+
     private val productRequestVersion = AtomicInteger()
 
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
@@ -77,6 +89,10 @@ class BillingRepository @Inject constructor(
 
         if (billingResult.responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
             refreshPurchases()
+        } else if (billingResult.responseCode != BillingClient.BillingResponseCode.OK &&
+            billingResult.responseCode != BillingClient.BillingResponseCode.USER_CANCELED
+        ) {
+            _purchaseLaunchState.value = PurchaseLaunchState.Failed(billingResult.responseCode)
         }
 
         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
@@ -96,6 +112,8 @@ class BillingRepository @Inject constructor(
                     _unlimitedAccessState.value = UnlimitedAccessState.Pending
                 }
             }
+        } else if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            refreshPurchases()
         }
     }
 
@@ -176,7 +194,7 @@ class BillingRepository @Inject constructor(
                 it.productId == UNLIMITED_PRODUCT_ID &&
                     it.productType == BillingClient.ProductType.INAPP
             }
-            val price = details?.buyOfferPrice()
+            val price = details?.standardBuyOffer()?.formattedPrice?.takeIf(String::isNotBlank)
 
             _productState.value = if (price != null) {
                 UnlimitedProductState.Available(price)
@@ -190,14 +208,105 @@ class BillingRepository @Inject constructor(
         }
     }
 
-    private fun ProductDetails.buyOfferPrice(): String? {
+    private fun ProductDetails.standardBuyOffer(): ProductDetails.OneTimePurchaseOfferDetails? {
         val offers = oneTimePurchaseOfferDetailsList
-        val buyOffer = if (offers.isNullOrEmpty()) {
+        return if (offers.isNullOrEmpty()) {
             oneTimePurchaseOfferDetails
         } else {
-            offers.firstOrNull { it.preorderDetails == null && it.rentalDetails == null }
+            offers.firstOrNull {
+                it.purchaseOptionId == STANDARD_PURCHASE_OPTION_ID &&
+                    it.preorderDetails == null && it.rentalDetails == null
+            } ?: offers.firstOrNull {
+                it.preorderDetails == null && it.rentalDetails == null
+            }
         }
-        return buyOffer?.formattedPrice?.takeIf(String::isNotBlank)
+    }
+
+    fun launchUnlimitedPurchase(activity: Activity) {
+        if (_purchaseLaunchState.value == PurchaseLaunchState.Loading) return
+        if (_unlimitedAccessState.value == UnlimitedAccessState.Active ||
+            _unlimitedAccessState.value == UnlimitedAccessState.Pending
+        ) return
+
+        if (!billingClient.isReady) {
+            _purchaseLaunchState.value =
+                PurchaseLaunchState.Failed(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED)
+            refreshPurchases()
+            return
+        }
+
+        _purchaseLaunchState.value = PurchaseLaunchState.Loading
+        val product = QueryProductDetailsParams.Product.newBuilder()
+            .setProductId(UNLIMITED_PRODUCT_ID)
+            .setProductType(BillingClient.ProductType.INAPP)
+            .build()
+        val params = QueryProductDetailsParams.newBuilder()
+            .setProductList(listOf(product))
+            .build()
+
+        // Query again for the purchase: ProductDetails cached for display can become stale.
+        try {
+            billingClient.queryProductDetailsAsync(params) { result, detailsResult ->
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                    Log.w(TAG, "Purchase product query failed: ${result.responseCode}, ${result.debugMessage}")
+                    _purchaseLaunchState.value = PurchaseLaunchState.Failed(result.responseCode)
+                    return@queryProductDetailsAsync
+                }
+
+                val details = detailsResult.productDetailsList.firstOrNull {
+                    it.productId == UNLIMITED_PRODUCT_ID &&
+                        it.productType == BillingClient.ProductType.INAPP
+                }
+                val offerToken = details?.standardBuyOffer()?.offerToken
+                    ?.takeIf(String::isNotBlank)
+                if (details == null || offerToken == null) {
+                    _purchaseLaunchState.value =
+                        PurchaseLaunchState.Failed(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE)
+                    return@queryProductDetailsAsync
+                }
+
+                val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+                    .setProductDetails(details)
+                    .setOfferToken(offerToken)
+                    .build()
+                val flowParams = BillingFlowParams.newBuilder()
+                    .setProductDetailsParamsList(listOf(productParams))
+                    .build()
+
+                activity.runOnUiThread {
+                    if (activity.isFinishing || activity.isDestroyed) {
+                        _purchaseLaunchState.value = PurchaseLaunchState.Idle
+                        return@runOnUiThread
+                    }
+
+                    val launchResult = try {
+                        billingClient.launchBillingFlow(activity, flowParams)
+                    } catch (error: RuntimeException) {
+                        Log.e(TAG, "Unable to launch purchase flow", error)
+                        _purchaseLaunchState.value =
+                            PurchaseLaunchState.Failed(BillingClient.BillingResponseCode.ERROR)
+                        return@runOnUiThread
+                    }
+
+                    _purchaseLaunchState.value = when (launchResult.responseCode) {
+                        BillingClient.BillingResponseCode.OK,
+                        BillingClient.BillingResponseCode.USER_CANCELED -> PurchaseLaunchState.Idle
+                        BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                            refreshPurchases()
+                            PurchaseLaunchState.Idle
+                        }
+                        else -> {
+                            Log.w(TAG, "Purchase flow launch failed: ${launchResult.responseCode}, ${launchResult.debugMessage}")
+                            PurchaseLaunchState.Failed(launchResult.responseCode)
+                        }
+                    }
+                }
+            }
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "Unable to query purchase product", error)
+            _purchaseLaunchState.value =
+                PurchaseLaunchState.Failed(BillingClient.BillingResponseCode.ERROR)
+        }
     }
 
     private fun queryPurchases(){
@@ -329,5 +438,6 @@ class BillingRepository @Inject constructor(
     companion object {
         private const val TAG = "BillingRepository"
         private const val UNLIMITED_PRODUCT_ID = "feelcamera_unlimited_capture"
+        private const val STANDARD_PURCHASE_OPTION_ID = "standard"
     }
 }

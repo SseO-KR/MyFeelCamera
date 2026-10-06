@@ -1,8 +1,11 @@
 package com.newfeelcamera.ui.camera
 
 import android.hardware.display.DisplayManager
+import android.net.Uri
+import android.util.Size
 import android.view.Surface
 import androidx.camera.core.Preview
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,7 +41,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -67,6 +75,10 @@ import com.newfeelcamera.ui.design.Ink
 import com.newfeelcamera.ui.design.InkDim
 import com.newfeelcamera.ui.design.PreviewBackground
 import com.newfeelcamera.ui.design.Rail
+import java.util.Locale
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 private fun CameraPreviewBindingEffect(
@@ -147,6 +159,10 @@ fun CameraScreen(
     onBindCamera: (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
     onDisplayRotationChanged: (Int) -> Unit,
     onFilmSelected: (FilmPreset) -> Unit,
+    onZoomInClick: () -> Unit,
+    onZoomOutClick: () -> Unit,
+    onFlashClick: () -> Unit,
+    onGalleryClick: () -> Unit,
     onShutterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -179,7 +195,9 @@ fun CameraScreen(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Background)
+            .background(Rail)
+            .safeDrawingPadding()
+            .padding(bottom = 16.dp)
     ) {
         CameraControlLayout(
             layoutMode = cameraLayoutModeFor(
@@ -193,13 +211,22 @@ fun CameraScreen(
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
             isQuotaLoaded = uiState.isQuotaLoaded,
+            isUnlimitedActive = uiState.isUnlimitedActive,
             capturedPhotoCount = uiState.capturedPhotoCount,
             selectedFilm = uiState.selectedFilm,
             showGrid = uiState.showGrid,
+            zoomRatio = uiState.zoomRatio,
+            minZoomRatio = uiState.minZoomRatio,
+            maxZoomRatio = uiState.maxZoomRatio,
+            hasFlashUnit = uiState.hasFlashUnit,
+            isFlashEnabled = uiState.isFlashEnabled,
+            latestPhotoUri = uiState.latestPhotoUri,
             onFilmSelected = onFilmSelected,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 16.dp),
+            onZoomInClick = onZoomInClick,
+            onZoomOutClick = onZoomOutClick,
+            onFlashClick = onFlashClick,
+            onGalleryClick = onGalleryClick,
+            modifier = Modifier.fillMaxSize(),
             onShutterClick = onShutterClick,
             onSettingsClick = onSettingsClick,
         )
@@ -216,10 +243,21 @@ private fun CameraControlLayout(
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
     isQuotaLoaded: Boolean,
+    isUnlimitedActive: Boolean,
     capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
     showGrid: Boolean,
+    zoomRatio: Float,
+    minZoomRatio: Float,
+    maxZoomRatio: Float,
+    hasFlashUnit: Boolean,
+    isFlashEnabled: Boolean,
+    latestPhotoUri: Uri?,
     onFilmSelected: (FilmPreset) -> Unit,
+    onZoomInClick: () -> Unit,
+    onZoomOutClick: () -> Unit,
+    onFlashClick: () -> Unit,
+    onGalleryClick: () -> Unit,
     onShutterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -248,7 +286,7 @@ private fun CameraControlLayout(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.background(Background)) {
         // 이 호출 위치를 고정해 방향 전환에도 PreviewSlot의 AndroidView identity를 유지한다.
         CameraStage(
             previewAspectRatio = if (isPortrait) 3f / 4f else 3f / 2f,
@@ -258,6 +296,7 @@ private fun CameraControlLayout(
             showCameraPreview = showCameraPreview,
             selectedFilm = selectedFilm,
             showGrid = showGrid,
+            zoomRatio = zoomRatio,
             onSurfaceProviderReady = onSurfaceProviderReady,
             modifier = Modifier
                 .fillMaxSize()
@@ -271,9 +310,15 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             isQuotaLoaded = isQuotaLoaded,
+            isUnlimitedActive = isUnlimitedActive,
             capturedPhotoCount = capturedPhotoCount,
             selectedFilm = selectedFilm,
             onFilmSelected = onFilmSelected,
+            zoomRatio = zoomRatio,
+            minZoomRatio = minZoomRatio,
+            maxZoomRatio = maxZoomRatio,
+            onZoomInClick = onZoomInClick,
+            onZoomOutClick = onZoomOutClick,
             modifier = Modifier
                 .align(startRailAlignment)
                 .then(
@@ -294,8 +339,18 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             isCapturing = isCapturing,
-            isShutterAvailable = isQuotaLoaded && capturedPhotoCount < FREE_CAPTURE_LIMIT,
-            isLimitReached = isQuotaLoaded && capturedPhotoCount >= FREE_CAPTURE_LIMIT,
+            isShutterAvailable = canCapture(
+                isUnlimitedActive = isUnlimitedActive,
+                isQuotaLoaded = isQuotaLoaded,
+                capturedPhotoCount = capturedPhotoCount,
+            ),
+            isLimitReached = !isUnlimitedActive &&
+                isQuotaLoaded && capturedPhotoCount >= FREE_CAPTURE_LIMIT,
+            hasFlashUnit = hasFlashUnit,
+            isFlashEnabled = isFlashEnabled,
+            latestPhotoUri = latestPhotoUri,
+            onFlashClick = onFlashClick,
+            onGalleryClick = onGalleryClick,
             onShutterClick = onShutterClick,
             onSettingsClick = onSettingsClick,
             modifier = Modifier
@@ -325,6 +380,7 @@ private fun CameraStage(
     showCameraPreview: Boolean,
     selectedFilm: FilmPreset,
     showGrid: Boolean,
+    zoomRatio: Float,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -341,6 +397,7 @@ private fun CameraStage(
             contentRotationDegrees = contentRotationDegrees,
             selectedFilm = selectedFilm,
             showGrid = showGrid,
+            zoomRatio = zoomRatio,
             onSurfaceProviderReady = onSurfaceProviderReady,
         )
     }
@@ -351,9 +408,15 @@ private fun StartControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
     isQuotaLoaded: Boolean,
+    isUnlimitedActive: Boolean,
     capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
     onFilmSelected: (FilmPreset) -> Unit,
+    zoomRatio: Float,
+    minZoomRatio: Float,
+    maxZoomRatio: Float,
+    onZoomInClick: () -> Unit,
+    onZoomOutClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (isVertical) {
@@ -374,12 +437,18 @@ private fun StartControlRail(
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
                 ShotCounter(
                     isQuotaLoaded = isQuotaLoaded,
+                    isUnlimitedActive = isUnlimitedActive,
                     capturedPhotoCount = capturedPhotoCount,
                 )
             }
             ZoomControl(
                 isVertical = true,
                 contentRotationDegrees = contentRotationDegrees,
+                zoomRatio = zoomRatio,
+                minZoomRatio = minZoomRatio,
+                maxZoomRatio = maxZoomRatio,
+                onZoomInClick = onZoomInClick,
+                onZoomOutClick = onZoomOutClick,
             )
         }
     } else {
@@ -401,12 +470,18 @@ private fun StartControlRail(
             RotationAwareContent(rotationDegrees = contentRotationDegrees) {
                 ShotCounter(
                     isQuotaLoaded = isQuotaLoaded,
+                    isUnlimitedActive = isUnlimitedActive,
                     capturedPhotoCount = capturedPhotoCount,
                 )
             }
             ZoomControl(
                 isVertical = false,
                 contentRotationDegrees = contentRotationDegrees,
+                zoomRatio = zoomRatio,
+                minZoomRatio = minZoomRatio,
+                maxZoomRatio = maxZoomRatio,
+                onZoomInClick = onZoomInClick,
+                onZoomOutClick = onZoomOutClick,
             )
         }
     }
@@ -419,6 +494,11 @@ private fun EndControlRail(
     isCapturing: Boolean,
     isShutterAvailable: Boolean,
     isLimitReached: Boolean,
+    hasFlashUnit: Boolean,
+    isFlashEnabled: Boolean,
+    latestPhotoUri: Uri?,
+    onFlashClick: () -> Unit,
+    onGalleryClick: () -> Unit,
     onShutterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -433,6 +513,11 @@ private fun EndControlRail(
                 isCapturing = isCapturing,
                 isShutterAvailable = isShutterAvailable,
                 isLimitReached = isLimitReached,
+                hasFlashUnit = hasFlashUnit,
+                isFlashEnabled = isFlashEnabled,
+                latestPhotoUri = latestPhotoUri,
+                onFlashClick = onFlashClick,
+                onGalleryClick = onGalleryClick,
                 contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
                 onSettingsClick = onSettingsClick,
@@ -448,6 +533,11 @@ private fun EndControlRail(
                 isCapturing = isCapturing,
                 isShutterAvailable = isShutterAvailable,
                 isLimitReached = isLimitReached,
+                hasFlashUnit = hasFlashUnit,
+                isFlashEnabled = isFlashEnabled,
+                latestPhotoUri = latestPhotoUri,
+                onFlashClick = onFlashClick,
+                onGalleryClick = onGalleryClick,
                 contentRotationDegrees = contentRotationDegrees,
                 onShutterClick = onShutterClick,
                 onSettingsClick = onSettingsClick,
@@ -461,17 +551,28 @@ private fun EndRailActions(
     isCapturing: Boolean,
     isShutterAvailable: Boolean,
     isLimitReached: Boolean,
+    hasFlashUnit: Boolean,
+    isFlashEnabled: Boolean,
+    latestPhotoUri: Uri?,
+    onFlashClick: () -> Unit,
+    onGalleryClick: () -> Unit,
     contentRotationDegrees: Float,
     onShutterClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
     RailAction(
-        accessibilityLabel = "Flash",
+        accessibilityLabel = when {
+            !hasFlashUnit -> "Flash unavailable"
+            isFlashEnabled -> "Flash on"
+            else -> "Flash off"
+        },
         contentRotationDegrees = contentRotationDegrees,
+        enabled = hasFlashUnit && !isCapturing,
+        onClick = onFlashClick,
     ) {
         Text(
             text = "ϟ",
-            color = Ink,
+            color = if (!hasFlashUnit) InkDim else if (isFlashEnabled) Accent else Ink,
             fontSize = 24.sp,
         )
     }
@@ -482,10 +583,12 @@ private fun EndRailActions(
         onClick = onShutterClick,
     )
     RailAction(
-        accessibilityLabel = "Gallery",
+        accessibilityLabel = if (latestPhotoUri == null) "No photos yet" else "Open latest photo",
         contentRotationDegrees = contentRotationDegrees,
+        enabled = latestPhotoUri != null,
+        onClick = onGalleryClick,
     ) {
-        GalleryThumbnail()
+        GalleryThumbnail(latestPhotoUri)
     }
     RailAction(
         accessibilityLabel = "Settings",
@@ -499,10 +602,13 @@ private fun EndRailActions(
 @Composable
 private fun ShotCounter(
     isQuotaLoaded: Boolean,
+    isUnlimitedActive: Boolean,
     capturedPhotoCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    val usedShots = if (isQuotaLoaded) {
+    val usedShots = if (isUnlimitedActive) {
+        "∞"
+    } else if (isQuotaLoaded) {
         capturedPhotoCount.coerceIn(0, FREE_CAPTURE_LIMIT).toString().padStart(2, '0')
     } else {
         "--"
@@ -531,14 +637,16 @@ private fun ShotCounter(
             maxLines = 1,
             softWrap = false,
         )
-        MonoText(text = "/", color = InkDim, fontSize = 13.sp, maxLines = 1, softWrap = false)
-        MonoText(
-            text = FREE_CAPTURE_LIMIT.toString(),
-            color = InkDim,
-            fontSize = 13.sp,
-            maxLines = 1,
-            softWrap = false,
-        )
+        if (!isUnlimitedActive) {
+            MonoText(text = "/", color = InkDim, fontSize = 13.sp, maxLines = 1, softWrap = false)
+            MonoText(
+                text = FREE_CAPTURE_LIMIT.toString(),
+                color = InkDim,
+                fontSize = 13.sp,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }
 
@@ -551,6 +659,7 @@ private fun PreviewSlot(
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     selectedFilm: FilmPreset,
     showGrid: Boolean,
+    zoomRatio: Float,
     modifier: Modifier = Modifier,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -636,7 +745,7 @@ private fun PreviewSlot(
                 .padding(end = 10.dp, top = 8.dp),
         ) {
             MonoText(
-                text = "1.0X",
+                text = formatZoomRatio(zoomRatio),
                 color = Ink.copy(alpha = 0.55f),
                 fontSize = 9.sp,
             )
@@ -824,7 +933,14 @@ private fun FilmDial(
 private fun ZoomControl(
     isVertical: Boolean,
     contentRotationDegrees: Float,
+    zoomRatio: Float,
+    minZoomRatio: Float,
+    maxZoomRatio: Float,
+    onZoomInClick: () -> Unit,
+    onZoomOutClick: () -> Unit,
 ) {
+    val canZoomIn = zoomRatio < maxZoomRatio - 0.01f
+    val canZoomOut = zoomRatio > minZoomRatio + 0.01f
     if (isVertical) {
         Column(
             modifier = Modifier.semantics {
@@ -833,9 +949,9 @@ private fun ZoomControl(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ZoomIncreaseButton(contentRotationDegrees)
-            ZoomValue(contentRotationDegrees)
-            ZoomDecreaseButton(contentRotationDegrees)
+            ZoomIncreaseButton(contentRotationDegrees, canZoomIn, onZoomInClick)
+            ZoomValue(contentRotationDegrees, zoomRatio)
+            ZoomDecreaseButton(contentRotationDegrees, canZoomOut, onZoomOutClick)
         }
     } else {
         Row(
@@ -845,19 +961,27 @@ private fun ZoomControl(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ZoomIncreaseButton(contentRotationDegrees)
-            ZoomValue(contentRotationDegrees)
-            ZoomDecreaseButton(contentRotationDegrees)
+            ZoomIncreaseButton(contentRotationDegrees, canZoomIn, onZoomInClick)
+            ZoomValue(contentRotationDegrees, zoomRatio)
+            ZoomDecreaseButton(contentRotationDegrees, canZoomOut, onZoomOutClick)
         }
     }
 }
 
 @Composable
-private fun ZoomIncreaseButton(contentRotationDegrees: Float) {
-    DialCircle {
+private fun ZoomIncreaseButton(
+    contentRotationDegrees: Float,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    DialCircle(
+        modifier = Modifier
+            .semantics { contentDescription = "Zoom in" }
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
         Text(
             text = "+",
-            color = Ink,
+            color = if (enabled) Ink else InkDim,
             fontSize = 22.sp,
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
         )
@@ -865,9 +989,9 @@ private fun ZoomIncreaseButton(contentRotationDegrees: Float) {
 }
 
 @Composable
-private fun ZoomValue(contentRotationDegrees: Float) {
+private fun ZoomValue(contentRotationDegrees: Float, zoomRatio: Float) {
     MonoText(
-        text = "1.0X",
+        text = formatZoomRatio(zoomRatio),
         color = Ink,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
@@ -876,11 +1000,19 @@ private fun ZoomValue(contentRotationDegrees: Float) {
 }
 
 @Composable
-private fun ZoomDecreaseButton(contentRotationDegrees: Float) {
-    DialCircle {
+private fun ZoomDecreaseButton(
+    contentRotationDegrees: Float,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    DialCircle(
+        modifier = Modifier
+            .semantics { contentDescription = "Zoom out" }
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
         Text(
             text = "−",
-            color = Ink,
+            color = if (enabled) Ink else InkDim,
             fontSize = 22.sp,
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
         )
@@ -891,13 +1023,14 @@ private fun ZoomDecreaseButton(contentRotationDegrees: Float) {
 private fun RailAction(
     accessibilityLabel: String,
     contentRotationDegrees: Float,
+    enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     DialCircle(
         modifier = Modifier.semantics {
             contentDescription = accessibilityLabel
-        }.then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
+        }.then(if (onClick == null) Modifier else Modifier.clickable(enabled = enabled, onClick = onClick)),
     ) {
         Box(
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
@@ -962,7 +1095,23 @@ private fun ShutterButton(
 }
 
 @Composable
-private fun GalleryThumbnail() {
+private fun GalleryThumbnail(uri: Uri?) {
+    val context = LocalContext.current
+    val thumbnail by produceState<ImageBitmap?>(initialValue = null, uri) {
+        value = null
+        if (uri != null) {
+            value = withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.loadThumbnail(uri, Size(96, 96), null).asImageBitmap()
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .size(30.dp)
@@ -973,8 +1122,20 @@ private fun GalleryThumbnail() {
                 ),
             )
             .border(1.dp, Hair, RoundedCornerShape(5.dp)),
-    )
+    ) {
+        thumbnail?.let { image ->
+            Image(
+                bitmap = image,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
+
+private fun formatZoomRatio(zoomRatio: Float): String =
+    String.format(Locale.US, "%.1fX", zoomRatio)
 
 @Composable
 private fun SettingsGlyph() {

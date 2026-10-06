@@ -1,0 +1,19 @@
+Generation mode: built-in image_gen, edit
+Inputs: newfeel-camera-icon-v1.png, newfeel-camera-icon-v2.png
+Design asset: newfeel-camera-icon-v3.png
+Status: icon design concept; launcher integration is not included.
+
+Use case: style-transfer
+Asset type: final square mobile app icon artwork for NewFeelCamera, revision 3.
+Input images:
+- Image 1 is the primary style reference and edit target: use its bold simplified camera silhouette, soft geometric corners, oversized amber lens, warm ivory/charcoal/amber palette and obvious app-icon character.
+- Image 2 is a secondary design reference only: borrow its compact, mostly flat-top black camera body and restrained concentric lens-ring construction. DO NOT borrow its photorealistic rendering, fine textures, realistic product proportions or tabletop setting.
+Primary request: blend the two previous designs, approximately 75 percent of image 1's friendly graphic app-icon simplicity and 25 percent of image 2's serious compact-camera styling. The result must read unmistakably as a polished app icon, not a photograph of a camera.
+
+Design: one chunky compact camera symbol viewed perfectly straight-on. A broad softly rounded rectangular matte graphite-black body, compressed horizontally relative to image 2 so the overall silhouette feels compact and substantial. A single simplified amber shutter tab on the top left. Very large circular lens centered slightly right, with exactly two broad clean charcoal concentric rings and a thin muted gold accent. Lens center is warm amber with a dark honey lower arc and one simple soft cream crescent reflection, influenced strongly by image 1. Keep lens shading broad and stylized, never complex optical reflections. One tiny ivory rounded-rectangle viewfinder at upper right. Suggest the left grip with just one broad smooth inset geometric panel, no texture. Camera body occupies about 65 percent of canvas width and 48 percent of canvas height.
+Rendering: beautifully reduced graphic illustration, near-flat vector-like shapes, smooth simple surfaces, crisp silhouette, only a subtle bevel and restrained soft shading to give a premium app-icon finish. Everything should remain clear at 48 pixels. Eliminate all leather grain, metal grain, dial knurling, small buttons, screws, flash ribbing and mechanical microdetails.
+Background: solid warm ivory #F5F0E8 full bleed to all four square edges. No tabletop, no horizon, no external cast shadow, no studio photography, no visible ground. The icon should feel like a cohesive composed graphic, with dark body and amber focal point.
+Composition: square image, one centered camera symbol, generous balanced padding for circular and rounded-square launcher masks. No outer rounded-square border or tile, no mockup, no multiple alternatives, no brand logos, no text or watermark.
+Preserve from image 1: warm friendly mood, rounded strong silhouette, big amber lens, minimal part count and icon legibility.
+Borrow from image 2 only: black low-profile compact camera identity, flattened top, simple ring hierarchy.
+Avoid: photorealistic camera, rendered product photograph, leather textures, cold multicolored glass, glowing orange orb, excessive specular highlights, complicated details, thin line art, tiny camera inside excessive whitespace.

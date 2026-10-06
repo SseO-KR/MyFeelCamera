@@ -28,6 +28,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.billing.PurchaseRefreshState
+import com.newfeelcamera.data.billing.PurchaseLaunchState
+import com.newfeelcamera.data.billing.UnlimitedAccessState
 import com.newfeelcamera.data.billing.UnlimitedProductState
 import com.newfeelcamera.ui.design.Accent
 import com.newfeelcamera.ui.design.Background
@@ -38,16 +40,22 @@ import com.newfeelcamera.ui.design.Rail
 @Composable
 fun SettingsRoute(
     onBackClick: () -> Unit,
+    onPurchaseUnlimited: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val purchaseRefreshState by viewModel.purchaseRefreshState.collectAsStateWithLifecycle()
     val unlimitedProductState by viewModel.unlimitedProductState.collectAsStateWithLifecycle()
+    val unlimitedAccessState by viewModel.unlimitedAccessState.collectAsStateWithLifecycle()
+    val purchaseLaunchState by viewModel.purchaseLaunchState.collectAsStateWithLifecycle()
 
     SettingsScreen(
         uiState = uiState,
         purchaseRefreshState = purchaseRefreshState,
         unlimitedProductState = unlimitedProductState,
+        unlimitedAccessState = unlimitedAccessState,
+        purchaseLaunchState = purchaseLaunchState,
+        onPurchaseUnlimited = onPurchaseUnlimited,
         onRetryPurchaseRefresh = viewModel::retryPurchaseRefresh,
         onRetryProductDetails = viewModel::retryProductDetails,
         onStartFilmSelected = viewModel::setStartFilm,
@@ -61,6 +69,9 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     purchaseRefreshState: PurchaseRefreshState,
     unlimitedProductState: UnlimitedProductState,
+    unlimitedAccessState: UnlimitedAccessState,
+    purchaseLaunchState: PurchaseLaunchState,
+    onPurchaseUnlimited: () -> Unit,
     onRetryPurchaseRefresh: () -> Unit,
     onRetryProductDetails: () -> Unit,
     onStartFilmSelected: (FilmPreset) -> Unit,
@@ -189,15 +200,22 @@ fun SettingsScreen(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     )
-                    val productMessage = when (unlimitedProductState) {
-                        UnlimitedProductState.NotLoaded,
-                        UnlimitedProductState.Loading -> "상품 정보를 확인하는 중입니다."
-                        is UnlimitedProductState.Available ->
-                            "현재 가격: ${unlimitedProductState.formattedPrice}"
-                        UnlimitedProductState.Unavailable ->
-                            "현재 구매 가능한 상품 정보를 확인할 수 없습니다."
-                        is UnlimitedProductState.Failed ->
-                            "상품 정보를 불러오지 못했습니다."
+                    val productMessage = when (unlimitedAccessState) {
+                        UnlimitedAccessState.Active -> "무제한 촬영을 사용 중입니다."
+                        UnlimitedAccessState.Pending -> "결제 승인을 기다리고 있습니다."
+                        UnlimitedAccessState.VerificationFailed ->
+                            "구매 확인에 실패했습니다. 구매 내역을 다시 확인해 주세요."
+                        UnlimitedAccessState.Unknown -> "구매 내역을 확인하는 중입니다."
+                        UnlimitedAccessState.NotPurchased -> when (unlimitedProductState) {
+                            UnlimitedProductState.NotLoaded,
+                            UnlimitedProductState.Loading -> "상품 정보를 확인하는 중입니다."
+                            is UnlimitedProductState.Available ->
+                                "한 번 결제하면 촬영 횟수 제한이 해제됩니다."
+                            UnlimitedProductState.Unavailable ->
+                                "현재 구매 가능한 상품 정보를 확인할 수 없습니다."
+                            is UnlimitedProductState.Failed ->
+                                "상품 정보를 불러오지 못했습니다."
+                        }
                     }
                     Text(
                         text = productMessage,
@@ -209,6 +227,40 @@ fun SettingsScreen(
                     ) {
                         TextButton(onClick = onRetryProductDetails) {
                             Text("상품 정보 다시 확인", color = Accent)
+                        }
+                    }
+                    if (unlimitedAccessState == UnlimitedAccessState.NotPurchased &&
+                        unlimitedProductState is UnlimitedProductState.Available
+                    ) {
+                        TextButton(
+                            onClick = onPurchaseUnlimited,
+                            enabled = !uiState.isSaving &&
+                                purchaseLaunchState != PurchaseLaunchState.Loading,
+                        ) {
+                            Text(
+                                text = "무제한 촬영 구매 · ${unlimitedProductState.formattedPrice}",
+                                color = Accent,
+                            )
+                        }
+                    }
+                    if (unlimitedAccessState == UnlimitedAccessState.VerificationFailed) {
+                        TextButton(onClick = onRetryPurchaseRefresh) {
+                            Text("구매 내역 다시 확인", color = Accent)
+                        }
+                    }
+                    if (unlimitedAccessState == UnlimitedAccessState.NotPurchased) {
+                        when (purchaseLaunchState) {
+                            PurchaseLaunchState.Idle -> Unit
+                            PurchaseLaunchState.Loading -> Text(
+                                text = "결제 화면을 준비하는 중입니다.",
+                                color = InkDim,
+                                fontSize = 13.sp,
+                            )
+                            is PurchaseLaunchState.Failed -> Text(
+                                text = "결제를 진행하지 못했습니다. 다시 시도해 주세요. (${purchaseLaunchState.responseCode})",
+                                color = Accent,
+                                fontSize = 13.sp,
+                            )
                         }
                     }
                 }

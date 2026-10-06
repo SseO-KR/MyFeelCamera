@@ -2,17 +2,21 @@ package com.newfeelcamera.ui.camera
 
 import android.util.Log
 import androidx.camera.core.Preview
+import androidx.camera.core.ZoomState
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.newfeelcamera.camera.CameraController
 import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.filter.FilmPreset
-import com.newfeelcamera.data.quota.FREE_CAPTURE_LIMIT
+import com.newfeelcamera.data.billing.BillingRepository
+import com.newfeelcamera.data.billing.UnlimitedAccessState
+import com.newfeelcamera.data.gallery.RecentPhotoRepository
 import com.newfeelcamera.data.quota.FreeCaptureQuotaRepository
 import com.newfeelcamera.data.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
@@ -33,6 +37,9 @@ sealed interface CameraAction {
     data class FilmSelected(
         val film: FilmPreset,
     ) : CameraAction
+    data object ZoomInClicked : CameraAction
+    data object ZoomOutClicked : CameraAction
+    data object FlashClicked : CameraAction
     data object ShutterClicked : CameraAction
 }
 
@@ -41,12 +48,23 @@ class CameraViewModel @Inject constructor(
     private val cameraController: CameraController,
     private val settingsRepository: AppSettingsRepository,
     private val freeCaptureQuotaRepository: FreeCaptureQuotaRepository,
+    private val recentPhotoRepository: RecentPhotoRepository,
+    billingRepository: BillingRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CameraUiState())
     val uiState = _uiState.asStateFlow()
+    private var latestPhotoRefreshJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            billingRepository.unlimitedAccessState.collect { accessState ->
+                _uiState.update {
+                    it.copy(isUnlimitedActive = accessState == UnlimitedAccessState.Active)
+                }
+            }
+        }
+
         viewModelScope.launch {
             var lastStartFilm: FilmPreset? = null
             settingsRepository.settings.collect { settings ->
@@ -113,6 +131,17 @@ class CameraViewModel @Inject constructor(
                     )
                 }
             }
+            CameraAction.ZoomInClicked -> cameraController.changeZoomBy(0.5f)
+            CameraAction.ZoomOutClicked -> cameraController.changeZoomBy(-0.5f)
+            CameraAction.FlashClicked -> {
+                val current = _uiState.value
+                if (current.hasFlashUnit && !current.isCapturing) {
+                    val enabled = !current.isFlashEnabled
+                    if (cameraController.setFlashEnabled(enabled)) {
+                        _uiState.update { it.copy(isFlashEnabled = enabled) }
+                    }
+                }
+            }
             CameraAction.ShutterClicked -> capturePhoto()
         }
     }
@@ -124,7 +153,41 @@ class CameraViewModel @Inject constructor(
         cameraController.bind(
             lifecycleOwner = lifecycleOwner,
             surfaceProvider = surfaceProvider,
+            onCameraStateChanged = ::onCameraStateChanged,
         )
+    }
+
+    private fun onCameraStateChanged(zoomState: ZoomState, hasFlashUnit: Boolean) {
+        _uiState.update { current ->
+            current.copy(
+                zoomRatio = zoomState.zoomRatio,
+                minZoomRatio = zoomState.minZoomRatio,
+                maxZoomRatio = zoomState.maxZoomRatio,
+                hasFlashUnit = hasFlashUnit,
+                isFlashEnabled = current.isFlashEnabled && hasFlashUnit,
+            )
+        }
+    }
+
+    fun refreshLatestPhoto() {
+        latestPhotoRefreshJob?.cancel()
+        latestPhotoRefreshJob = viewModelScope.launch {
+            val savedAtStart = _uiState.value.lastSavedPhotoUri
+            try {
+                val uri = recentPhotoRepository.latestPhotoUri()
+                _uiState.update { current ->
+                    if (current.lastSavedPhotoUri == savedAtStart) {
+                        current.copy(latestPhotoUri = uri)
+                    } else {
+                        current
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                Log.w(TAG, "Unable to load latest photo", error)
+            }
+        }
     }
 
     private fun capturePhoto() {
@@ -133,14 +196,19 @@ class CameraViewModel @Inject constructor(
         if (!stateAtShutter.isSettingsLoaded) return
         if (stateAtShutter.isCapturing) return
 
-        if (!stateAtShutter.isQuotaLoaded) {
+        if (!stateAtShutter.isUnlimitedActive && !stateAtShutter.isQuotaLoaded) {
             _uiState.update {
                 it.copy(captureErrorMessage = "무료 촬영 횟수를 확인하지 못했습니다.")
             }
             return
         }
 
-        if (stateAtShutter.capturedPhotoCount >= FREE_CAPTURE_LIMIT) {
+        if (!canCapture(
+                isUnlimitedActive = stateAtShutter.isUnlimitedActive,
+                isQuotaLoaded = stateAtShutter.isQuotaLoaded,
+                capturedPhotoCount = stateAtShutter.capturedPhotoCount,
+            )
+        ) {
             _uiState.update {
                 it.copy(captureErrorMessage = "무료 촬영 24장을 모두 사용했습니다.")
             }
@@ -169,6 +237,11 @@ class CameraViewModel @Inject constructor(
                     film = filmAtShutter,
                 )
 
+                if (stateAtShutter.isUnlimitedActive) {
+                    _uiState.update { it.copy(latestPhotoUri = uri, lastSavedPhotoUri = uri) }
+                    return@launch
+                }
+
                 val usedShots = try {
                     freeCaptureQuotaRepository.recordSavedPhoto()
                 } catch (cancellation: CancellationException) {
@@ -179,6 +252,7 @@ class CameraViewModel @Inject constructor(
                         it.copy(
                             isQuotaLoaded = false,
                             latestPhotoUri = uri,
+                            lastSavedPhotoUri = uri,
                             captureErrorMessage = "사진은 저장되었지만 촬영 횟수 기록에 실패했습니다.",
                         )
                     }
@@ -189,6 +263,7 @@ class CameraViewModel @Inject constructor(
                     it.copy(
                         capturedPhotoCount = usedShots,
                         latestPhotoUri = uri,
+                        lastSavedPhotoUri = uri,
                     )
                 }
             } catch (cancellation: CancellationException) {

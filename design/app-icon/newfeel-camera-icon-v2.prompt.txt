@@ -1,0 +1,14 @@
+Generation mode: built-in image_gen, edit
+Input: newfeel-camera-icon-v1.png
+Design asset: newfeel-camera-icon-v2.png
+Status: icon design concept; launcher integration is not included.
+
+Use case: style-transfer
+Asset type: revised square app icon for NewFeelCamera.
+Input image: the attached previous icon is the edit target. Keep its single centered camera subject, square canvas, generous mask-safe spacing and immediate readability as an app icon. Redesign the camera styling and background as specified below.
+Primary request: make the camera feel like a serious Nikon / Sony / Ricoh camera: purposeful, compact, precision-engineered Japanese photographic equipment. Particularly the understated black compact body of a Ricoh GR, restrained Sony mirrorless geometry, and substantial Nikon grip/material quality. Create an original unbranded synthesis.
+Subject: a matte black compact camera with a low rectangular body and mostly flat top, softly chamfered corners, subtly textured black grip on the viewer's left, a small knurled top control dial, discrete shutter button, tiny rectangular flash window. Large circular lens, slightly right of the body center, with two or three finely stepped concentric precision-machined black metal rings and a very thin muted champagne-bronze accent ring. Lens glass is deep black with restrained teal and violet optical coating reflections and a very small warm amber reflection. The dark lens center must look like optical glass, not a glowing amber orb. No large DSLR pentaprism hump.
+Style/medium: premium industrial product icon, a beautifully simplified, almost frontal dimensional render with a tiny amount of top surface visible. Restrained realism, crisp silhouette, tactile materials, broad legible forms, details subordinate to icon readability. More authentic camera hardware and less toy-like. Controlled soft studio illumination, gentle silver edge highlights reveal the black body.
+Scene/backdrop: replace the previous black backdrop with a solid warm light ivory #E9E5DE full-bleed square background, providing clear contrast with the black camera. A very subtle close contact shadow only, no dramatic floating shadow.
+Composition/framing: one camera centered in a square canvas, camera fits inside central 64 percent of canvas width and central 48 percent of height. It remains recognizable at tiny launcher sizes. No cropping, generous negative space for circular and rounded-square masks.
+Constraints: single icon artwork only. Keep the square canvas and simple centered composition of the source; change camera design, materials and background. No actual brand logo, no text, no model numbers, no decorative lettering, no watermark, no border, no outer rounded-square tile, no phone mockup, no multiple variants, no accessories. Avoid excessive tiny mechanical detail, oversized lens reflections, brightly glowing lens, white plastic body, cartoon camera silhouette.

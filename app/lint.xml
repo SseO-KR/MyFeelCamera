@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- v1은 배경까지 포함된 원본이다. 외곽 모양은 adaptive-icon의 시스템 마스크가 처리한다. -->
+    <issue id="IconLauncherShape">
+        <ignore path="src/main/res/drawable-nodpi/ic_launcher_artwork.png" />
+    </issue>
+</lint>

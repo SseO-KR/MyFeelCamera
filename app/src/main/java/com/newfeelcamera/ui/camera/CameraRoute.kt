@@ -1,6 +1,8 @@
 package com.newfeelcamera.ui.camera
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.OrientationEventListener
 import android.widget.Toast
@@ -100,11 +102,11 @@ fun CameraRoute(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // 화면에 다시 들어올 때 이전 촬영 결과를 새 알림으로 표시하지 않는다.
-    var lastNotifiedPhotoUri by remember { mutableStateOf(uiState.latestPhotoUri) }
+    var lastNotifiedPhotoUri by remember { mutableStateOf(uiState.lastSavedPhotoUri) }
     var lastNotifiedError by remember { mutableStateOf(uiState.captureErrorMessage) }
 
-    LaunchedEffect(uiState.latestPhotoUri, uiState.captureErrorMessage) {
-        val photoUri = uiState.latestPhotoUri
+    LaunchedEffect(uiState.lastSavedPhotoUri, uiState.captureErrorMessage) {
+        val photoUri = uiState.lastSavedPhotoUri
         val errorMessage = uiState.captureErrorMessage
 
         if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
@@ -151,6 +153,7 @@ fun CameraRoute(
     }
 
     LifecycleResumeEffect(viewModel) {
+        viewModel.refreshLatestPhoto()
         val unregister = registerVolumeShutterHandler {
             viewModel.onIntent(CameraAction.ShutterClicked)
         }
@@ -167,6 +170,24 @@ fun CameraRoute(
         },
         onFilmSelected = { film ->
             viewModel.onIntent(CameraAction.FilmSelected(film))
+        },
+        onZoomInClick = { viewModel.onIntent(CameraAction.ZoomInClicked) },
+        onZoomOutClick = { viewModel.onIntent(CameraAction.ZoomOutClicked) },
+        onFlashClick = { viewModel.onIntent(CameraAction.FlashClicked) },
+        onGalleryClick = {
+            uiState.latestPhotoUri?.let { uri ->
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "image/jpeg")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                try {
+                    context.startActivity(intent)
+                } catch (error: ActivityNotFoundException) {
+                    Toast.makeText(context, "사진을 열 앱이 없습니다.", Toast.LENGTH_SHORT).show()
+                } catch (error: SecurityException) {
+                    Toast.makeText(context, "사진을 열 수 없습니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
         },
         onShutterClick = {
             viewModel.onIntent(CameraAction.ShutterClicked)

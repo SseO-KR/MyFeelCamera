@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground>
+        <!-- v1 원본의 여백을 유지하며 108dp 레이어에서 90dp로 표시한다. -->
+        <inset
+            android:insetBottom="8.333333%"
+            android:insetLeft="8.333333%"
+            android:insetRight="8.333333%"
+            android:insetTop="8.333333%">
+            <bitmap
+                android:src="@drawable/ic_launcher_artwork"
+                android:filter="true"
+                android:gravity="fill" />
+        </inset>
+    </foreground>
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+</adaptive-icon>

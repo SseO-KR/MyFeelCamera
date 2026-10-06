@@ -33,6 +33,7 @@ class SettingsViewModel @Inject constructor(
     val purchaseRefreshState = billingRepository.refreshState
     val unlimitedAccessState = billingRepository.unlimitedAccessState
     val unlimitedProductState = billingRepository.productState
+    val purchaseLaunchState = billingRepository.purchaseLaunchState
 
     init {
         viewModelScope.launch {

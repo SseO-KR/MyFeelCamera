@@ -59,7 +59,13 @@
 - Capture는 셔터를 누른 순간의 `selectedFilm` snapshot을 입력으로 받는다. 처리 도중 UI에서 Film을 바꿔도 이미 시작된 사진의 LUT는 바뀌지 않는다. **(Implementation Decision — `01` §7)**
 - 촬영된 원본에 필터를 실제로 적용하는 방식은 이 문서의 범위 밖이다(`03`).
 
-## 5. 이 문서에서 다루지 않는 것
+## 5. P1 조작: Zoom, Flash, Gallery
+
+- Zoom +/−는 바인딩된 `Camera`의 `CameraControl.setZoomRatio()`를 0.5배씩 변경한다. `CameraInfo.zoomState`의 최소·최대값으로 제한하고 실제 배율을 UI에 표시한다. 같은 카메라의 Preview와 ImageCapture에 적용한다. 카메라를 다시 바인딩하면 요청 배율을 새 `CameraControl`에 다시 적용한다. **(Product Requirement, CameraX API Contract, Implementation Decision)**
+- Flash 버튼은 후면 카메라의 `hasFlashUnit()`이 참일 때에만 촬영 플래시 OFF/ON을 전환한다. `ImageCapture.flashMode`에 적용하고 다시 바인딩해도 선택을 유지한다. 지속 점등하는 torch와 AUTO 모드는 이 버튼의 범위 밖이다. **(Product Requirement, CameraX API Contract, Implementation Decision)**
+- 갤러리 썸네일은 `Pictures/NewFeelCamera`의 공개 완료된 최신 이미지를 MediaStore에서 찾고, 저장 직후와 카메라 화면 복귀 때 갱신한다. 앱 소유 미디어만 사용하므로 저장소 읽기 권한을 추가하지 않는다. 탭하면 사진 URI를 `ACTION_VIEW`로 열고 읽기 권한을 전달한다. **(Product Requirement, Android MediaStore API Contract, Implementation Decision)**
+
+## 6. 이 문서에서 다루지 않는 것
 
 - LUT/셰이더 적용, Preview·Capture 실행 경로 공유 여부 → `03-rendering-and-lut.md`
 - Layout mode 판정 로직, Portrait 외 모드 → `04-adaptive-layout.md`

@@ -11,6 +11,8 @@
 - Phone에서는 현재 단일 Activity의 Camera와 Settings가 같은 Portrait 요청을 유지한다. Settings 이동만으로 Window 방향을 바꾸지 않기 위한 정책이다. 큰 화면에서는 요청이 무시되거나 적용되지 않을 수 있으므로 실제 Window에 적응한다. **(Product Requirement)**
 - 버튼 아이콘, Film 정보와 촬영 수, Preview overlay text처럼 읽기 방향이 있는 개별 content는 실제 display rotation과 CameraX 규약으로 양자화된 device target rotation을 합성해 회전한다. Rail 배경과 PreviewSlot은 회전하지 않는다. Flash/Shutter/Gallery/Settings/Zoom의 반복적인 시각 레이블은 표시하지 않고 아이콘·형태와 접근성 설명으로 역할을 전달한다. 촬영 수는 Preview 위에 겹치지 않고 Start 패널의 Film과 Zoom 사이에 `현재 수 / 최대 수`만 표시한다. Film 이름은 Film 영역의 `WARM` 표기를 재사용한다. **(Product Requirement, Implementation Decision)**
 - Portrait 요청이 적용되지 않아 실제 Window 크기나 방향이 바뀌면 `CameraLayoutMode`와 기존 `Box` 배치가 adaptive fallback을 담당한다. Phone 여부만으로 Window가 항상 Portrait라고 가정하지 않는다. **(Product Requirement, Android Window API Contract)**
+- Galaxy S25에서 시스템 상태바와 내비게이션 바가 카메라 화면을 가리는 문제가 보고됐다. Camera와 Settings가 공유하는 Activity를 몰입형 전체 화면으로 표시하고, 가장자리 스와이프로 시스템 바를 잠깐 볼 수 있게 한다. Camera 조작 영역과 Settings 내용은 `safeDrawing` insets를 적용해 카메라 홀·멀티윈도우의 캡션 바 등에 가리지 않게 한다. **(실기기 사용자 관찰, Implementation Decision, Android/Compose Window API Contract)**
+- 시스템 바를 숨긴 뒤 Camera의 상단이 넓게 비어 보인다는 사용자 관찰에 따라, 카메라 화면의 `safeDrawing` 여백은 유지하되 바깥 배경을 control rail과 같은 색으로 이어 그린다. 상단에 중복으로 적용된 고정 16dp 여백은 제거하고, 하단 조작 버튼 아래에만 16dp를 둔다. 기기별 상태바 높이를 하드코딩하지 않는다. **(실기기 사용자 관찰, Implementation Decision, Android/Compose Window API Contract)**
 
 ## 2. 신호 재확인 — Window Size ≠ Camera Rotation
 
