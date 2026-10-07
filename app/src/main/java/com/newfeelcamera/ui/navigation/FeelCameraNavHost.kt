@@ -16,6 +16,7 @@ fun FeelCameraNavHost(
     modifier: Modifier = Modifier,
     registerVolumeShutterHandler: (() -> Unit) -> (() -> Unit),
     onPurchaseUnlimited: () -> Unit,
+    onCameraPermissionHandled: () -> Unit,
 ) {
     val navController = rememberNavController()
 
@@ -27,6 +28,7 @@ fun FeelCameraNavHost(
         composable(CameraDestination) {
             CameraRoute(
                 registerVolumeShutterHandler = registerVolumeShutterHandler,
+                onCameraPermissionHandled = onCameraPermissionHandled,
                 onOpenSettings = {
                     navController.navigate(SettingsDestination) {
                         launchSingleTop = true

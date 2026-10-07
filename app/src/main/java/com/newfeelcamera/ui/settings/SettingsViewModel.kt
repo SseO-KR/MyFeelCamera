@@ -1,11 +1,13 @@
 package com.newfeelcamera.ui.settings
 
 import android.util.Log
+import androidx.camera.core.CameraInfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.data.settings.AppSettingsRepository
+import com.newfeelcamera.data.settings.ShutterSoundLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +21,8 @@ data class SettingsUiState(
     val isSaving: Boolean = false,
     val startFilm: FilmPreset = FilmPreset.WARM,
     val showGrid: Boolean = true,
+    val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
+    val mustPlayShutterSound: Boolean = CameraInfo.mustPlayShutterSound(),
     val errorMessage: String? = null,
 )
 
@@ -43,6 +47,7 @@ class SettingsViewModel @Inject constructor(
                         isLoading = false,
                         startFilm = settings.startFilm,
                         showGrid = settings.showGrid,
+                        shutterSoundLevel = settings.shutterSoundLevel,
                     )
                 }
             }
@@ -75,6 +80,25 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 settingsRepository.setShowGrid(showGrid)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                showWriteError(error)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    fun setShutterSoundLevel(level: ShutterSoundLevel) {
+        val current = _uiState.value
+        if (current.isLoading || current.isSaving || current.mustPlayShutterSound ||
+            current.shutterSoundLevel == level
+        ) return
+        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        viewModelScope.launch {
+            try {
+                settingsRepository.setShutterSoundLevel(level)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

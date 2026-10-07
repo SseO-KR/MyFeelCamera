@@ -174,11 +174,14 @@ class CameraController @Inject constructor (
 
     suspend fun takePhoto(
         film: FilmPreset,
+        onShutter: () -> Unit,
     ): Uri {
         val capture = imageCapture
             ?: throw CaptureException.CameraNotReady()
 
         Log.d(TAG, "takePhoto film=$film")
+
+        onShutter()
 
         val imageProxy = try {
             capture.takePicture()

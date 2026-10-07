@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.newfeelcamera.camera.CameraController
+import com.newfeelcamera.camera.ShutterSoundPlayer
 import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.billing.BillingRepository
@@ -46,6 +47,7 @@ sealed interface CameraAction {
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     private val cameraController: CameraController,
+    private val shutterSoundPlayer: ShutterSoundPlayer,
     private val settingsRepository: AppSettingsRepository,
     private val freeCaptureQuotaRepository: FreeCaptureQuotaRepository,
     private val recentPhotoRepository: RecentPhotoRepository,
@@ -76,6 +78,7 @@ class CameraViewModel @Inject constructor(
                         isSettingsLoaded = true,
                         selectedFilm = if (startFilmChanged) settings.startFilm else current.selectedFilm,
                         showGrid = settings.showGrid,
+                        shutterSoundLevel = settings.shutterSoundLevel,
                     )
                 }
             }
@@ -223,6 +226,7 @@ class CameraViewModel @Inject constructor(
         }
 
         val filmAtShutter = stateAtShutter.selectedFilm
+        val shutterSoundLevelAtShutter = stateAtShutter.shutterSoundLevel
 
         _uiState.update {
             it.copy(
@@ -235,6 +239,7 @@ class CameraViewModel @Inject constructor(
             try {
                 val uri = cameraController.takePhoto(
                     film = filmAtShutter,
+                    onShutter = { shutterSoundPlayer.play(shutterSoundLevelAtShutter) },
                 )
 
                 if (stateAtShutter.isUnlimitedActive) {
@@ -293,6 +298,7 @@ class CameraViewModel @Inject constructor(
 
     override fun onCleared() {
         cameraController.close()
+        shutterSoundPlayer.close()
     }
 
     private companion object {

@@ -95,6 +95,7 @@ fun DeviceOrientationEffect(
 fun CameraRoute(
     onOpenSettings: () -> Unit,
     registerVolumeShutterHandler: (() -> Unit) -> (() -> Unit),
+    onCameraPermissionHandled: () -> Unit,
     viewModel: CameraViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -131,6 +132,7 @@ fun CameraRoute(
         viewModel.onIntent(
             CameraAction.CameraPermissionChanged(granted),
         )
+        onCameraPermissionHandled()
     }
 
     LaunchedEffect(Unit) {
@@ -145,6 +147,8 @@ fun CameraRoute(
 
         if (!granted) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
+        } else {
+            onCameraPermissionHandled()
         }
     }
 

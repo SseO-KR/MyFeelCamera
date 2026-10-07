@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -26,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.newfeelcamera.BuildConfig
 import com.newfeelcamera.camera.filter.FilmPreset
+import com.newfeelcamera.data.settings.ShutterSoundLevel
 import com.newfeelcamera.data.billing.PurchaseRefreshState
 import com.newfeelcamera.data.billing.PurchaseLaunchState
 import com.newfeelcamera.data.billing.UnlimitedAccessState
@@ -60,6 +64,7 @@ fun SettingsRoute(
         onRetryProductDetails = viewModel::retryProductDetails,
         onStartFilmSelected = viewModel::setStartFilm,
         onGridChanged = viewModel::setShowGrid,
+        onShutterSoundLevelSelected = viewModel::setShutterSoundLevel,
         onBackClick = onBackClick,
     )
 }
@@ -76,6 +81,7 @@ fun SettingsScreen(
     onRetryProductDetails: () -> Unit,
     onStartFilmSelected: (FilmPreset) -> Unit,
     onGridChanged: (Boolean) -> Unit,
+    onShutterSoundLevelSelected: (ShutterSoundLevel) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -117,7 +123,10 @@ fun SettingsScreen(
             )
         } else {
             Column(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 Column {
@@ -191,6 +200,55 @@ fun SettingsScreen(
                             uncheckedTrackColor = Rail,
                         ),
                     )
+                }
+
+                Column {
+                    Text(
+                        text = "촬영음",
+                        color = Ink,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (uiState.mustPlayShutterSound) {
+                        Text(
+                            text = "이 기기는 촬영음을 항상 재생합니다. 음량은 기기에서 관리합니다.",
+                            color = InkDim,
+                            fontSize = 13.sp,
+                        )
+                    } else {
+                        Text(
+                            text = "촬영할 때 나는 소리의 크기 · 기기 음량의 영향도 받습니다.",
+                            color = InkDim,
+                            fontSize = 13.sp,
+                        )
+                        ShutterSoundLevel.entries.forEach { level ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !uiState.isSaving) {
+                                        onShutterSoundLevelSelected(level)
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = uiState.shutterSoundLevel == level,
+                                    onClick = null,
+                                    enabled = !uiState.isSaving,
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = Accent,
+                                        unselectedColor = InkDim,
+                                    ),
+                                )
+                                Text(
+                                    text = level.displayName,
+                                    modifier = Modifier.padding(start = 12.dp),
+                                    color = Ink,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Column {
@@ -284,6 +342,19 @@ fun SettingsScreen(
                     Text(
                         text = message,
                         color = Accent,
+                        fontSize = 13.sp,
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = "현재 버전", color = InkDim, fontSize = 13.sp)
+                    Text(
+                        text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        color = InkDim,
                         fontSize = 13.sp,
                     )
                 }

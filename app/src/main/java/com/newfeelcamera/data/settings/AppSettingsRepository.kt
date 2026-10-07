@@ -20,6 +20,7 @@ private val Context.appSettingsDataStore by preferencesDataStore(name = "app_set
 data class AppSettings(
     val startFilm: FilmPreset = FilmPreset.WARM,
     val showGrid: Boolean = true,
+    val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
 )
 
 @Singleton
@@ -28,6 +29,7 @@ class AppSettingsRepository @Inject constructor(
 ) {
     private val startFilmKey = stringPreferencesKey("start_film")
     private val showGridKey = booleanPreferencesKey("show_grid")
+    private val shutterSoundLevelKey = stringPreferencesKey("shutter_sound_level")
 
     val settings: Flow<AppSettings> = context.appSettingsDataStore.data
         .catch { error ->
@@ -43,6 +45,9 @@ class AppSettingsRepository @Inject constructor(
                     it.name == preferences[startFilmKey]
                 } ?: FilmPreset.WARM,
                 showGrid = preferences[showGridKey] ?: true,
+                shutterSoundLevel = ShutterSoundLevel.entries.firstOrNull {
+                    it.name == preferences[shutterSoundLevelKey]
+                } ?: ShutterSoundLevel.MEDIUM,
             )
         }
 
@@ -55,6 +60,12 @@ class AppSettingsRepository @Inject constructor(
     suspend fun setShowGrid(showGrid: Boolean) {
         context.appSettingsDataStore.edit { preferences ->
             preferences[showGridKey] = showGrid
+        }
+    }
+
+    suspend fun setShutterSoundLevel(level: ShutterSoundLevel) {
+        context.appSettingsDataStore.edit { preferences ->
+            preferences[shutterSoundLevelKey] = level.name
         }
     }
 }

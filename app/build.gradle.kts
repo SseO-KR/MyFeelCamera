@@ -106,4 +106,5 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
 
     implementation(libs.billing.ktx)
+    implementation(libs.play.app.update)
 }
