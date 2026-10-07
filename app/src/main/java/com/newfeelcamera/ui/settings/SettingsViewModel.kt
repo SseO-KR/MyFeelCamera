@@ -1,9 +1,11 @@
 package com.newfeelcamera.ui.settings
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.camera.core.CameraInfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.newfeelcamera.R
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.data.settings.AppSettingsRepository
@@ -23,7 +25,7 @@ data class SettingsUiState(
     val showGrid: Boolean = true,
     val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
     val mustPlayShutterSound: Boolean = CameraInfo.mustPlayShutterSound(),
-    val errorMessage: String? = null,
+    @field:StringRes val errorMessageRes: Int? = null,
 )
 
 @HiltViewModel
@@ -58,7 +60,7 @@ class SettingsViewModel @Inject constructor(
         val current = _uiState.value
         if (current.isLoading || current.isSaving || current.startFilm == film) return
 
-        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
 
         viewModelScope.launch {
             try {
@@ -76,7 +78,7 @@ class SettingsViewModel @Inject constructor(
     fun setShowGrid(showGrid: Boolean) {
         val current = _uiState.value
         if (current.isLoading || current.isSaving || current.showGrid == showGrid) return
-        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
                 settingsRepository.setShowGrid(showGrid)
@@ -95,7 +97,7 @@ class SettingsViewModel @Inject constructor(
         if (current.isLoading || current.isSaving || current.mustPlayShutterSound ||
             current.shutterSoundLevel == level
         ) return
-        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
                 settingsRepository.setShutterSoundLevel(level)
@@ -112,7 +114,7 @@ class SettingsViewModel @Inject constructor(
     private fun showWriteError(error: Exception) {
         Log.e(TAG, "Unable to save camera settings", error)
         _uiState.update {
-            it.copy(errorMessage = "설정을 저장하지 못했습니다. 다시 시도해 주세요.")
+            it.copy(errorMessageRes = R.string.settings_save_failed)
         }
     }
 

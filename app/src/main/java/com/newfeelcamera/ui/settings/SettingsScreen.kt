@@ -23,12 +23,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.newfeelcamera.BuildConfig
+import com.newfeelcamera.R
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.settings.ShutterSoundLevel
 import com.newfeelcamera.data.billing.PurchaseRefreshState
@@ -40,6 +42,7 @@ import com.newfeelcamera.ui.design.Background
 import com.newfeelcamera.ui.design.Ink
 import com.newfeelcamera.ui.design.InkDim
 import com.newfeelcamera.ui.design.Rail
+import com.newfeelcamera.ui.labelRes
 
 @Composable
 fun SettingsRoute(
@@ -103,10 +106,10 @@ fun SettingsScreen(
                 enabled = !uiState.isSaving,
                 modifier = Modifier.align(Alignment.CenterStart),
             ) {
-                Text(text = "뒤로", color = if (uiState.isSaving) InkDim else Ink)
+                Text(text = stringResource(R.string.back), color = if (uiState.isSaving) InkDim else Ink)
             }
             Text(
-                text = "설정",
+                text = stringResource(R.string.settings),
                 modifier = Modifier.align(Alignment.Center),
                 color = Ink,
                 fontSize = 20.sp,
@@ -116,7 +119,7 @@ fun SettingsScreen(
 
         if (uiState.isLoading) {
             Text(
-                text = "설정을 불러오는 중입니다.",
+                text = stringResource(R.string.settings_loading),
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
                 color = InkDim,
                 fontSize = 14.sp,
@@ -131,13 +134,13 @@ fun SettingsScreen(
             ) {
                 Column {
                     Text(
-                        text = "시작 필름",
+                        text = stringResource(R.string.start_film),
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "카메라를 열 때 선택할 필름",
+                        text = stringResource(R.string.start_film_description),
                         color = InkDim,
                         fontSize = 13.sp,
                     )
@@ -159,7 +162,7 @@ fun SettingsScreen(
                                 ),
                             )
                             Text(
-                                text = film.displayName,
+                                text = stringResource(film.labelRes),
                                 modifier = Modifier.padding(start = 12.dp),
                                 color = Ink,
                                 fontSize = 15.sp,
@@ -180,13 +183,13 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "격자 표시",
+                            text = stringResource(R.string.show_grid),
                             color = Ink,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "프리뷰에 3×3 구도선을 표시",
+                            text = stringResource(R.string.show_grid_description),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
@@ -204,20 +207,20 @@ fun SettingsScreen(
 
                 Column {
                     Text(
-                        text = "촬영음",
+                        text = stringResource(R.string.shutter_sound),
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     if (uiState.mustPlayShutterSound) {
                         Text(
-                            text = "이 기기는 촬영음을 항상 재생합니다. 음량은 기기에서 관리합니다.",
+                            text = stringResource(R.string.shutter_sound_required),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
                     } else {
                         Text(
-                            text = "촬영할 때 나는 소리의 크기 · 기기 음량의 영향도 받습니다.",
+                            text = stringResource(R.string.shutter_sound_description),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
@@ -241,7 +244,7 @@ fun SettingsScreen(
                                     ),
                                 )
                                 Text(
-                                    text = level.displayName,
+                                    text = stringResource(level.labelRes),
                                     modifier = Modifier.padding(start = 12.dp),
                                     color = Ink,
                                     fontSize = 15.sp,
@@ -253,26 +256,26 @@ fun SettingsScreen(
 
                 Column {
                     Text(
-                        text = "무제한 촬영",
+                        text = stringResource(R.string.unlimited_captures),
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     val productMessage = when (unlimitedAccessState) {
-                        UnlimitedAccessState.Active -> "무제한 촬영을 사용 중입니다."
-                        UnlimitedAccessState.Pending -> "결제 승인을 기다리고 있습니다."
+                        UnlimitedAccessState.Active -> stringResource(R.string.unlimited_active)
+                        UnlimitedAccessState.Pending -> stringResource(R.string.purchase_pending)
                         UnlimitedAccessState.VerificationFailed ->
-                            "구매 확인에 실패했습니다. 구매 내역을 다시 확인해 주세요."
-                        UnlimitedAccessState.Unknown -> "구매 내역을 확인하는 중입니다."
+                            stringResource(R.string.purchase_verification_failed)
+                        UnlimitedAccessState.Unknown -> stringResource(R.string.purchase_checking)
                         UnlimitedAccessState.NotPurchased -> when (unlimitedProductState) {
                             UnlimitedProductState.NotLoaded,
-                            UnlimitedProductState.Loading -> "상품 정보를 확인하는 중입니다."
+                            UnlimitedProductState.Loading -> stringResource(R.string.product_loading)
                             is UnlimitedProductState.Available ->
-                                "한 번 결제하면 촬영 횟수 제한이 해제됩니다."
+                                stringResource(R.string.unlimited_description)
                             UnlimitedProductState.Unavailable ->
-                                "현재 구매 가능한 상품 정보를 확인할 수 없습니다."
+                                stringResource(R.string.product_unavailable)
                             is UnlimitedProductState.Failed ->
-                                "상품 정보를 불러오지 못했습니다."
+                                stringResource(R.string.product_load_failed)
                         }
                     }
                     Text(
@@ -284,7 +287,7 @@ fun SettingsScreen(
                         unlimitedProductState is UnlimitedProductState.Failed
                     ) {
                         TextButton(onClick = onRetryProductDetails) {
-                            Text("상품 정보 다시 확인", color = Accent)
+                            Text(stringResource(R.string.retry_product), color = Accent)
                         }
                     }
                     if (unlimitedAccessState == UnlimitedAccessState.NotPurchased &&
@@ -296,26 +299,32 @@ fun SettingsScreen(
                                 purchaseLaunchState != PurchaseLaunchState.Loading,
                         ) {
                             Text(
-                                text = "무제한 촬영 구매 · ${unlimitedProductState.formattedPrice}",
+                                text = stringResource(
+                                    R.string.buy_unlimited,
+                                    unlimitedProductState.formattedPrice,
+                                ),
                                 color = Accent,
                             )
                         }
                     }
                     if (unlimitedAccessState == UnlimitedAccessState.VerificationFailed) {
                         TextButton(onClick = onRetryPurchaseRefresh) {
-                            Text("구매 내역 다시 확인", color = Accent)
+                            Text(stringResource(R.string.retry_purchases), color = Accent)
                         }
                     }
                     if (unlimitedAccessState == UnlimitedAccessState.NotPurchased) {
                         when (purchaseLaunchState) {
                             PurchaseLaunchState.Idle -> Unit
                             PurchaseLaunchState.Loading -> Text(
-                                text = "결제 화면을 준비하는 중입니다.",
+                                text = stringResource(R.string.purchase_preparing),
                                 color = InkDim,
                                 fontSize = 13.sp,
                             )
                             is PurchaseLaunchState.Failed -> Text(
-                                text = "결제를 진행하지 못했습니다. 다시 시도해 주세요. (${purchaseLaunchState.responseCode})",
+                                text = stringResource(
+                                    R.string.purchase_launch_failed,
+                                    purchaseLaunchState.responseCode,
+                                ),
                                 color = Accent,
                                 fontSize = 13.sp,
                             )
@@ -326,21 +335,21 @@ fun SettingsScreen(
                 if(purchaseRefreshState is PurchaseRefreshState.Failed){
                     Column {
                         Text(
-                            text = "구매 내역을 확인하지 못했습니다.",
+                            text = stringResource(R.string.purchase_refresh_failed),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
                         TextButton(
                             onClick = onRetryPurchaseRefresh,
                         ) {
-                            Text("다시 시도", color = Accent)
+                            Text(stringResource(R.string.retry), color = Accent)
                         }
                     }
                 }
 
-                uiState.errorMessage?.let { message ->
+                uiState.errorMessageRes?.let { messageRes ->
                     Text(
-                        text = message,
+                        text = stringResource(messageRes),
                         color = Accent,
                         fontSize = 13.sp,
                     )
@@ -351,7 +360,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "현재 버전", color = InkDim, fontSize = 13.sp)
+                    Text(text = stringResource(R.string.current_version), color = InkDim, fontSize = 13.sp)
                     Text(
                         text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                         color = InkDim,

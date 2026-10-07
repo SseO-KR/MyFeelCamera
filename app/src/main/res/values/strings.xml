@@ -1,3 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NewFeelCamera</string>
+    <string name="app_name" translatable="false">NewFeelCamera</string>
+
+    <string name="update_available">A new version is available</string>
+    <string name="update_from_store">Update the app from Google Play.</string>
+    <string name="update_now">Update</string>
+    <string name="later">Later</string>
+    <string name="play_store_open_failed">Could not open Google Play.</string>
+
+    <string name="film">FILM</string>
+    <string name="film_warm">WARM</string>
+    <string name="film_dusk">DUSK</string>
+    <string name="selected_film">Film: %1$s</string>
+    <string name="flash_unavailable">Flash unavailable</string>
+    <string name="flash_on">Flash on</string>
+    <string name="flash_off">Flash off</string>
+    <string name="no_photos_yet">No photos yet</string>
+    <string name="open_latest_photo">Open latest photo</string>
+    <string name="exposure_zero">EV +0.0</string>
+    <string name="rear_camera">REAR CAMERA</string>
+    <string name="zoom">Zoom</string>
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
+    <string name="zoom_ratio">%1$.1f×</string>
+    <string name="free_capture_limit_reached">Free capture limit reached</string>
+    <string name="checking_free_captures">Checking free captures</string>
+    <string name="saving">Saving photo</string>
+    <string name="shutter">Shutter</string>
+    <string name="free_capture_count_failed">Could not check remaining free captures.</string>
+    <string name="free_capture_limit_used">You have used all free captures.</string>
+    <string name="camera_permission_required">Camera permission is required.</string>
+    <string name="photo_saved_count_failed">Photo saved, but the free capture count could not be updated.</string>
+    <string name="camera_unknown_error">An unknown error occurred while processing the photo.</string>
+    <string name="camera_not_ready">The camera is not ready yet.</string>
+    <string name="camera_capture_failed">Could not take the photo.</string>
+    <string name="camera_processing_failed">Could not process the photo.</string>
+    <string name="camera_save_failed">Could not save the photo.</string>
+    <string name="photo_saved">Photo saved.</string>
+    <string name="no_photo_viewer">No app is available to open the photo.</string>
+    <string name="photo_open_failed">Could not open the photo.</string>
+
+    <string name="back">Back</string>
+    <string name="settings">Settings</string>
+    <string name="settings_loading">Loading settings…</string>
+    <string name="start_film">Starting film</string>
+    <string name="start_film_description">Film selected when you open the camera</string>
+    <string name="show_grid">Show grid</string>
+    <string name="show_grid_description">Show a 3×3 composition grid in the preview</string>
+    <string name="shutter_sound">Shutter sound</string>
+    <string name="shutter_sound_required">This device always plays a shutter sound. Adjust its volume in device settings.</string>
+    <string name="shutter_sound_description">Shutter sound volume is also affected by your device volume.</string>
+    <string name="sound_off">Off</string>
+    <string name="sound_low">Low</string>
+    <string name="sound_medium">Medium</string>
+    <string name="sound_high">High</string>
+    <string name="unlimited_captures">Unlimited captures</string>
+    <string name="unlimited_active">Unlimited captures are active.</string>
+    <string name="purchase_pending">Waiting for purchase approval.</string>
+    <string name="purchase_verification_failed">Could not verify your purchase. Check your purchases again.</string>
+    <string name="purchase_checking">Checking your purchases…</string>
+    <string name="product_loading">Checking product details…</string>
+    <string name="unlimited_description">One purchase removes the capture limit.</string>
+    <string name="product_unavailable">No purchasable product is currently available.</string>
+    <string name="product_load_failed">Could not load product details.</string>
+    <string name="retry_product">Check product details again</string>
+    <string name="buy_unlimited">Buy unlimited captures · %1$s</string>
+    <string name="retry_purchases">Check purchases again</string>
+    <string name="purchase_preparing">Preparing the purchase screen…</string>
+    <string name="purchase_launch_failed">Could not start the purchase. Try again. (%1$d)</string>
+    <string name="purchase_refresh_failed">Could not check your purchases.</string>
+    <string name="retry">Try again</string>
+    <string name="settings_save_failed">Could not save settings. Try again.</string>
+    <string name="current_version">Current version</string>
 </resources>

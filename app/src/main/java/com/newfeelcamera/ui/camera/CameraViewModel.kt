@@ -6,6 +6,7 @@ import androidx.camera.core.ZoomState
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.newfeelcamera.R
 import com.newfeelcamera.camera.CameraController
 import com.newfeelcamera.camera.ShutterSoundPlayer
 import com.newfeelcamera.camera.capture.CaptureException
@@ -92,7 +93,7 @@ class CameraViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isQuotaLoaded = false,
-                            captureErrorMessage = "무료 촬영 횟수를 확인하지 못했습니다.",
+                            captureErrorMessageRes = R.string.free_capture_count_failed,
                         )
                     }
                 }
@@ -201,7 +202,7 @@ class CameraViewModel @Inject constructor(
 
         if (!stateAtShutter.isUnlimitedActive && !stateAtShutter.isQuotaLoaded) {
             _uiState.update {
-                it.copy(captureErrorMessage = "무료 촬영 횟수를 확인하지 못했습니다.")
+                it.copy(captureErrorMessageRes = R.string.free_capture_count_failed)
             }
             return
         }
@@ -213,14 +214,14 @@ class CameraViewModel @Inject constructor(
             )
         ) {
             _uiState.update {
-                it.copy(captureErrorMessage = "무료 촬영 24장을 모두 사용했습니다.")
+                it.copy(captureErrorMessageRes = R.string.free_capture_limit_used)
             }
             return
         }
 
         if (!stateAtShutter.hasCameraPermission) {
             _uiState.update {
-                it.copy(captureErrorMessage = "카메라 권한이 필요합니다.")
+                it.copy(captureErrorMessageRes = R.string.camera_permission_required)
             }
             return
         }
@@ -231,7 +232,7 @@ class CameraViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isCapturing = true,
-                captureErrorMessage = null,
+                captureErrorMessageRes = null,
             )
         }
 
@@ -258,7 +259,7 @@ class CameraViewModel @Inject constructor(
                             isQuotaLoaded = false,
                             latestPhotoUri = uri,
                             lastSavedPhotoUri = uri,
-                            captureErrorMessage = "사진은 저장되었지만 촬영 횟수 기록에 실패했습니다.",
+                            captureErrorMessageRes = R.string.photo_saved_count_failed,
                         )
                     }
                     return@launch
@@ -286,13 +287,13 @@ class CameraViewModel @Inject constructor(
     private fun handleCaptureFailure(error: Exception) {
         Log.e(TAG, "Capture failed", error)
 
-        val errorMessage = when (error) {
-            is CaptureException -> error.userMessage
-            else -> "사진 처리 중 알 수 없는 오류가 발생했습니다."
+        val errorMessageRes = when (error) {
+            is CaptureException -> error.userMessageRes
+            else -> R.string.camera_unknown_error
         }
 
         _uiState.update {
-            it.copy(captureErrorMessage = errorMessage)
+            it.copy(captureErrorMessageRes = errorMessageRes)
         }
     }
 

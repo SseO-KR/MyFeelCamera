@@ -2,6 +2,7 @@ package com.newfeelcamera.ui.camera
 
 import android.net.Uri
 import android.view.Surface
+import androidx.annotation.StringRes
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.settings.ShutterSoundLevel
 
@@ -14,7 +15,7 @@ data class CameraUiState(
     val capturedPhotoCount: Int = 0,
     val latestPhotoUri: Uri? = null,
     val lastSavedPhotoUri: Uri? = null,
-    val captureErrorMessage: String? = null,
+    @field:StringRes val captureErrorMessageRes: Int? = null,
     val deviceTargetRotation: Int = Surface.ROTATION_0,
     val selectedFilm: FilmPreset = FilmPreset.WARM,
     val showGrid: Boolean = true,

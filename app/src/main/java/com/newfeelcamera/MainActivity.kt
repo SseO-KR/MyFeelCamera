@@ -15,6 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -55,19 +56,19 @@ class MainActivity : ComponentActivity() {
             if (cameraPermissionHandled && updateAvailable && !updatePromptHandled) {
                 AlertDialog(
                     onDismissRequest = ::dismissUpdatePrompt,
-                    title = { Text("새 버전이 있습니다") },
-                    text = { Text("플레이스토어에서 업데이트할 수 있습니다.") },
+                    title = { Text(stringResource(R.string.update_available)) },
+                    text = { Text(stringResource(R.string.update_from_store)) },
                     confirmButton = {
                         TextButton(onClick = {
                             dismissUpdatePrompt()
                             openPlayStore()
                         }) {
-                            Text("업데이트", color = Accent)
+                            Text(stringResource(R.string.update_now), color = Accent)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = ::dismissUpdatePrompt) {
-                            Text("나중에", color = InkDim)
+                            Text(stringResource(R.string.later), color = InkDim)
                         }
                     },
                     containerColor = Background,
@@ -106,7 +107,7 @@ class MainActivity : ComponentActivity() {
         val playStoreIntent = Intent(Intent.ACTION_VIEW, uri).setPackage("com.android.vending")
         if (tryStartActivity(playStoreIntent)) return
         if (!tryStartActivity(Intent(Intent.ACTION_VIEW, uri))) {
-            Toast.makeText(this, "플레이스토어를 열 수 없습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.play_store_open_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

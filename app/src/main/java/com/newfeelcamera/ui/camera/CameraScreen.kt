@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -64,6 +65,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.newfeelcamera.camera.filter.FilmPreset
+import com.newfeelcamera.R
 import com.newfeelcamera.camera.gl.CameraGlSurfaceView
 import com.newfeelcamera.data.quota.FREE_CAPTURE_LIMIT
 import com.newfeelcamera.ui.camera.layout.CameraLayoutMode
@@ -75,7 +77,7 @@ import com.newfeelcamera.ui.design.Ink
 import com.newfeelcamera.ui.design.InkDim
 import com.newfeelcamera.ui.design.PreviewBackground
 import com.newfeelcamera.ui.design.Rail
-import java.util.Locale
+import com.newfeelcamera.ui.labelRes
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -426,7 +428,7 @@ private fun StartControlRail(
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
             RailLabel(
-                text = "FILM",
+                text = stringResource(R.string.film),
                 modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
             )
             FilmDial(
@@ -461,7 +463,7 @@ private fun StartControlRail(
                 modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                RailLabel(text = "FILM")
+                RailLabel(text = stringResource(R.string.film))
                 FilmDial(
                     selectedFilm = selectedFilm,
                     onFilmSelected = onFilmSelected,
@@ -562,9 +564,9 @@ private fun EndRailActions(
 ) {
     RailAction(
         accessibilityLabel = when {
-            !hasFlashUnit -> "Flash unavailable"
-            isFlashEnabled -> "Flash on"
-            else -> "Flash off"
+            !hasFlashUnit -> stringResource(R.string.flash_unavailable)
+            isFlashEnabled -> stringResource(R.string.flash_on)
+            else -> stringResource(R.string.flash_off)
         },
         contentRotationDegrees = contentRotationDegrees,
         enabled = hasFlashUnit && !isCapturing,
@@ -583,7 +585,11 @@ private fun EndRailActions(
         onClick = onShutterClick,
     )
     RailAction(
-        accessibilityLabel = if (latestPhotoUri == null) "No photos yet" else "Open latest photo",
+        accessibilityLabel = if (latestPhotoUri == null) {
+            stringResource(R.string.no_photos_yet)
+        } else {
+            stringResource(R.string.open_latest_photo)
+        },
         contentRotationDegrees = contentRotationDegrees,
         enabled = latestPhotoUri != null,
         onClick = onGalleryClick,
@@ -591,7 +597,7 @@ private fun EndRailActions(
         GalleryThumbnail(latestPhotoUri)
     }
     RailAction(
-        accessibilityLabel = "Settings",
+        accessibilityLabel = stringResource(R.string.settings),
         contentRotationDegrees = contentRotationDegrees,
         onClick = onSettingsClick,
     ) {
@@ -733,7 +739,7 @@ private fun PreviewSlot(
                 .padding(start = 10.dp, top = 8.dp),
         ) {
             MonoText(
-                text = "EV +0.0",
+                text = stringResource(R.string.exposure_zero),
                 color = Ink.copy(alpha = 0.55f),
                 fontSize = 9.sp,
             )
@@ -745,7 +751,7 @@ private fun PreviewSlot(
                 .padding(end = 10.dp, top = 8.dp),
         ) {
             MonoText(
-                text = formatZoomRatio(zoomRatio),
+                text = stringResource(R.string.zoom_ratio, zoomRatio),
                 color = Ink.copy(alpha = 0.55f),
                 fontSize = 9.sp,
             )
@@ -757,7 +763,7 @@ private fun PreviewSlot(
                 .padding(bottom = 10.dp),
         ) {
             MonoText(
-                text = "REAR CAMERA",
+                text = stringResource(R.string.rear_camera),
                 color = Ink.copy(alpha = 0.28f),
                 fontSize = 9.sp,
                 letterSpacing = 2.4.sp,
@@ -895,6 +901,8 @@ private fun FilmDial(
     onFilmSelected: (FilmPreset) -> Unit,
     contentRotationDegrees: Float = 0f,
 ) {
+    val filmName = stringResource(selectedFilm.labelRes)
+    val accessibilityLabel = stringResource(R.string.selected_film, filmName)
     val nextFilm = when (selectedFilm){
         FilmPreset.WARM -> FilmPreset.DUSK
         FilmPreset.DUSK -> FilmPreset.WARM
@@ -903,7 +911,7 @@ private fun FilmDial(
     Column(
         modifier = Modifier
             .semantics {
-                contentDescription = "Film ${selectedFilm.displayName}"
+                contentDescription = accessibilityLabel
             }
             .clickable {
                 onFilmSelected(nextFilm)
@@ -913,7 +921,7 @@ private fun FilmDial(
     ) {
         DialCircle {
             CondensedText(
-                text = selectedFilm.displayName.first().toString(),
+                text = selectedFilm.name.first().toString(),
                 color = Accent,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -921,7 +929,7 @@ private fun FilmDial(
             )
         }
         MonoText(
-            text = selectedFilm.displayName,
+            text = filmName,
             color = InkDim,
             fontSize = 8.sp,
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
@@ -941,10 +949,11 @@ private fun ZoomControl(
 ) {
     val canZoomIn = zoomRatio < maxZoomRatio - 0.01f
     val canZoomOut = zoomRatio > minZoomRatio + 0.01f
+    val zoomLabel = stringResource(R.string.zoom)
     if (isVertical) {
         Column(
             modifier = Modifier.semantics {
-                contentDescription = "Zoom"
+                contentDescription = zoomLabel
             },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -956,7 +965,7 @@ private fun ZoomControl(
     } else {
         Row(
             modifier = Modifier.semantics {
-                contentDescription = "Zoom"
+                contentDescription = zoomLabel
             },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -974,9 +983,10 @@ private fun ZoomIncreaseButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val label = stringResource(R.string.zoom_in)
     DialCircle(
         modifier = Modifier
-            .semantics { contentDescription = "Zoom in" }
+            .semantics { contentDescription = label }
             .clickable(enabled = enabled, onClick = onClick),
     ) {
         Text(
@@ -991,7 +1001,7 @@ private fun ZoomIncreaseButton(
 @Composable
 private fun ZoomValue(contentRotationDegrees: Float, zoomRatio: Float) {
     MonoText(
-        text = formatZoomRatio(zoomRatio),
+        text = stringResource(R.string.zoom_ratio, zoomRatio),
         color = Ink,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
@@ -1005,9 +1015,10 @@ private fun ZoomDecreaseButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val label = stringResource(R.string.zoom_out)
     DialCircle(
         modifier = Modifier
-            .semantics { contentDescription = "Zoom out" }
+            .semantics { contentDescription = label }
             .clickable(enabled = enabled, onClick = onClick),
     ) {
         Text(
@@ -1064,17 +1075,18 @@ private fun ShutterButton(
     onClick: () -> Unit,
 ) {
     val isEnabled = isShutterAvailable && !isCapturing
+    val accessibilityLabel = when {
+        isLimitReached -> stringResource(R.string.free_capture_limit_reached)
+        !isShutterAvailable -> stringResource(R.string.checking_free_captures)
+        isCapturing -> stringResource(R.string.saving)
+        else -> stringResource(R.string.shutter)
+    }
 
     Box(
         modifier = Modifier
             .size(68.dp)
             .semantics {
-                contentDescription = when {
-                    isLimitReached -> "Free capture limit reached"
-                    !isShutterAvailable -> "Checking free captures"
-                    isCapturing -> "Saving"
-                    else -> "Shutter"
-                }
+                contentDescription = accessibilityLabel
             }
             .clickable(
                 enabled = isEnabled,
@@ -1133,9 +1145,6 @@ private fun GalleryThumbnail(uri: Uri?) {
         }
     }
 }
-
-private fun formatZoomRatio(zoomRatio: Float): String =
-    String.format(Locale.US, "%.1fX", zoomRatio)
 
 @Composable
 private fun SettingsGlyph() {

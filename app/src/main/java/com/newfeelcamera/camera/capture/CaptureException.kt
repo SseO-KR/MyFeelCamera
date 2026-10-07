@@ -1,32 +1,35 @@
 package com.newfeelcamera.camera.capture
 
+import androidx.annotation.StringRes
+import com.newfeelcamera.R
+
 sealed class CaptureException(
-    val userMessage: String,
+    @field:StringRes val userMessageRes: Int,
     cause: Throwable? = null,
-) : Exception(userMessage, cause) {
+) : Exception(cause) {
 
     class CameraNotReady : CaptureException(
-        userMessage = "카메라가 아직 준비되지 않았습니다.",
+        userMessageRes = R.string.camera_not_ready,
     )
 
     class CameraCaptureFailed(
         cause: Throwable,
     ) : CaptureException(
-        userMessage = "사진 촬영에 실패했습니다.",
+        userMessageRes = R.string.camera_capture_failed,
         cause = cause,
     )
 
     class ProcessingFailed(
         cause: Throwable,
     ) : CaptureException(
-        userMessage = "사진 처리에 실패했습니다.",
+        userMessageRes = R.string.camera_processing_failed,
         cause = cause,
     )
 
     class SaveFailed(
         cause: Throwable,
     ) : CaptureException(
-        userMessage = "사진 저장에 실패했습니다.",
+        userMessageRes = R.string.camera_save_failed,
         cause = cause,
     )
 }
