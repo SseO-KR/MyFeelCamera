@@ -60,7 +60,13 @@ class CameraViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CameraUiState())
     val uiState = _uiState.asStateFlow()
+    private val notices = CameraNoticeStore()
+    val pendingNotice = notices.pending
     private var latestPhotoRefreshJob: Job? = null
+
+    fun noticeShown(id: Long) {
+        notices.acknowledge(id)
+    }
 
     init {
         viewModelScope.launch {
@@ -93,12 +99,8 @@ class CameraViewModel @Inject constructor(
                 .catch { error ->
                     if (error is CancellationException) throw error
                     Log.e(TAG, "Unable to read free capture count", error)
-                    _uiState.update {
-                        it.copy(
-                            isQuotaLoaded = false,
-                            captureErrorMessageRes = R.string.free_capture_count_failed,
-                        )
-                    }
+                    _uiState.update { it.copy(isQuotaLoaded = false) }
+                    notices.post(R.string.free_capture_count_failed)
                 }
                 .collect { usedShots ->
                     _uiState.update {
@@ -204,9 +206,7 @@ class CameraViewModel @Inject constructor(
         if (stateAtShutter.isCapturing) return
 
         if (!stateAtShutter.isUnlimitedActive && !stateAtShutter.isQuotaLoaded) {
-            _uiState.update {
-                it.copy(captureErrorMessageRes = R.string.free_capture_count_failed)
-            }
+            notices.post(R.string.free_capture_count_failed)
             return
         }
 
@@ -216,16 +216,12 @@ class CameraViewModel @Inject constructor(
                 capturedPhotoCount = stateAtShutter.capturedPhotoCount,
             )
         ) {
-            _uiState.update {
-                it.copy(captureErrorMessageRes = R.string.free_capture_limit_used)
-            }
+            notices.post(R.string.free_capture_limit_used)
             return
         }
 
         if (!stateAtShutter.hasCameraPermission) {
-            _uiState.update {
-                it.copy(captureErrorMessageRes = R.string.camera_permission_required)
-            }
+            notices.post(R.string.camera_permission_required)
             return
         }
 
@@ -234,12 +230,7 @@ class CameraViewModel @Inject constructor(
         val flashAvailableAtShutter = stateAtShutter.hasFlashUnit
         val shutterSoundLevelAtShutter = stateAtShutter.shutterSoundLevel
 
-        _uiState.update {
-            it.copy(
-                isCapturing = true,
-                captureErrorMessageRes = null,
-            )
-        }
+        _uiState.update { it.copy(isCapturing = true) }
 
         viewModelScope.launch {
             try {
@@ -264,6 +255,7 @@ class CameraViewModel @Inject constructor(
 
                 if (stateAtShutter.isUnlimitedActive) {
                     _uiState.update { it.copy(latestPhotoUri = uri, lastSavedPhotoUri = uri) }
+                    notices.post(R.string.photo_saved)
                     return@launch
                 }
 
@@ -278,9 +270,9 @@ class CameraViewModel @Inject constructor(
                             isQuotaLoaded = false,
                             latestPhotoUri = uri,
                             lastSavedPhotoUri = uri,
-                            captureErrorMessageRes = R.string.photo_saved_count_failed,
                         )
                     }
+                    notices.post(R.string.photo_saved_count_failed)
                     return@launch
                 }
 
@@ -291,6 +283,7 @@ class CameraViewModel @Inject constructor(
                         lastSavedPhotoUri = uri,
                     )
                 }
+                notices.post(R.string.photo_saved)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
@@ -311,9 +304,7 @@ class CameraViewModel @Inject constructor(
             else -> R.string.camera_unknown_error
         }
 
-        _uiState.update {
-            it.copy(captureErrorMessageRes = errorMessageRes)
-        }
+        notices.post(errorMessageRes)
     }
 
     override fun onCleared() {

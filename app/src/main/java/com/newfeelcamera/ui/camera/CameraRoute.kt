@@ -13,12 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -26,7 +22,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.newfeelcamera.R
+import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
 fun DeviceOrientationEffect(
@@ -102,31 +100,15 @@ fun CameraRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val resources = LocalResources.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // 화면에 다시 들어올 때 이전 촬영 결과를 새 알림으로 표시하지 않는다.
-    var lastNotifiedPhotoUri by remember { mutableStateOf(uiState.lastSavedPhotoUri) }
-    var lastNotifiedError by remember { mutableStateOf(uiState.captureErrorMessageRes) }
-
-    LaunchedEffect(uiState.lastSavedPhotoUri, uiState.captureErrorMessageRes) {
-        val photoUri = uiState.lastSavedPhotoUri
-        val errorMessageRes = uiState.captureErrorMessageRes
-
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            when {
-                errorMessageRes != null && errorMessageRes != lastNotifiedError -> {
-                    Toast.makeText(context, resources.getString(errorMessageRes), Toast.LENGTH_SHORT).show()
-                }
-
-                photoUri != null && photoUri != lastNotifiedPhotoUri -> {
-                    Toast.makeText(context, R.string.photo_saved, Toast.LENGTH_SHORT).show()
-                }
+    LaunchedEffect(viewModel, lifecycleOwner, context) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.pendingNotice.filterNotNull().collect { notice ->
+                Toast.makeText(context, notice.messageRes, Toast.LENGTH_SHORT).show()
+                viewModel.noticeShown(notice.id)
             }
         }
-
-        lastNotifiedPhotoUri = photoUri
-        lastNotifiedError = errorMessageRes
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(

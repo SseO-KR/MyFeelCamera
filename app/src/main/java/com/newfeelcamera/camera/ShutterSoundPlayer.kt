@@ -46,10 +46,10 @@ class ShutterSoundPlayer @Inject constructor(
 
         if (level == ShutterSoundLevel.OFF) return
 
-        if (!soundLoaded ||
-            soundPool.play(soundId, level.volume, level.volume, 1, 0, 1f) == 0
-        ) {
-            systemSound.play(MediaActionSound.SHUTTER_CLICK)
+        if (!soundLoaded) return
+
+        if (soundPool.play(soundId, level.volume, level.volume, 1, 0, 1f) == 0) {
+            Log.w(TAG, "Shutter sound could not be played")
         }
     }
 

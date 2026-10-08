@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">NewFeelCamera</string>
+    <string name="app_name" translatable="false">FeelCamera</string>
 
     <string name="update_available">A new version is available</string>
     <string name="update_from_store">Update the app from Google Play.</string>
