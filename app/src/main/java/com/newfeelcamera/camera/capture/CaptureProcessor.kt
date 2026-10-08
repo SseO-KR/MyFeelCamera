@@ -64,7 +64,7 @@ class CaptureProcessor @Inject constructor(
     suspend fun processAndSave(
         imageProxy: ImageProxy,
         film: FilmPreset,
-    ): Uri {
+    ): SavedPhoto {
         return try {
             check(!isClosed.get()) {
                 "CaptureProcessor is already closed."
@@ -118,7 +118,7 @@ class CaptureProcessor @Inject constructor(
 
     private fun renderAndSave(
         input: CaptureInput,
-    ): Uri {
+    ): SavedPhoto {
         val session = getOrCreateEglSession()
 
         session.makeCurrent()
@@ -127,7 +127,12 @@ class CaptureProcessor @Inject constructor(
         val filteredBitmap = renderer.render(input)
 
         return try {
-            saveBitmapToMediaStore(filteredBitmap)
+            val orientation = PhotoOrientation.fromDimensions(
+                filteredBitmap.width,
+                filteredBitmap.height,
+            )
+            val uri = saveBitmapToMediaStore(filteredBitmap)
+            SavedPhoto(uri, orientation)
         } finally {
             filteredBitmap.recycle()
         }

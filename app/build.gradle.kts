@@ -19,6 +19,13 @@ if (firebaseEnabled) {
     pluginManager.apply("com.google.firebase.crashlytics")
 }
 
+// Firebase 의존성이 없는 공개 빌드에는 SDK 참조가 없는 구현만 컴파일한다.
+android.sourceSets.named("main") {
+    kotlin.directories.add(
+        if (firebaseEnabled) "src/firebase/java" else "src/noFirebase/java"
+    )
+}
+
 val playBillingPublicKey = providers.gradleProperty("playBillingPublicKey")
     .map(String::trim)
     .getOrElse("")

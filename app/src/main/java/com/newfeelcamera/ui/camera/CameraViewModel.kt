@@ -11,6 +11,8 @@ import com.newfeelcamera.camera.CameraController
 import com.newfeelcamera.camera.ShutterSoundPlayer
 import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.filter.FilmPreset
+import com.newfeelcamera.data.analytics.CaptureAnalytics
+import com.newfeelcamera.data.analytics.PhotoSavedEvent
 import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.data.billing.UnlimitedAccessState
 import com.newfeelcamera.data.gallery.RecentPhotoRepository
@@ -52,6 +54,7 @@ class CameraViewModel @Inject constructor(
     private val settingsRepository: AppSettingsRepository,
     private val freeCaptureQuotaRepository: FreeCaptureQuotaRepository,
     private val recentPhotoRepository: RecentPhotoRepository,
+    private val captureAnalytics: CaptureAnalytics,
     billingRepository: BillingRepository,
 ) : ViewModel() {
 
@@ -227,6 +230,8 @@ class CameraViewModel @Inject constructor(
         }
 
         val filmAtShutter = stateAtShutter.selectedFilm
+        val flashEnabledAtShutter = stateAtShutter.hasFlashUnit && stateAtShutter.isFlashEnabled
+        val flashAvailableAtShutter = stateAtShutter.hasFlashUnit
         val shutterSoundLevelAtShutter = stateAtShutter.shutterSoundLevel
 
         _uiState.update {
@@ -238,10 +243,24 @@ class CameraViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val uri = cameraController.takePhoto(
+                val savedPhoto = cameraController.takePhoto(
                     film = filmAtShutter,
                     onShutter = { shutterSoundPlayer.play(shutterSoundLevelAtShutter) },
                 )
+                val uri = savedPhoto.uri
+
+                try {
+                    captureAnalytics.photoSaved(
+                        PhotoSavedEvent(
+                            film = filmAtShutter,
+                            orientation = savedPhoto.orientation,
+                            flashEnabled = flashEnabledAtShutter,
+                            flashAvailable = flashAvailableAtShutter,
+                        )
+                    )
+                } catch (error: Exception) {
+                    Log.w(TAG, "Photo saved but analytics event failed", error)
+                }
 
                 if (stateAtShutter.isUnlimitedActive) {
                     _uiState.update { it.copy(latestPhotoUri = uri, lastSavedPhotoUri = uri) }

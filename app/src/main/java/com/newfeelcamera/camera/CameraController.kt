@@ -1,7 +1,6 @@
 package com.newfeelcamera.camera
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import android.view.Surface
 import androidx.camera.core.Camera
@@ -18,6 +17,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.capture.CaptureProcessor
+import com.newfeelcamera.camera.capture.SavedPhoto
 import com.newfeelcamera.camera.filter.FilmPreset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.Closeable
@@ -175,7 +175,7 @@ class CameraController @Inject constructor (
     suspend fun takePhoto(
         film: FilmPreset,
         onShutter: () -> Unit,
-    ): Uri {
+    ): SavedPhoto {
         val capture = imageCapture
             ?: throw CaptureException.CameraNotReady()
 
