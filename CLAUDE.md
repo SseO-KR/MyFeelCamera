@@ -30,8 +30,8 @@
 | `docs/04-adaptive-layout.md` | Portrait/Landscape 배치 메커니즘, window size/posture 신호, custom Layout 필요 여부 |
 | `docs/05-lifecycle-and-resource-ownership.md` | 8개 레이어(Composition~Camera device) 소유권, 이벤트 전파 매트릭스 |
 | `docs/06-implementation-roadmap.md` | 단계별 구현 순서. **지금 작업 범위는 이 문서의 "현재 Step"을 기준으로 정한다** |
-| `docs/features/one-time-unlimited-purchase.md` | 별도 결제 Feature의 정책, 책임 경계, 구현 순서, 미정 사항·검증 목록. 아직 구현되지 않은 계획이다 |
-| `docs/features/firebase-monitoring.md` | Firebase 기본 연결, 공개 소스 빌드 경로, 자동 수집 정책·검증 목록 |
+| `docs/features/one-time-unlimited-purchase.md` | v1에서 보류한 일회성 결제 Feature의 이전 설계와 재검토 항목 |
+| `docs/features/firebase-monitoring.md` | Firebase 선택 빌드 경로, v1 기본 제외 정책과 과거 수집 검증 기록 |
 | `new_feelcamera_filter_assets/` | 실제 LUT(`lut/*.bin`)·shader(`shader/*.glsl`) 리소스 원본 |
 
 ---
@@ -96,8 +96,8 @@
 - 설계 문서 `00`~`06` 확정.
 - Gradle/Hilt 설정이 완료되어 있으며, `NewFeelCameraApp`은 `@HiltAndroidApp`, `MainActivity`는 `@AndroidEntryPoint`, `CameraController`는 `@Inject constructor`, `CameraViewModel`은 `@HiltViewModel`을 사용한다. KSP가 AGP 9 내장 Kotlin의 source-set DSL을 아직 완전히 지원하지 않아 `gradle.properties`에 `android.disallowKotlinSourceSets=false`(AGP 공식 과도기 escape hatch)가 있다.
 - `CameraController`는 `Preview`와 `ImageCapture`를 함께 bind한다. `CameraScreen`은 고정된 `Box` 안에서 `CameraGlSurfaceView`를 유지하며, GL Preview는 `CameraSurfaceProvider` → OES `SurfaceTexture` → `CameraRenderer` 경로로 표시된다. Warm/Dusk LUT는 Preview EGL Context에 미리 업로드되고 `CameraUiState.selectedFilm` 변경에 따라 texture binding이 즉시 전환된다.
-- **현재 작업: Roadmap Step 19의 로컬 무료 촬영 24장 한도를 연결한다. 저장 성공 횟수를 영속화하고 `24/24`에서 화면·볼륨 키 셔터를 차단한다. 결제·Entitlement·계정/서버 검증은 포함하지 않는다.**
-- **다음 별도 Feature: Step 20의 일회성 무제한 구매 정책을 `docs/features/one-time-unlimited-purchase.md`에 정리했다. 로컬 무료 횟수 초기화를 허용하고 백업은 유지한다. 결제 코드는 아직 없으며, 사용자의 Feature 구현 시작 지시 전에는 Step 20을 미리 구현하지 않는다.**
+- **현재 출시 정책: v1은 무료·무제한 촬영, 광고 없음, 인앱결제 없음이다.** 이전 Step 19의 24장 한도와 Step 20의 구매 정책은 출시 경로에서 사용하지 않는다(`docs/00` §4, `docs/06`의 v1 무료 출시 전환).
+- Billing·24장 한도 코드는 `app/src/deferredMonetization/`에 보존하며 기본 빌드에는 포함하지 않는다. Firebase SDK도 기본 빌드에서 제외한다. 개인정보처리방침, Play 데이터 보안 신고, Play Console의 인앱 상품 상태 및 실제 배포 국가 확정은 별도 출시 과제다.
 
 ---
 

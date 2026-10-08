@@ -5,14 +5,18 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// 공개 저장소에는 JSON을 포함하지 않는다. 파일이 없으면 Firebase 없이 빌드한다.
+// v1 기본 빌드는 Firebase SDK를 제외한다. 동의 흐름이 준비되기 전까지 명시적 테스트에서만 포함한다.
 val firebaseEnabled = providers.gradleProperty("firebaseEnabled")
     .map(String::toBoolean)
-    .getOrElse(true) && file("google-services.json").isFile
+    .getOrElse(false) && file("google-services.json").isFile
 val firebaseDebugCollectionEnabled = firebaseEnabled &&
     providers.gradleProperty("firebaseDebugCollectionEnabled")
         .map(String::toBoolean)
         .getOrElse(false)
+// v1 무료 배포에는 이전 결제·촬영 한도 코드를 포함하지 않는다.
+val monetizationCodeEnabled = providers.gradleProperty("monetizationCodeEnabled")
+    .map(String::toBoolean)
+    .getOrElse(false)
 
 if (firebaseEnabled) {
     pluginManager.apply("com.google.gms.google-services")
@@ -24,11 +28,15 @@ android.sourceSets.named("main") {
     kotlin.directories.add(
         if (firebaseEnabled) "src/firebase/java" else "src/noFirebase/java"
     )
+    if (monetizationCodeEnabled) {
+        kotlin.directories.add("src/deferredMonetization/java")
+    }
 }
-
-val playBillingPublicKey = providers.gradleProperty("playBillingPublicKey")
-    .map(String::trim)
-    .getOrElse("")
+if (monetizationCodeEnabled) {
+    android.sourceSets.named("test") {
+        kotlin.directories.add("src/deferredMonetizationTest/java")
+    }
+}
 
 android {
     namespace = "com.newfeelcamera"
@@ -42,7 +50,12 @@ android {
         versionName = "1.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "PLAY_BILLING_PUBLIC_KEY", "\"$playBillingPublicKey\"")
+        if (monetizationCodeEnabled) {
+            val playBillingPublicKey = providers.gradleProperty("playBillingPublicKey")
+                .map(String::trim)
+                .getOrElse("")
+            buildConfigField("String", "PLAY_BILLING_PUBLIC_KEY", "\"$playBillingPublicKey\"")
+        }
     }
 
     buildTypes {
@@ -50,7 +63,7 @@ android {
             manifestPlaceholders["firebaseCollectionEnabled"] = firebaseDebugCollectionEnabled.toString()
         }
         release {
-            manifestPlaceholders["firebaseCollectionEnabled"] = firebaseEnabled.toString()
+            manifestPlaceholders["firebaseCollectionEnabled"] = "false"
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -112,6 +125,8 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
 
-    implementation(libs.billing.ktx)
+    if (monetizationCodeEnabled) {
+        implementation(libs.billing.ktx)
+    }
     implementation(libs.play.app.update)
 }

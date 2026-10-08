@@ -67,7 +67,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.R
 import com.newfeelcamera.camera.gl.CameraGlSurfaceView
-import com.newfeelcamera.data.quota.FREE_CAPTURE_LIMIT
 import com.newfeelcamera.ui.camera.layout.CameraLayoutMode
 import com.newfeelcamera.ui.camera.layout.cameraLayoutModeFor
 import com.newfeelcamera.ui.design.Accent
@@ -212,9 +211,6 @@ fun CameraScreen(
             showCameraPreview = uiState.hasCameraPermission,
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
-            isQuotaLoaded = uiState.isQuotaLoaded,
-            isUnlimitedActive = uiState.isUnlimitedActive,
-            capturedPhotoCount = uiState.capturedPhotoCount,
             selectedFilm = uiState.selectedFilm,
             showGrid = uiState.showGrid,
             zoomRatio = uiState.zoomRatio,
@@ -244,9 +240,6 @@ private fun CameraControlLayout(
     showCameraPreview: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
-    isQuotaLoaded: Boolean,
-    isUnlimitedActive: Boolean,
-    capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
     showGrid: Boolean,
     zoomRatio: Float,
@@ -311,9 +304,6 @@ private fun CameraControlLayout(
         StartControlRail(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
-            isQuotaLoaded = isQuotaLoaded,
-            isUnlimitedActive = isUnlimitedActive,
-            capturedPhotoCount = capturedPhotoCount,
             selectedFilm = selectedFilm,
             onFilmSelected = onFilmSelected,
             zoomRatio = zoomRatio,
@@ -341,13 +331,6 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             isCapturing = isCapturing,
-            isShutterAvailable = canCapture(
-                isUnlimitedActive = isUnlimitedActive,
-                isQuotaLoaded = isQuotaLoaded,
-                capturedPhotoCount = capturedPhotoCount,
-            ),
-            isLimitReached = !isUnlimitedActive &&
-                isQuotaLoaded && capturedPhotoCount >= FREE_CAPTURE_LIMIT,
             hasFlashUnit = hasFlashUnit,
             isFlashEnabled = isFlashEnabled,
             latestPhotoUri = latestPhotoUri,
@@ -409,9 +392,6 @@ private fun CameraStage(
 private fun StartControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
-    isQuotaLoaded: Boolean,
-    isUnlimitedActive: Boolean,
-    capturedPhotoCount: Int,
     selectedFilm: FilmPreset,
     onFilmSelected: (FilmPreset) -> Unit,
     zoomRatio: Float,
@@ -436,13 +416,6 @@ private fun StartControlRail(
                 onFilmSelected = onFilmSelected,
                 contentRotationDegrees = contentRotationDegrees,
                 )
-            RotationAwareContent(rotationDegrees = contentRotationDegrees) {
-                ShotCounter(
-                    isQuotaLoaded = isQuotaLoaded,
-                    isUnlimitedActive = isUnlimitedActive,
-                    capturedPhotoCount = capturedPhotoCount,
-                )
-            }
             ZoomControl(
                 isVertical = true,
                 contentRotationDegrees = contentRotationDegrees,
@@ -469,13 +442,6 @@ private fun StartControlRail(
                     onFilmSelected = onFilmSelected,
                 )
             }
-            RotationAwareContent(rotationDegrees = contentRotationDegrees) {
-                ShotCounter(
-                    isQuotaLoaded = isQuotaLoaded,
-                    isUnlimitedActive = isUnlimitedActive,
-                    capturedPhotoCount = capturedPhotoCount,
-                )
-            }
             ZoomControl(
                 isVertical = false,
                 contentRotationDegrees = contentRotationDegrees,
@@ -494,8 +460,6 @@ private fun EndControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
     isCapturing: Boolean,
-    isShutterAvailable: Boolean,
-    isLimitReached: Boolean,
     hasFlashUnit: Boolean,
     isFlashEnabled: Boolean,
     latestPhotoUri: Uri?,
@@ -513,8 +477,6 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
-                isShutterAvailable = isShutterAvailable,
-                isLimitReached = isLimitReached,
                 hasFlashUnit = hasFlashUnit,
                 isFlashEnabled = isFlashEnabled,
                 latestPhotoUri = latestPhotoUri,
@@ -533,8 +495,6 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
-                isShutterAvailable = isShutterAvailable,
-                isLimitReached = isLimitReached,
                 hasFlashUnit = hasFlashUnit,
                 isFlashEnabled = isFlashEnabled,
                 latestPhotoUri = latestPhotoUri,
@@ -551,8 +511,6 @@ private fun EndControlRail(
 @Composable
 private fun EndRailActions(
     isCapturing: Boolean,
-    isShutterAvailable: Boolean,
-    isLimitReached: Boolean,
     hasFlashUnit: Boolean,
     isFlashEnabled: Boolean,
     latestPhotoUri: Uri?,
@@ -580,8 +538,6 @@ private fun EndRailActions(
     }
     ShutterButton(
         isCapturing = isCapturing,
-        isShutterAvailable = isShutterAvailable,
-        isLimitReached = isLimitReached,
         onClick = onShutterClick,
     )
     RailAction(
@@ -602,57 +558,6 @@ private fun EndRailActions(
         onClick = onSettingsClick,
     ) {
         SettingsGlyph()
-    }
-}
-
-@Composable
-private fun ShotCounter(
-    isQuotaLoaded: Boolean,
-    isUnlimitedActive: Boolean,
-    capturedPhotoCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val usedShots = if (isUnlimitedActive) {
-        "∞"
-    } else if (isQuotaLoaded) {
-        capturedPhotoCount.coerceIn(0, FREE_CAPTURE_LIMIT).toString().padStart(2, '0')
-    } else {
-        "--"
-    }
-
-    Row(
-        modifier = modifier
-            .background(
-                color = Color(0x73000000),
-                shape = RoundedCornerShape(20.dp),
-            )
-            .border(
-                width = 1.dp,
-                color = Hair,
-                shape = RoundedCornerShape(20.dp),
-            )
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        MonoText(
-            text = usedShots,
-            color = Ink,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-        )
-        if (!isUnlimitedActive) {
-            MonoText(text = "/", color = InkDim, fontSize = 13.sp, maxLines = 1, softWrap = false)
-            MonoText(
-                text = FREE_CAPTURE_LIMIT.toString(),
-                color = InkDim,
-                fontSize = 13.sp,
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
     }
 }
 
@@ -1070,17 +975,12 @@ private fun DialCircle(
 @Composable
 private fun ShutterButton(
     isCapturing: Boolean,
-    isShutterAvailable: Boolean,
-    isLimitReached: Boolean,
     onClick: () -> Unit,
 ) {
-    val isEnabled = isShutterAvailable && !isCapturing
-    val accessibilityLabel = when {
-        isLimitReached -> stringResource(R.string.free_capture_limit_reached)
-        !isShutterAvailable -> stringResource(R.string.checking_free_captures)
-        isCapturing -> stringResource(R.string.saving)
-        else -> stringResource(R.string.shutter)
-    }
+    val isEnabled = !isCapturing
+    val accessibilityLabel = stringResource(
+        if (isCapturing) R.string.saving else R.string.shutter,
+    )
 
     Box(
         modifier = Modifier

@@ -47,18 +47,19 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 - 카메라 화면에는 이 앱에서 저장한 가장 최근 사진의 썸네일을 표시하고, 누르면 해당 사진을 갤러리 앱에서 연다. 저장한 사진이 없으면 갤러리 버튼은 비활성화한다.
 - 필터를 여러 개로 확장, 필터 선택 UI 고도화
 - 성능 수치 목표 설정 및 튜닝(§12)
-- 카운터/설정 등 영속화
+- 설정값 영속화
 - 설정 화면은 카메라 화면에서 열고 뒤로 돌아올 수 있어야 한다. Phone에서는 설정 화면도 Camera와 같은 Portrait 요청을 유지해 화면 이동만으로 Window 방향이 바뀌지 않도록 한다. 복귀 시 카메라 Preview가 정상적으로 다시 표시되어야 한다. 첫 단계에서는 화면 이동과 방향 정책을 연결하고, 볼륨 버튼 동작·격자 표시·시작 필름의 설정값 저장은 이어지는 단계에서 구현한다.
 - Camera 화면이 활성화된 동안 볼륨 ↑/↓ 버튼을 셔터로 사용한다. Settings에서는 시스템 음량 조절을 유지하며, 화면 셔터와 동일한 촬영 경로를 사용한다.
 - 사진 저장이 성공하면 촬영을 막지 않는 짧은 안내 문구를 표시하고, 실패하면 기존 촬영 오류 메시지를 사용자에게 보여준다.
 - 설정 화면에서 시작 필름(Warm/Dusk)과 프리뷰 격자 표시 여부를 변경하고 앱 재실행 후에도 유지한다. 시작 필름은 카메라 화면의 초기 선택값이며, 카메라 화면에서 일시적으로 필름을 바꾸는 동작은 설정값을 덮어쓰지 않는다. 격자 설정은 Preview 위 UI 오버레이만 제어하고 저장 사진에는 영향을 주지 않는다.
-- 무료 촬영 한도는 필름 프리셋과 무관하게 앱 전체에서 저장 성공한 사진 24장이다. 카운터는 사용 완료 횟수로 `00/24`에서 시작해 저장 성공 후에만 증가하며, 무제한 구매 권한이 없는 사용자는 `24/24`에서 화면·볼륨 키 셔터 모두 새 촬영을 시작하지 못한다. 실패한 촬영이나 기존 사진 삭제로 횟수를 조정하지 않는다. 사용 횟수는 기기 내부에서 관리하며 앱 데이터 삭제·재설치에 의한 초기화를 허용한다. 기존 Android 백업 정책은 유지하므로 재설치 후 초기화를 보장하지 않고, 백업에서 기존 횟수가 복원되는 것도 허용한다. 무료 횟수 보호를 위한 로그인·서버 카운터·기기 식별은 도입하지 않는다.
-- 공식 Google Play 배포판은 비소모성 일회성 구매로 촬영 제한을 해제한다. 구독이나 추가 촬영 장수 판매는 제공하지 않는다. 클라이언트에서 구매 완료 확인·승인 처리·구매 복구·대기/취소/실패 처리를 구현한다. 유료 촬영은 무료 횟수를 추가 차감하지 않는다. 서버 없는 구현의 보안·오프라인/환불 반영 한계를 구분하고, 연결 성공을 구매 권한으로 취급하지 않는다. 별도 Feature의 범위와 미정 사항은 [일회성 무제한 구매 설계](features/one-time-unlimited-purchase.md)를 따른다.
-- GitHub에 소스를 공개하고 직접 빌드하거나 촬영 제한을 수정해 사용하는 것을 막지 않는다. 공식 배포판의 유료 권한 제공과 소스 수정 방지는 다른 목표로 취급한다. README 안내 문구와 공개 라이선스는 출시 전에 별도로 확정한다.
+- **v1 초기 배포 정책:** 무료 다운로드, 촬영 횟수 제한 없음, 광고 없음, 인앱결제 없음. 화면·볼륨 키 셔터 모두 구매 상태나 과거의 무료 촬영 카운터에 의존하지 않는다. 국내외 배포 국가 목록은 출시 전에 확정한다.
+- v1 기본 배포 빌드에는 Firebase Analytics·Crashlytics SDK를 포함하지 않는다. 이용 분석을 다시 켜려면 사용자 동의·설정 변경 흐름, 개인정보처리방침, Play 데이터 보안 신고를 먼저 일치시킨다.
+- 기존 24장 한도와 일회성 무제한 구매는 초기 배포에서 사용하지 않는다. 유료화 재검토 시 기존 무료 사용자 경험, 판매 국가·세금, 결제·복원·환불 정책을 새로 확정한다. 이전 설계와 남겨 둔 Billing 구현은 [일회성 무제한 구매 문서](features/one-time-unlimited-purchase.md)에 기록한다.
+- GitHub에 소스를 공개한다. README 안내 문구와 공개 라이선스는 출시 전에 별도로 확정한다.
 
 ## 5. Later (지금 구현을 막지 않는 범위에서 뒤로 미룸)
 
-- 계정·서버 기반 구매 검증과 사용량 관리, 온보딩 플로우 — 현재 일회성 구매 Feature에는 포함하지 않는다. 무료 횟수 우회 방지는 제품 목표가 아니다.
+- 유료화와 관련된 계정·서버 기반 구매 검증·사용량 관리, 온보딩 플로우. v1에는 촬영 횟수 제한이 없다.
 - RAW, manual exposure, manual focus, 고급 color management
 - 셔터음·암전·필름 감기 인터랙션
 - 범용 필터 체인, 런타임 필터 강도 슬라이더, 커스텀 필터 에디터
@@ -74,7 +75,7 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 - UI를 구성하는 Composable 트리는 모드에 따라 통째로 스왑되지 않고, 하나의 트리를 유지한 채 measure/place만 모드별로 달라지는 구조를 전제로 한다. (세부 타입/Composable 설계는 `01-architecture.md`에서 다룬다.)
 - 현재 Camera와 Settings가 같은 `MainActivity`를 사용하므로 Phone에서는 Activity의 Portrait orientation을 요청한다. 설정 이동 시에도 방향 요청을 바꾸지 않아 Window 축 교환에 따른 전체 remeasure, Preview 크기 변경과 control 재배치의 체감 지연을 피한다. 기본 카메라처럼 촬영 프레임은 유지하고 읽기 방향이 있는 content만 기기 방향을 따라 회전시킨다. 이 요청은 모든 환경에서 Window 방향을 보장하는 아키텍처 불변식이 아니다. 큰 화면·폴드·멀티윈도우·제조사 정책 등으로 요청이 적용되지 않아 실제 Window가 바뀌면 Camera와 Settings 모두 실제 크기/방향에 대응해야 한다.
 - Portrait 요청이 적용돼 Window가 유지되는 동안 StartControls는 앱 좌표상 상단, Preview는 중앙, EndControls는 하단에 고정한다. 기기를 오른쪽으로 돌리면 고정된 하단 EndControls가 사용자 기준 왼쪽에, 왼쪽으로 돌리면 오른쪽에, 180°에서는 위쪽에 보인다. 이 효과를 만들기 위해 Rail이나 Preview를 기기 방향에 따라 재배치하지 않는다.
-- Rail 배경과 PreviewSlot은 회전시키지 않는다. 버튼 아이콘, Film 정보와 촬영 수, Preview overlay text처럼 읽기 방향이 있는 개별 콘텐츠만 실제 기기 방향을 따라 회전한다. `OrientationEventListener`의 물리 각도와 CameraX target rotation은 반대 방향 규약이므로, UI 각도는 실제 display rotation과 양자화된 device target rotation의 규약을 변환해 합성한다.
+- Rail 배경과 PreviewSlot은 회전시키지 않는다. 버튼 아이콘, Film 정보, Preview overlay text처럼 읽기 방향이 있는 개별 콘텐츠만 실제 기기 방향을 따라 회전한다. `OrientationEventListener`의 물리 각도와 CameraX target rotation은 반대 방향 규약이므로, UI 각도는 실제 display rotation과 양자화된 device target rotation의 규약을 변환해 합성한다.
 - Window/layout 신호, display rotation, 물리적 기기 방향은 별개다. 실제 Window 크기와 posture는 `CameraLayoutMode`를, display rotation은 adaptive fallback의 UI 좌표계와 `Preview.targetRotation`을 결정한다. `ImageCapture.targetRotation`은 기기 방향 관찰값을 `Surface.ROTATION_*`으로 양자화한 신호를 사용한다. Preview와 ImageCapture가 항상 같은 회전 source를 쓴다고 가정하지 않는다.
 
 **카메라/LUT P0 검증은 Portrait부터 시작한다.** 다만 현재 사용자 요구에 따라 3-region UI의 방향별 배치는 PreviewView 단계부터 구현·검증한다. CameraX `targetRotation`과 GL texture transform은 UI layout과 별도의 카메라 회전 단계에서 구현·검증한다.

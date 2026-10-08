@@ -21,14 +21,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.ui.design.Accent
 import com.newfeelcamera.ui.design.Background
 import com.newfeelcamera.ui.design.Ink
 import com.newfeelcamera.ui.design.InkDim
 import com.newfeelcamera.ui.navigation.FeelCameraNavHost
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import androidx.core.net.toUri
 
 @AndroidEntryPoint
@@ -39,9 +37,6 @@ class MainActivity : ComponentActivity() {
     private var updateCheckInFlight = false
     private var updatePromptHandled = false
 
-    @Inject
-    lateinit var billingRepository: BillingRepository
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         updatePromptHandled = savedInstanceState?.getBoolean(UPDATE_PROMPT_HANDLED) ?: false
@@ -50,7 +45,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             FeelCameraNavHost(
                 registerVolumeShutterHandler = ::registerVolumeShutterHandler,
-                onPurchaseUnlimited = { billingRepository.launchUnlimitedPurchase(this) },
                 onCameraPermissionHandled = { cameraPermissionHandled = true },
             )
             if (cameraPermissionHandled && updateAvailable && !updatePromptHandled) {
@@ -149,7 +143,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         hideSystemBars()
-        billingRepository.refreshPurchases()
         checkForUpdate()
     }
 
@@ -163,13 +156,6 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
-    }
-
-    override fun onDestroy() {
-        if(!isChangingConfigurations){
-            billingRepository.close()
-        }
-        super.onDestroy()
     }
 
     private companion object {

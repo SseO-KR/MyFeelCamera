@@ -15,7 +15,6 @@ private const val SettingsDestination = "settings"
 fun FeelCameraNavHost(
     modifier: Modifier = Modifier,
     registerVolumeShutterHandler: (() -> Unit) -> (() -> Unit),
-    onPurchaseUnlimited: () -> Unit,
     onCameraPermissionHandled: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -39,7 +38,6 @@ fun FeelCameraNavHost(
         composable(SettingsDestination) {
             SettingsRoute(
                 onBackClick = { navController.popBackStack() },
-                onPurchaseUnlimited = onPurchaseUnlimited,
             )
         }
     }

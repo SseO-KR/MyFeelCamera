@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.newfeelcamera.R
 import com.newfeelcamera.camera.filter.FilmPreset
-import com.newfeelcamera.data.billing.BillingRepository
 import com.newfeelcamera.data.settings.AppSettingsRepository
 import com.newfeelcamera.data.settings.ShutterSoundLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,15 +30,9 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: AppSettingsRepository,
-    private val billingRepository: BillingRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
-
-    val purchaseRefreshState = billingRepository.refreshState
-    val unlimitedAccessState = billingRepository.unlimitedAccessState
-    val unlimitedProductState = billingRepository.productState
-    val purchaseLaunchState = billingRepository.purchaseLaunchState
 
     init {
         viewModelScope.launch {
@@ -116,14 +109,6 @@ class SettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(errorMessageRes = R.string.settings_save_failed)
         }
-    }
-
-    fun retryPurchaseRefresh() {
-        billingRepository.refreshPurchases()
-    }
-
-    fun retryProductDetails() {
-        billingRepository.refreshProductDetails()
     }
 
     private companion object {

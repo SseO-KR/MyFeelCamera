@@ -33,10 +33,6 @@ import com.newfeelcamera.BuildConfig
 import com.newfeelcamera.R
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.settings.ShutterSoundLevel
-import com.newfeelcamera.data.billing.PurchaseRefreshState
-import com.newfeelcamera.data.billing.PurchaseLaunchState
-import com.newfeelcamera.data.billing.UnlimitedAccessState
-import com.newfeelcamera.data.billing.UnlimitedProductState
 import com.newfeelcamera.ui.design.Accent
 import com.newfeelcamera.ui.design.Background
 import com.newfeelcamera.ui.design.Ink
@@ -47,24 +43,12 @@ import com.newfeelcamera.ui.labelRes
 @Composable
 fun SettingsRoute(
     onBackClick: () -> Unit,
-    onPurchaseUnlimited: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val purchaseRefreshState by viewModel.purchaseRefreshState.collectAsStateWithLifecycle()
-    val unlimitedProductState by viewModel.unlimitedProductState.collectAsStateWithLifecycle()
-    val unlimitedAccessState by viewModel.unlimitedAccessState.collectAsStateWithLifecycle()
-    val purchaseLaunchState by viewModel.purchaseLaunchState.collectAsStateWithLifecycle()
 
     SettingsScreen(
         uiState = uiState,
-        purchaseRefreshState = purchaseRefreshState,
-        unlimitedProductState = unlimitedProductState,
-        unlimitedAccessState = unlimitedAccessState,
-        purchaseLaunchState = purchaseLaunchState,
-        onPurchaseUnlimited = onPurchaseUnlimited,
-        onRetryPurchaseRefresh = viewModel::retryPurchaseRefresh,
-        onRetryProductDetails = viewModel::retryProductDetails,
         onStartFilmSelected = viewModel::setStartFilm,
         onGridChanged = viewModel::setShowGrid,
         onShutterSoundLevelSelected = viewModel::setShutterSoundLevel,
@@ -75,13 +59,6 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
-    purchaseRefreshState: PurchaseRefreshState,
-    unlimitedProductState: UnlimitedProductState,
-    unlimitedAccessState: UnlimitedAccessState,
-    purchaseLaunchState: PurchaseLaunchState,
-    onPurchaseUnlimited: () -> Unit,
-    onRetryPurchaseRefresh: () -> Unit,
-    onRetryProductDetails: () -> Unit,
     onStartFilmSelected: (FilmPreset) -> Unit,
     onGridChanged: (Boolean) -> Unit,
     onShutterSoundLevelSelected: (ShutterSoundLevel) -> Unit,
@@ -250,99 +227,6 @@ fun SettingsScreen(
                                     fontSize = 15.sp,
                                 )
                             }
-                        }
-                    }
-                }
-
-                Column {
-                    Text(
-                        text = stringResource(R.string.unlimited_captures),
-                        color = Ink,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    val productMessage = when (unlimitedAccessState) {
-                        UnlimitedAccessState.Active -> stringResource(R.string.unlimited_active)
-                        UnlimitedAccessState.Pending -> stringResource(R.string.purchase_pending)
-                        UnlimitedAccessState.VerificationFailed ->
-                            stringResource(R.string.purchase_verification_failed)
-                        UnlimitedAccessState.Unknown -> stringResource(R.string.purchase_checking)
-                        UnlimitedAccessState.NotPurchased -> when (unlimitedProductState) {
-                            UnlimitedProductState.NotLoaded,
-                            UnlimitedProductState.Loading -> stringResource(R.string.product_loading)
-                            is UnlimitedProductState.Available ->
-                                stringResource(R.string.unlimited_description)
-                            UnlimitedProductState.Unavailable ->
-                                stringResource(R.string.product_unavailable)
-                            is UnlimitedProductState.Failed ->
-                                stringResource(R.string.product_load_failed)
-                        }
-                    }
-                    Text(
-                        text = productMessage,
-                        color = InkDim,
-                        fontSize = 13.sp,
-                    )
-                    if (unlimitedProductState is UnlimitedProductState.Unavailable ||
-                        unlimitedProductState is UnlimitedProductState.Failed
-                    ) {
-                        TextButton(onClick = onRetryProductDetails) {
-                            Text(stringResource(R.string.retry_product), color = Accent)
-                        }
-                    }
-                    if (unlimitedAccessState == UnlimitedAccessState.NotPurchased &&
-                        unlimitedProductState is UnlimitedProductState.Available
-                    ) {
-                        TextButton(
-                            onClick = onPurchaseUnlimited,
-                            enabled = !uiState.isSaving &&
-                                purchaseLaunchState != PurchaseLaunchState.Loading,
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    R.string.buy_unlimited,
-                                    unlimitedProductState.formattedPrice,
-                                ),
-                                color = Accent,
-                            )
-                        }
-                    }
-                    if (unlimitedAccessState == UnlimitedAccessState.VerificationFailed) {
-                        TextButton(onClick = onRetryPurchaseRefresh) {
-                            Text(stringResource(R.string.retry_purchases), color = Accent)
-                        }
-                    }
-                    if (unlimitedAccessState == UnlimitedAccessState.NotPurchased) {
-                        when (purchaseLaunchState) {
-                            PurchaseLaunchState.Idle -> Unit
-                            PurchaseLaunchState.Loading -> Text(
-                                text = stringResource(R.string.purchase_preparing),
-                                color = InkDim,
-                                fontSize = 13.sp,
-                            )
-                            is PurchaseLaunchState.Failed -> Text(
-                                text = stringResource(
-                                    R.string.purchase_launch_failed,
-                                    purchaseLaunchState.responseCode,
-                                ),
-                                color = Accent,
-                                fontSize = 13.sp,
-                            )
-                        }
-                    }
-                }
-
-                if(purchaseRefreshState is PurchaseRefreshState.Failed){
-                    Column {
-                        Text(
-                            text = stringResource(R.string.purchase_refresh_failed),
-                            color = InkDim,
-                            fontSize = 13.sp,
-                        )
-                        TextButton(
-                            onClick = onRetryPurchaseRefresh,
-                        ) {
-                            Text(stringResource(R.string.retry), color = Accent)
                         }
                     }
                 }

@@ -8,10 +8,7 @@ import com.newfeelcamera.data.settings.ShutterSoundLevel
 data class CameraUiState(
     val isSettingsLoaded: Boolean = false,
     val hasCameraPermission: Boolean = false,
-    val isQuotaLoaded: Boolean = false,
-    val isUnlimitedActive: Boolean = false,
     val isCapturing: Boolean = false,
-    val capturedPhotoCount: Int = 0,
     val latestPhotoUri: Uri? = null,
     val lastSavedPhotoUri: Uri? = null,
     val deviceTargetRotation: Int = Surface.ROTATION_0,

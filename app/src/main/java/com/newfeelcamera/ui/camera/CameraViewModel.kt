@@ -13,17 +13,13 @@ import com.newfeelcamera.camera.capture.CaptureException
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.analytics.CaptureAnalytics
 import com.newfeelcamera.data.analytics.PhotoSavedEvent
-import com.newfeelcamera.data.billing.BillingRepository
-import com.newfeelcamera.data.billing.UnlimitedAccessState
 import com.newfeelcamera.data.gallery.RecentPhotoRepository
-import com.newfeelcamera.data.quota.FreeCaptureQuotaRepository
 import com.newfeelcamera.data.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -52,10 +48,8 @@ class CameraViewModel @Inject constructor(
     private val cameraController: CameraController,
     private val shutterSoundPlayer: ShutterSoundPlayer,
     private val settingsRepository: AppSettingsRepository,
-    private val freeCaptureQuotaRepository: FreeCaptureQuotaRepository,
     private val recentPhotoRepository: RecentPhotoRepository,
     private val captureAnalytics: CaptureAnalytics,
-    billingRepository: BillingRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CameraUiState())
@@ -69,14 +63,6 @@ class CameraViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
-            billingRepository.unlimitedAccessState.collect { accessState ->
-                _uiState.update {
-                    it.copy(isUnlimitedActive = accessState == UnlimitedAccessState.Active)
-                }
-            }
-        }
-
         viewModelScope.launch {
             var lastStartFilm: FilmPreset? = null
             settingsRepository.settings.collect { settings ->
@@ -94,23 +80,6 @@ class CameraViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch {
-            freeCaptureQuotaRepository.usedShots
-                .catch { error ->
-                    if (error is CancellationException) throw error
-                    Log.e(TAG, "Unable to read free capture count", error)
-                    _uiState.update { it.copy(isQuotaLoaded = false) }
-                    notices.post(R.string.free_capture_count_failed)
-                }
-                .collect { usedShots ->
-                    _uiState.update {
-                        it.copy(
-                            isQuotaLoaded = true,
-                            capturedPhotoCount = usedShots,
-                        )
-                    }
-                }
-        }
     }
 
     fun onIntent(intent: CameraAction){
@@ -205,21 +174,6 @@ class CameraViewModel @Inject constructor(
         if (!stateAtShutter.isSettingsLoaded) return
         if (stateAtShutter.isCapturing) return
 
-        if (!stateAtShutter.isUnlimitedActive && !stateAtShutter.isQuotaLoaded) {
-            notices.post(R.string.free_capture_count_failed)
-            return
-        }
-
-        if (!canCapture(
-                isUnlimitedActive = stateAtShutter.isUnlimitedActive,
-                isQuotaLoaded = stateAtShutter.isQuotaLoaded,
-                capturedPhotoCount = stateAtShutter.capturedPhotoCount,
-            )
-        ) {
-            notices.post(R.string.free_capture_limit_used)
-            return
-        }
-
         if (!stateAtShutter.hasCameraPermission) {
             notices.post(R.string.camera_permission_required)
             return
@@ -253,32 +207,8 @@ class CameraViewModel @Inject constructor(
                     Log.w(TAG, "Photo saved but analytics event failed", error)
                 }
 
-                if (stateAtShutter.isUnlimitedActive) {
-                    _uiState.update { it.copy(latestPhotoUri = uri, lastSavedPhotoUri = uri) }
-                    notices.post(R.string.photo_saved)
-                    return@launch
-                }
-
-                val usedShots = try {
-                    freeCaptureQuotaRepository.recordSavedPhoto()
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (error: Exception) {
-                    Log.e(TAG, "Photo saved but free capture count was not recorded: uri=$uri", error)
-                    _uiState.update {
-                        it.copy(
-                            isQuotaLoaded = false,
-                            latestPhotoUri = uri,
-                            lastSavedPhotoUri = uri,
-                        )
-                    }
-                    notices.post(R.string.photo_saved_count_failed)
-                    return@launch
-                }
-
                 _uiState.update {
                     it.copy(
-                        capturedPhotoCount = usedShots,
                         latestPhotoUri = uri,
                         lastSavedPhotoUri = uri,
                     )
