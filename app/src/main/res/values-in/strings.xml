@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Pembelian Anda tidak dapat diperiksa.</string>
     <string name="retry">Coba lagi</string>
     <string name="settings_save_failed">Pengaturan tidak dapat disimpan. Coba lagi.</string>
+    <string name="privacy_policy">Kebijakan privasi</string>
+    <string name="privacy_policy_description">Buka di browser</string>
+    <string name="privacy_policy_open_failed">Kebijakan privasi tidak dapat dibuka.</string>
     <string name="current_version">Versi saat ini</string>
 </resources>

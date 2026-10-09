@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">無法確認購買紀錄。</string>
     <string name="retry">重試</string>
     <string name="settings_save_failed">無法儲存設定。請重試。</string>
+    <string name="privacy_policy">隱私權政策</string>
+    <string name="privacy_policy_description">在瀏覽器中開啟</string>
+    <string name="privacy_policy_open_failed">無法開啟隱私權政策。</string>
     <string name="current_version">目前版本</string>
 </resources>

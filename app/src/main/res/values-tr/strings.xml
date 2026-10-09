@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Satın alımlarınız kontrol edilemedi.</string>
     <string name="retry">Tekrar dene</string>
     <string name="settings_save_failed">Ayarlar kaydedilemedi. Tekrar deneyin.</string>
+    <string name="privacy_policy">Gizlilik politikası</string>
+    <string name="privacy_policy_description">Tarayıcıda aç</string>
+    <string name="privacy_policy_open_failed">Gizlilik politikası açılamadı.</string>
     <string name="current_version">Geçerli sürüm</string>
 </resources>

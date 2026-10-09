@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Не удалось проверить покупки.</string>
     <string name="retry">Повторить</string>
     <string name="settings_save_failed">Не удалось сохранить настройки. Повторите попытку.</string>
+    <string name="privacy_policy">Политика конфиденциальности</string>
+    <string name="privacy_policy_description">Открыть в браузере</string>
+    <string name="privacy_policy_open_failed">Не удалось открыть политику конфиденциальности.</string>
     <string name="current_version">Текущая версия</string>
 </resources>

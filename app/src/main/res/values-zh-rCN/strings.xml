@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">无法检查购买记录。</string>
     <string name="retry">重试</string>
     <string name="settings_save_failed">无法保存设置。请重试。</string>
+    <string name="privacy_policy">隐私政策</string>
+    <string name="privacy_policy_description">在浏览器中打开</string>
+    <string name="privacy_policy_open_failed">无法打开隐私政策。</string>
     <string name="current_version">当前版本</string>
 </resources>

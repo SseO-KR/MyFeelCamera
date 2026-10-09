@@ -1,5 +1,9 @@
 package com.newfeelcamera.ui.settings
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,18 +45,31 @@ import com.newfeelcamera.ui.design.InkDim
 import com.newfeelcamera.ui.design.Rail
 import com.newfeelcamera.ui.labelRes
 
+private const val PRIVACY_POLICY_URL =
+    "https://curly-crowberry-6e3.notion.site/FeelCamera-3f4a6411e1a4805f968df6a70c04a331"
+
 @Composable
 fun SettingsRoute(
     onBackClick: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     SettingsScreen(
         uiState = uiState,
         onStartFilmSelected = viewModel::setStartFilm,
         onGridChanged = viewModel::setShowGrid,
         onShutterSoundLevelSelected = viewModel::setShutterSoundLevel,
+        onPrivacyPolicyClick = {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
+            } catch (_: SecurityException) {
+                Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
+            }
+        },
         onBackClick = onBackClick,
     )
 }
@@ -62,6 +80,7 @@ fun SettingsScreen(
     onStartFilmSelected: (FilmPreset) -> Unit,
     onGridChanged: (Boolean) -> Unit,
     onShutterSoundLevelSelected: (ShutterSoundLevel) -> Unit,
+    onPrivacyPolicyClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -235,6 +254,25 @@ fun SettingsScreen(
                     Text(
                         text = stringResource(messageRes),
                         color = Accent,
+                        fontSize = 13.sp,
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onPrivacyPolicyClick)
+                        .padding(vertical = 8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.privacy_policy),
+                        color = Ink,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(R.string.privacy_policy_description),
+                        color = InkDim,
                         fontSize = 13.sp,
                     )
                 }

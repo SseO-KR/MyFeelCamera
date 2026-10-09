@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Não foi possível verificar suas compras.</string>
     <string name="retry">Tentar novamente</string>
     <string name="settings_save_failed">Não foi possível salvar as configurações. Tente novamente.</string>
+    <string name="privacy_policy">Política de privacidade</string>
+    <string name="privacy_policy_description">Abrir no navegador</string>
+    <string name="privacy_policy_open_failed">Não foi possível abrir a política de privacidade.</string>
     <string name="current_version">Versão atual</string>
 </resources>

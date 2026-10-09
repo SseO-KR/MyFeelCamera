@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">구매 내역을 확인하지 못했습니다.</string>
     <string name="retry">다시 시도</string>
     <string name="settings_save_failed">설정을 저장하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="privacy_policy">개인정보처리방침</string>
+    <string name="privacy_policy_description">브라우저에서 보기</string>
+    <string name="privacy_policy_open_failed">개인정보처리방침을 열지 못했습니다.</string>
     <string name="current_version">현재 버전</string>
 </resources>

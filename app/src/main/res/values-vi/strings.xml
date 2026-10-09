@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Không kiểm tra được các giao dịch mua.</string>
     <string name="retry">Thử lại</string>
     <string name="settings_save_failed">Không lưu được cài đặt. Hãy thử lại.</string>
+    <string name="privacy_policy">Chính sách quyền riêng tư</string>
+    <string name="privacy_policy_description">Mở trong trình duyệt</string>
+    <string name="privacy_policy_open_failed">Không thể mở chính sách quyền riêng tư.</string>
     <string name="current_version">Phiên bản hiện tại</string>
 </resources>

@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">購入履歴を確認できませんでした。</string>
     <string name="retry">再試行</string>
     <string name="settings_save_failed">設定を保存できませんでした。もう一度お試しください。</string>
+    <string name="privacy_policy">プライバシーポリシー</string>
+    <string name="privacy_policy_description">ブラウザで開く</string>
+    <string name="privacy_policy_open_failed">プライバシーポリシーを開けませんでした。</string>
     <string name="current_version">現在のバージョン</string>
 </resources>

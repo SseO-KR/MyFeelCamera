@@ -67,5 +67,8 @@
     <string name="purchase_refresh_failed">Deine Käufe konnten nicht geprüft werden.</string>
     <string name="retry">Erneut versuchen</string>
     <string name="settings_save_failed">Einstellungen konnten nicht gespeichert werden. Versuche es erneut.</string>
+    <string name="privacy_policy">Datenschutzerklärung</string>
+    <string name="privacy_policy_description">Im Browser öffnen</string>
+    <string name="privacy_policy_open_failed">Die Datenschutzerklärung konnte nicht geöffnet werden.</string>
     <string name="current_version">Aktuelle Version</string>
 </resources>
