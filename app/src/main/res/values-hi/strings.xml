@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">मुफ़्त फ़ोटो की सीमा पूरी हो गई</string>
     <string name="checking_free_captures">मुफ़्त फ़ोटो की संख्या जाँची जा रही है</string>
     <string name="saving">फ़ोटो सहेजी जा रही है</string>
-    <string name="shutter">शटर</string>
+    <string name="shutter">फ़ोटो लें</string>
     <string name="free_capture_count_failed">शेष मुफ़्त फ़ोटो की संख्या जाँची नहीं जा सकी।</string>
     <string name="free_capture_limit_used">आपने सभी मुफ़्त फ़ोटो का उपयोग कर लिया है।</string>
     <string name="camera_permission_required">कैमरा अनुमति आवश्यक है।</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">ब्राउज़र में खोलें</string>
     <string name="privacy_policy_open_failed">गोपनीयता नीति नहीं खोली जा सकी।</string>
     <string name="current_version">मौजूदा संस्करण</string>
+    <string name="switch_to_film">%1$s फ़िल्म पर बदलें</string>
+    <string name="zoom_level">ज़ूम %1$.1f गुना</string>
+    <string name="flash">फ़्लैश</string>
 </resources>

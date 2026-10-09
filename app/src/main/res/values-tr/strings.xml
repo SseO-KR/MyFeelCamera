@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">Ücretsiz fotoğraf sınırına ulaşıldı</string>
     <string name="checking_free_captures">Ücretsiz fotoğraflar kontrol ediliyor</string>
     <string name="saving">Fotoğraf kaydediliyor</string>
-    <string name="shutter">Deklanşör</string>
+    <string name="shutter">Fotoğraf çek</string>
     <string name="free_capture_count_failed">Kalan ücretsiz fotoğraf sayısı kontrol edilemedi.</string>
     <string name="free_capture_limit_used">Tüm ücretsiz fotoğraflarınızı kullandınız.</string>
     <string name="camera_permission_required">Kamera izni gerekiyor.</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">Tarayıcıda aç</string>
     <string name="privacy_policy_open_failed">Gizlilik politikası açılamadı.</string>
     <string name="current_version">Geçerli sürüm</string>
+    <string name="switch_to_film">%1$s filmine geç</string>
+    <string name="zoom_level">Yakınlaştırma %1$.1f kat</string>
+    <string name="flash">Flaş</string>
 </resources>

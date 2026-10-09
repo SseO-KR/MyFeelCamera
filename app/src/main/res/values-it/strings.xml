@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">Limite di foto gratuite raggiunto</string>
     <string name="checking_free_captures">Controllo delle foto gratuite</string>
     <string name="saving">Salvataggio della foto</string>
-    <string name="shutter">Otturatore</string>
+    <string name="shutter">Scatta una foto</string>
     <string name="free_capture_count_failed">Impossibile controllare le foto gratuite rimaste.</string>
     <string name="free_capture_limit_used">Hai usato tutte le foto gratuite.</string>
     <string name="camera_permission_required">È necessaria l\'autorizzazione per la fotocamera.</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">Apri nel browser</string>
     <string name="privacy_policy_open_failed">Impossibile aprire l’informativa sulla privacy.</string>
     <string name="current_version">Versione attuale</string>
+    <string name="switch_to_film">Passa al filtro %1$s</string>
+    <string name="zoom_level">Zoom %1$.1f volte</string>
+    <string name="flash">Flash</string>
 </resources>

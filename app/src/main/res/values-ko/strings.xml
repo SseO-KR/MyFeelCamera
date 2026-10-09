@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">무료 촬영 한도에 도달함</string>
     <string name="checking_free_captures">무료 촬영 횟수 확인 중</string>
     <string name="saving">사진 저장 중</string>
-    <string name="shutter">셔터</string>
+    <string name="shutter">사진 촬영</string>
     <string name="free_capture_count_failed">남은 무료 촬영 횟수를 확인하지 못했습니다.</string>
     <string name="free_capture_limit_used">무료 촬영 횟수를 모두 사용했습니다.</string>
     <string name="camera_permission_required">카메라 권한이 필요합니다.</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">브라우저에서 보기</string>
     <string name="privacy_policy_open_failed">개인정보처리방침을 열지 못했습니다.</string>
     <string name="current_version">현재 버전</string>
+    <string name="switch_to_film">%1$s 필름으로 변경</string>
+    <string name="zoom_level">확대 배율 %1$.1f배</string>
+    <string name="flash">플래시</string>
 </resources>

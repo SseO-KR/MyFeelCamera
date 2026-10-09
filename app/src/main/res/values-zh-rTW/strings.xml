@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">已達免費拍攝上限</string>
     <string name="checking_free_captures">正在確認免費拍攝次數</string>
     <string name="saving">正在儲存照片</string>
-    <string name="shutter">快門</string>
+    <string name="shutter">拍照</string>
     <string name="free_capture_count_failed">無法確認剩餘免費拍攝次數。</string>
     <string name="free_capture_limit_used">免費拍攝次數已用完。</string>
     <string name="camera_permission_required">需要相機權限。</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">在瀏覽器中開啟</string>
     <string name="privacy_policy_open_failed">無法開啟隱私權政策。</string>
     <string name="current_version">目前版本</string>
+    <string name="switch_to_film">切換到%1$s濾鏡</string>
+    <string name="zoom_level">縮放%1$.1f倍</string>
+    <string name="flash">閃光燈</string>
 </resources>

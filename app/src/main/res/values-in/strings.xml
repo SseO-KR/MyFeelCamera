@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">Batas foto gratis tercapai</string>
     <string name="checking_free_captures">Memeriksa foto gratis</string>
     <string name="saving">Menyimpan foto</string>
-    <string name="shutter">Tombol foto</string>
+    <string name="shutter">Ambil foto</string>
     <string name="free_capture_count_failed">Sisa foto gratis tidak dapat diperiksa.</string>
     <string name="free_capture_limit_used">Anda telah menggunakan semua foto gratis.</string>
     <string name="camera_permission_required">Izin kamera diperlukan.</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">Buka di browser</string>
     <string name="privacy_policy_open_failed">Kebijakan privasi tidak dapat dibuka.</string>
     <string name="current_version">Versi saat ini</string>
+    <string name="switch_to_film">Ganti ke film %1$s</string>
+    <string name="zoom_level">Perbesaran %1$.1f kali</string>
+    <string name="flash">Flash</string>
 </resources>

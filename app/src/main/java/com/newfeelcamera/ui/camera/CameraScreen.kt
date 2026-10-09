@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.Preview
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -39,9 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -50,8 +55,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -520,22 +531,13 @@ private fun EndRailActions(
     onShutterClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
-    RailAction(
-        accessibilityLabel = when {
-            !hasFlashUnit -> stringResource(R.string.flash_unavailable)
-            isFlashEnabled -> stringResource(R.string.flash_on)
-            else -> stringResource(R.string.flash_off)
-        },
+    FlashControl(
+        hasFlashUnit = hasFlashUnit,
+        isFlashEnabled = isFlashEnabled,
         contentRotationDegrees = contentRotationDegrees,
         enabled = hasFlashUnit && !isCapturing,
         onClick = onFlashClick,
-    ) {
-        Text(
-            text = "ϟ",
-            color = if (!hasFlashUnit) InkDim else if (isFlashEnabled) Accent else Ink,
-            fontSize = 24.sp,
-        )
-    }
+    )
     ShutterButton(
         isCapturing = isCapturing,
         onClick = onShutterClick,
@@ -558,6 +560,56 @@ private fun EndRailActions(
         onClick = onSettingsClick,
     ) {
         SettingsGlyph()
+    }
+}
+
+@Composable
+private fun FlashControl(
+    hasFlashUnit: Boolean,
+    isFlashEnabled: Boolean,
+    contentRotationDegrees: Float,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val label = stringResource(R.string.flash)
+    val unavailableLabel = stringResource(R.string.flash_unavailable)
+    val glyphColor = if (!hasFlashUnit) InkDim else if (isFlashEnabled) Accent else Ink
+    DialCircle(
+        modifier = Modifier
+            .semantics {
+                contentDescription = label
+                if (!hasFlashUnit) stateDescription = unavailableLabel
+            }
+            .toggleable(
+                value = isFlashEnabled,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = { onClick() },
+            ),
+    ) {
+        Canvas(
+            modifier = Modifier.size(28.dp).graphicsLayer(rotationZ = contentRotationDegrees),
+        ) {
+            val bolt = Path().apply {
+                moveTo(size.width * 0.60f, size.height * 0.10f)
+                lineTo(size.width * 0.25f, size.height * 0.55f)
+                lineTo(size.width * 0.45f, size.height * 0.55f)
+                lineTo(size.width * 0.35f, size.height * 0.90f)
+                lineTo(size.width * 0.80f, size.height * 0.40f)
+                lineTo(size.width * 0.55f, size.height * 0.40f)
+                close()
+            }
+            drawPath(path = bolt, color = glyphColor)
+            if (!isFlashEnabled) {
+                drawLine(
+                    color = glyphColor,
+                    start = Offset(size.width * 0.15f, size.height * 0.15f),
+                    end = Offset(size.width * 0.85f, size.height * 0.85f),
+                    strokeWidth = 2.dp.toPx(),
+                    cap = StrokeCap.Round,
+                )
+            }
+        }
     }
 }
 
@@ -643,11 +695,7 @@ private fun PreviewSlot(
                 .align(Alignment.TopStart)
                 .padding(start = 10.dp, top = 8.dp),
         ) {
-            MonoText(
-                text = stringResource(R.string.exposure_zero),
-                color = Ink.copy(alpha = 0.55f),
-                fontSize = 9.sp,
-            )
+            PreviewInfoBadge(text = stringResource(R.string.exposure_zero))
         }
         RotationAwareContent(
             rotationDegrees = contentRotationDegrees,
@@ -655,10 +703,9 @@ private fun PreviewSlot(
                 .align(Alignment.TopEnd)
                 .padding(end = 10.dp, top = 8.dp),
         ) {
-            MonoText(
+            PreviewInfoBadge(
                 text = stringResource(R.string.zoom_ratio, zoomRatio),
-                color = Ink.copy(alpha = 0.55f),
-                fontSize = 9.sp,
+                modifier = Modifier.clearAndSetSemantics { },
             )
         }
         RotationAwareContent(
@@ -667,14 +714,21 @@ private fun PreviewSlot(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 10.dp),
         ) {
-            MonoText(
-                text = stringResource(R.string.rear_camera),
-                color = Ink.copy(alpha = 0.28f),
-                fontSize = 9.sp,
-                letterSpacing = 2.4.sp,
-            )
+            PreviewInfoBadge(text = stringResource(R.string.rear_camera))
         }
     }
+}
+
+@Composable
+private fun PreviewInfoBadge(text: String, modifier: Modifier = Modifier) {
+    MonoText(
+        text = text,
+        color = Ink,
+        fontSize = 11.sp,
+        modifier = modifier
+            .background(Background, RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+    )
 }
 
 @Composable
@@ -807,20 +861,24 @@ private fun FilmDial(
     contentRotationDegrees: Float = 0f,
 ) {
     val filmName = stringResource(selectedFilm.labelRes)
-    val accessibilityLabel = stringResource(R.string.selected_film, filmName)
+    val accessibilityLabel = stringResource(R.string.film)
     val nextFilm = when (selectedFilm){
         FilmPreset.WARM -> FilmPreset.DUSK
         FilmPreset.DUSK -> FilmPreset.WARM
     }
+    val changeFilmLabel = stringResource(R.string.switch_to_film, stringResource(nextFilm.labelRes))
 
     Column(
         modifier = Modifier
             .semantics {
                 contentDescription = accessibilityLabel
+                stateDescription = filmName
             }
-            .clickable {
-                onFilmSelected(nextFilm)
-            },
+            .clickable(
+                role = Role.Button,
+                onClickLabel = changeFilmLabel,
+                onClick = { onFilmSelected(nextFilm) },
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -837,7 +895,9 @@ private fun FilmDial(
             text = filmName,
             color = InkDim,
             fontSize = 8.sp,
-            modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+            modifier = Modifier
+                .graphicsLayer(rotationZ = contentRotationDegrees)
+                .clearAndSetSemantics { },
         )
     }
 }
@@ -854,12 +914,9 @@ private fun ZoomControl(
 ) {
     val canZoomIn = zoomRatio < maxZoomRatio - 0.01f
     val canZoomOut = zoomRatio > minZoomRatio + 0.01f
-    val zoomLabel = stringResource(R.string.zoom)
     if (isVertical) {
         Column(
-            modifier = Modifier.semantics {
-                contentDescription = zoomLabel
-            },
+            modifier = Modifier.semantics { isTraversalGroup = true },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -869,9 +926,7 @@ private fun ZoomControl(
         }
     } else {
         Row(
-            modifier = Modifier.semantics {
-                contentDescription = zoomLabel
-            },
+            modifier = Modifier.semantics { isTraversalGroup = true },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -892,7 +947,7 @@ private fun ZoomIncreaseButton(
     DialCircle(
         modifier = Modifier
             .semantics { contentDescription = label }
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
     ) {
         Text(
             text = "+",
@@ -905,12 +960,18 @@ private fun ZoomIncreaseButton(
 
 @Composable
 private fun ZoomValue(contentRotationDegrees: Float, zoomRatio: Float) {
+    val zoomLabel = stringResource(R.string.zoom_level, zoomRatio)
     MonoText(
         text = stringResource(R.string.zoom_ratio, zoomRatio),
         color = Ink,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
+        modifier = Modifier
+            .graphicsLayer(rotationZ = contentRotationDegrees)
+            .clearAndSetSemantics {
+                contentDescription = zoomLabel
+                liveRegion = LiveRegionMode.Polite
+            },
     )
 }
 
@@ -924,7 +985,7 @@ private fun ZoomDecreaseButton(
     DialCircle(
         modifier = Modifier
             .semantics { contentDescription = label }
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
     ) {
         Text(
             text = "−",
@@ -940,13 +1001,13 @@ private fun RailAction(
     accessibilityLabel: String,
     contentRotationDegrees: Float,
     enabled: Boolean = true,
-    onClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     DialCircle(
-        modifier = Modifier.semantics {
-            contentDescription = accessibilityLabel
-        }.then(if (onClick == null) Modifier else Modifier.clickable(enabled = enabled, onClick = onClick)),
+        modifier = Modifier
+            .semantics { contentDescription = accessibilityLabel }
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
     ) {
         Box(
             modifier = Modifier.graphicsLayer(rotationZ = contentRotationDegrees),
@@ -964,12 +1025,18 @@ private fun DialCircle(
 ) {
     Box(
         modifier = modifier
-            .size(44.dp)
+            .size(48.dp)
             .background(Color(0x05FFFFFF), CircleShape)
             .border(1.dp, Hair, CircleShape),
         contentAlignment = Alignment.Center,
-        content = { content() },
-    )
+    ) {
+        Box(
+            modifier = Modifier.clearAndSetSemantics { },
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -978,18 +1045,19 @@ private fun ShutterButton(
     onClick: () -> Unit,
 ) {
     val isEnabled = !isCapturing
-    val accessibilityLabel = stringResource(
-        if (isCapturing) R.string.saving else R.string.shutter,
-    )
+    val accessibilityLabel = stringResource(R.string.shutter)
+    val savingLabel = stringResource(R.string.saving)
 
     Box(
         modifier = Modifier
             .size(68.dp)
             .semantics {
                 contentDescription = accessibilityLabel
+                if (isCapturing) stateDescription = savingLabel
             }
             .clickable(
                 enabled = isEnabled,
+                role = Role.Button,
                 onClick = onClick,
             )
             .border(3.dp, Ink.copy(alpha = 0.85f), CircleShape),

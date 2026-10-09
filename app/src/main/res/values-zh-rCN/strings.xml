@@ -23,7 +23,7 @@
     <string name="free_capture_limit_reached">已达到免费拍摄上限</string>
     <string name="checking_free_captures">正在检查免费拍摄次数</string>
     <string name="saving">正在保存照片</string>
-    <string name="shutter">快门</string>
+    <string name="shutter">拍照</string>
     <string name="free_capture_count_failed">无法查看剩余免费拍摄次数。</string>
     <string name="free_capture_limit_used">免费拍摄次数已用完。</string>
     <string name="camera_permission_required">需要相机权限。</string>
@@ -71,4 +71,7 @@
     <string name="privacy_policy_description">在浏览器中打开</string>
     <string name="privacy_policy_open_failed">无法打开隐私政策。</string>
     <string name="current_version">当前版本</string>
+    <string name="switch_to_film">切换到%1$s滤镜</string>
+    <string name="zoom_level">缩放%1$.1f倍</string>
+    <string name="flash">闪光灯</string>
 </resources>

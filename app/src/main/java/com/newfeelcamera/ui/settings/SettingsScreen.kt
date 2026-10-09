@@ -7,14 +7,17 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.RadioButton
@@ -29,7 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -92,24 +101,37 @@ fun SettingsScreen(
             .background(Background)
             .safeDrawingPadding(),
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             TextButton(
                 onClick = onBackClick,
                 enabled = !uiState.isSaving,
-                modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 Text(text = stringResource(R.string.back), color = if (uiState.isSaving) InkDim else Ink)
             }
             Text(
                 text = stringResource(R.string.settings),
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier.weight(1f).semantics { heading() },
                 color = Ink,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        uiState.errorMessageRes?.let { messageRes ->
+            Text(
+                text = stringResource(messageRes),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                color = Accent,
+                fontSize = 13.sp,
             )
         }
 
@@ -128,9 +150,10 @@ fun SettingsScreen(
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Column {
+                Column(modifier = Modifier.selectableGroup()) {
                     Text(
                         text = stringResource(R.string.start_film),
+                        modifier = Modifier.semantics { heading() },
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
@@ -144,7 +167,13 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(enabled = !uiState.isSaving) { onStartFilmSelected(film) }
+                                .heightIn(min = 48.dp)
+                                .selectable(
+                                    selected = uiState.startFilm == film,
+                                    enabled = !uiState.isSaving,
+                                    role = Role.RadioButton,
+                                    onClick = { onStartFilmSelected(film) },
+                                )
                                 .padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -170,14 +199,17 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(enabled = !uiState.isSaving) {
-                            onGridChanged(!uiState.showGrid)
-                        }
+                        .toggleable(
+                            value = uiState.showGrid,
+                            enabled = !uiState.isSaving,
+                            role = Role.Switch,
+                            onValueChange = onGridChanged,
+                        )
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
                             text = stringResource(R.string.show_grid),
                             color = Ink,
@@ -201,9 +233,10 @@ fun SettingsScreen(
                     )
                 }
 
-                Column {
+                Column(modifier = Modifier.selectableGroup()) {
                     Text(
                         text = stringResource(R.string.shutter_sound),
+                        modifier = Modifier.semantics { heading() },
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
@@ -224,9 +257,13 @@ fun SettingsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(enabled = !uiState.isSaving) {
-                                        onShutterSoundLevelSelected(level)
-                                    }
+                                    .heightIn(min = 48.dp)
+                                    .selectable(
+                                        selected = uiState.shutterSoundLevel == level,
+                                        enabled = !uiState.isSaving,
+                                        role = Role.RadioButton,
+                                        onClick = { onShutterSoundLevelSelected(level) },
+                                    )
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -250,18 +287,10 @@ fun SettingsScreen(
                     }
                 }
 
-                uiState.errorMessageRes?.let { messageRes ->
-                    Text(
-                        text = stringResource(messageRes),
-                        color = Accent,
-                        fontSize = 13.sp,
-                    )
-                }
-
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onPrivacyPolicyClick)
+                        .clickable(role = Role.Button, onClick = onPrivacyPolicyClick)
                         .padding(vertical = 8.dp),
                 ) {
                     Text(
@@ -282,7 +311,12 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = stringResource(R.string.current_version), color = InkDim, fontSize = 13.sp)
+                    Text(
+                        text = stringResource(R.string.current_version),
+                        modifier = Modifier.weight(1f).padding(end = 12.dp),
+                        color = InkDim,
+                        fontSize = 13.sp,
+                    )
                     Text(
                         text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                         color = InkDim,
