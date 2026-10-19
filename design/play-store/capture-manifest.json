@@ -1,7 +1,7 @@
 {
   "language": "en-US",
   "created": "2026-10-09",
-  "screenshots_status": "captured from current app",
+  "screenshots_status": "presentation assets based on app 1.0.3 UI captures; README camera images composed with developer photographs",
   "app": {
     "package": "com.newfeelcamera",
     "versionName": "1.0.3",
@@ -25,25 +25,9 @@
       210,
       0
     ],
-    "note": "Actual running app UI. The supplied WARM photo was already filtered and is rephotographed through the virtual camera and current app film. These screenshots illustrate the UI; they are not raw-source filter comparisons or physical-device verification. No preview replacement, cropping, or UI compositing was performed."
+    "note": "Base UI capture environment. The supplied WARM photo was used as an emulator scene poster at the capture stage. For the final README camera images, the developer reports replacing the preview region with personally captured photographs; see readme_composition and README.md. These presentation assets do not establish a paired live-preview/saved-photo comparison."
   },
   "assets": [
-    {
-      "file": "app-icon-512.png",
-      "width": 512,
-      "height": 512,
-      "hasAlpha": true,
-      "bytes": 222586,
-      "sha256": "d1168bbf6cf4d75455a25043a24276b6acad0f7f00f924953ea27acaae92ad10"
-    },
-    {
-      "file": "en-US/feature-graphic-photos-1024x500.png",
-      "width": 1024,
-      "height": 500,
-      "hasAlpha": false,
-      "bytes": 286125,
-      "sha256": "c42b3481964d7ccc4b095f09060723deda30d89c7cd1c814865aa63c91ab5cbc"
-    },
     {
       "file": "en-US/phone/01-warm.png",
       "width": 1080,
@@ -61,85 +45,22 @@
       "sha256": "2e3c8f1da0745e66896e84130ef3c7d4ca73ea923369135dc1b6c8e9f7e275a3"
     },
     {
-      "file": "en-US/phone/03-grid.png",
-      "width": 1080,
-      "height": 1920,
-      "hasAlpha": false,
-      "bytes": 1176710,
-      "sha256": "b2c13c379f16f9ffa2f6f45bd846d6d69afd6651647aeb16feb68066b786d198"
-    },
-    {
       "file": "en-US/phone/04-settings.png",
       "width": 1080,
       "height": 1920,
       "hasAlpha": false,
       "bytes": 95400,
       "sha256": "cc6b5d81e19e22b6c8c7312704eeae1a1a87b18642cf600f8f3a668d6d7f427c"
-    },
-    {
-      "file": "en-US/tablet-7/01-warm.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 2225541,
-      "sha256": "13a46770a1e1ac6d12f030f5e22150a4a3b8b6f0ebfb472275971d7820678d1e"
-    },
-    {
-      "file": "en-US/tablet-7/02-dusk.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 2074504,
-      "sha256": "b294a06e2bac3071cf77fbd1c5cefee093f9463e7c6146b2567f88a8012403d7"
-    },
-    {
-      "file": "en-US/tablet-7/03-grid.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 2073773,
-      "sha256": "6bad3b2af11bf33262b4a102d3ae1f8af4930f98d84a5cf2f883334d9869c9a4"
-    },
-    {
-      "file": "en-US/tablet-7/04-settings.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 107290,
-      "sha256": "d3bdf520655b23b837905df73209e6157a5967cb2ba19f482cbe4c72bac75898"
-    },
-    {
-      "file": "en-US/tablet-10/01-warm.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 2106937,
-      "sha256": "ef7491ba6ae22655c79b2e30a4c0d17ab6d42bedfa5abd218c6b83ba584b5e4e"
-    },
-    {
-      "file": "en-US/tablet-10/02-dusk.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 1958020,
-      "sha256": "0c4dd6dda74071766136b6645688b226cb4d0dde1f63a381084061aed19caff7"
-    },
-    {
-      "file": "en-US/tablet-10/03-grid.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 1975679,
-      "sha256": "2ef0f087a34112609401da0ae8e3c9d5bcd3a45acedef10871fc4506d3b6a48b"
-    },
-    {
-      "file": "en-US/tablet-10/04-settings.png",
-      "width": 1440,
-      "height": 2560,
-      "hasAlpha": false,
-      "bytes": 84216,
-      "sha256": "3ea442ea8ff358d10525450dc7a9ce830da9691a6ea094e2f4736d89c3616c8f"
     }
   ],
-  "photo_sources_manifest": "photo-samples/manifest.json"
+  "readme_composition": {
+    "files": [
+      "en-US/phone/01-warm.png",
+      "en-US/phone/02-dusk.png"
+    ],
+    "method": "Developer photographs composited over the preview region of emulator UI captures.",
+    "source": "Project owner explanation",
+    "documentation": "README.md"
+  },
+  "asset_scope": "The three presentation images used in the repository README."
 }

@@ -15,15 +15,18 @@
 `00`에는 module 구조에 대한 요구사항이 없다 — 학습 목표 목록(CameraX, Compose, lifecycle, Surface, OpenGL ES, SurfaceTexture, OES texture, shader, LUT, adaptive layout)에도 module 경계 자체는 포함돼 있지 않다. 이 프로젝트는 재사용 대상(다른 앱이 이 코드를 가져다 쓰는 시나리오)이 아직 없는 1인 프로젝트이므로, `:domain`/`:data`를 별도 Gradle 모듈로 미리 쪼개는 비용(빌드 그래프, DI 컴포넌트 경계 관리)을 지금 낼 이유가 없다.
 
 ```
-com.<app>/
+com.newfeelcamera/
 ├─ camera/    CameraX 실행과 카메라 Preview/Filter 파이프라인 — UI를 모른다
 │  ├─ gl/     카메라 전용 GLSurfaceView, SurfaceProvider, Renderer, shader 로딩
 │  ├─ filter/ Film/LUT 모델 — Android 프레임워크 비의존
 │  └─ capture/ ImageCapture 입력, 오프스크린 GL 처리, MediaStore 저장
-├─ layout/    window size/posture → CameraLayoutMode 판정 (순수 함수에 가깝게)
-├─ ui/        Compose Screen, ViewModel
-└─ di/        DI 배선 (프레임워크 선택은 §9)
+├─ data/      설정·최근 사진 Repository, 분석 계약
+├─ ui/        Compose Screen, ViewModel, navigation
+│  └─ camera/layout/  측정한 너비·높이 → CameraLayoutMode
+└─ application/ FeelCameraApp, 앱 초기화
 ```
+
+Hilt constructor injection과 필요한 Module로 객체를 연결한다(§9).
 
 경계는 지금은 "모듈"이 아니라 "패키지 + import 규율"로 지킨다. `camera/filter/`는 `android.*`를 import하지 않고, `camera/gl/`과 `camera/capture/`는 Compose·디자인·레이아웃을 import하지 않는다. UI는 `camera/gl/`의 Preview View를 사용하지만 GL/CameraX 구현은 UI를 역으로 알지 않는다. 실제로 재사용 대상이 생기거나 빌드 시간이 문제가 되면 `:domain`/`:data`로 승격하는 것은 기계적인 리팩터링이라 나중으로 미룬다(Later).
 
@@ -39,17 +42,17 @@ com.<app>/
 | `CameraController` | `ProcessCameraProvider` 획득, UseCase(Preview/ImageCapture) 구성, bind/unbind | ViewModel과 동일 스코프로 유지 — Composable이 재생성될 때마다 새로 만들지 않는다 |
 | Preview 렌더링 View (예: GLSurfaceView 기반) | OES `SurfaceTexture` 보유, GL 렌더링 | `AndroidView` 팩토리가 관리 — View 시스템 lifecycle을 따르며 Composition보다 하위 개념 |
 | `Renderer` | 셰이더 컴파일, draw call | 소유 View의 EGL context lifetime을 따름 |
-| `SurfaceProvider` 구현체 | CameraX에 카메라 입력 `Surface`를 공급 | §4 참고 — 정확한 안정성 수준은 아직 미정 |
+| `CameraSurfaceProvider` | Renderer에 SurfaceRequest 전달 | `CameraGlSurfaceView`가 소유하며 View와 함께 생성 |
 | Capture 파이프라인 | 촬영 시점의 `FilmPreset`을 snapshot으로 고정하고, `ImageCapture`에서 원본 `ImageProxy` 획득과 MediaStore 저장을 조정 | `CameraController`와 같은 Camera destination/ViewModel 스코프 |
-| Capture GL 처리기(가칭) | 촬영 이미지를 2D texture로 업로드하고 별도 offscreen EGL/FBO에서 LUT를 적용 | Camera destination 범위의 단일 Executor 기반 CoroutineDispatcher/EGL Context를 소유하고 lazy 초기화·명시적 해제. 외부에는 main-safe suspend 작업을 제공하고, 입력·출력 image buffer는 촬영 호출 단위로 해제 |
+| `CaptureProcessor` | 촬영 이미지를 2D texture로 업로드하고 별도 offscreen EGL/FBO에서 LUT를 적용 | Camera destination 범위의 단일 Executor 기반 CoroutineDispatcher/EGL Context를 소유하고 lazy 초기화·명시적 해제. 외부에는 main-safe suspend 작업을 제공하고, 입력·출력 image buffer는 촬영 호출 단위로 해제 |
 
-이 표의 핵심은 **각 객체의 lifetime을 Composable 트리의 lifetime과 동일시하지 않는다**는 것이다. 특히 `CameraController`/`SurfaceProvider`는 `CameraScreen`이 재구성되어도 살아남아야 한다 — 그래야 `00` §9의 "재생성돼도 복구" 원칙을 카메라 세션 레벨에서 지킬 수 있다.
+이 표의 핵심은 **각 객체의 lifetime을 Composable 트리의 lifetime과 동일시하지 않는다**는 것이다. `CameraController`는 ViewModel 범위를 따르고, `SurfaceProvider`는 GL View 범위를 따른다. 일반 recomposition에는 View가 유지되지만 View가 재생성되면 새 provider를 Controller에 연결한다. provider 자체를 ViewModel 수명까지 연장할 필요는 없다.
 
 ## 3. Lifecycle 레이어 분리 — 왜 나누는가
 
 `00` §9가 못박은 레이어 목록(Composition / Android View / Surface / EGL Context / SurfaceTexture / CameraX SurfaceRequest / CameraX UseCase / Camera device)을 나누는 이유는 구체적인 실패 시나리오 때문이다:
 
-- Compose recomposition은 `AndroidView` factory를 재호출하지 않는다(factory는 최초 1회) → View lifetime은 Composition보다 길게 유지될 수 있다.
+- 같은 `AndroidView` 호출부의 일반 recomposition은 factory를 재호출하지 않는다. 호출부가 Composition에서 제거되면 View가 해제될 수 있으므로 recomposition과 Composition 이탈을 구분한다.
 - View의 `Surface`가 파괴·재생성돼도(예: 가시성 변경) EGL context가 항상 같이 죽는 것은 아니다 — 하지만 항상 살아남는다고 가정할 수도 없다. "EGL context가 항상 살아있다"를 전제로 코드를 짜지 않는다.
 - EGL context가 실제로 죽으면 그 안에서 만든 GL 텍스처 id(OES 텍스처 포함)는 전부 무효가 된다 → `SurfaceTexture`도 다시 만들어야 한다 → 그 `SurfaceTexture`를 감싼 `Surface`를 CameraX에 다시 공급해야 한다.
 - 이때 "다시 공급"이 UseCase를 통째로 다시 bind하는 것인지, 기존 `SurfaceRequest` 계약 안에서 새 `Surface`만 물리는 것인지가 §4의 주제다.
@@ -75,19 +78,19 @@ SurfaceProvider 구현체
       └─ ...
 ```
 
-**Verify First (아직 열린 질문 — 답을 안다고 가정하지 않는다)**:
-- 이 `SurfaceProvider` 구현체 인스턴스를 얼마나 오래 살려둘지(어느 스코프가 맞는지)는 정해지지 않았다.
-- 같은 provider 인스턴스가 Surface 재생성을 실제로 어떤 방식으로 흡수하는지 — 새 `SurfaceTexture`/`Surface`를 만들어 기존 또는 새 `SurfaceRequest`에 연결하는 구체적인 코드 경로 — 는 아직 없다. 구현하며 찾는다.
-- 실제로 어떤 조건에서 UseCase 전체 rebind가 필요해지는지(EGL context 소실, 해상도 변경 등은 후보일 뿐 확정된 목록이 아니다)는 실기기 로그로만 확인 가능하다.
+**현재 구현 (Implementation Decision):**
 
-이 세 질문에 대한 답이 나오기 전까지는 "SurfaceProvider가 Surface 재생성을 매끄럽게 흡수한다"는 문장을 이미 그렇게 동작하는 것처럼 쓰지 않는다.
+- `CameraGlSurfaceView`가 `CameraSurfaceProvider(renderer)`를 생성한다. Controller는 전달받은 provider를 Preview에 연결한다.
+- Renderer는 요청을 보관하고 GL 콜백에서 새 OES texture·SurfaceTexture·Surface를 생성한다. Context 교체나 binding 퇴역 때 `SurfaceRequest.invalidate()`로 새 요청을 유도한다.
+- 교체 중인 이전 Surface는 CameraX 사용 완료 후 해제하며, GL texture 삭제는 Context 세대와 current 여부로 판단한다. 구체적인 해제 규칙은 `05` §8을 따른다.
+- 어떤 기기·화면 전환에서 전체 rebind가 필요한지는 실행 환경에 따라 추가 검증한다. provider의 객체 수명만으로 모든 복구를 보장하지 않는다.
 
 ## 5. Layout과 Camera Rotation 분리
 
 `00` §6의 원칙을 타입 레벨로 옮긴다 — 다음을 같은 개념으로 다루지 않는다:
 
 ```
-Window / layout 크기, foldable posture   →  CameraLayoutMode를 결정한다        (§6)
+Window / layout의 실제 너비·높이         →  CameraLayoutMode를 결정한다        (§6)
 Display rotation                          →  adaptive fallback의 ControlEdgeOrder와 Preview targetRotation을 결정한다
 Device target rotation − display rotation →  개별 control content의 화면상 회전각을 결정한다
 기기 방향 관찰값(양자화)                   →  device target rotation과 ImageCapture targetRotation을 결정한다
@@ -97,7 +100,7 @@ SurfaceTexture transform + 위 정책        →  Preview 최종 GL transform을
 
 Phone UX는 Activity에 Portrait orientation을 요청한다. 요청이 적용돼 Window가 유지되는 동안 Portrait의 Start/Preview/End 앱 좌표 배치를 그대로 유지하고, 읽기 방향이 있는 개별 control content만 기기 방향을 따라 회전한다. Portrait 요청은 멀티 윈도우·large screen·제조사 동작까지 고정하는 보장이 아니므로, 실제 Window가 바뀌면 `CameraLayoutMode`와 `ControlEdgeOrder`가 adaptive fallback을 담당한다.
 
-`CameraLayoutMode`는 window size + posture만 입력으로 받는다. `ControlEdgeOrder`와 Preview target rotation은 observable display rotation을 읽고, ImageCapture target rotation은 기기 방향 listener를 읽는다. `UseCase.snapToSurfaceRotation()` 결과와 display rotation은 같은 Surface 회전 규약이다. control content는 두 값을 각도로 바꾼 뒤 `device target rotation − display rotation`을 정규화한다. 기기를 따라 Window도 회전하면 추가 UI 회전은 0이다. UI 배치와 CameraX/GL transform 사이에는 코드 의존성을 만들지 않는다.
+`CameraLayoutMode`는 현재 측정한 너비·높이만 입력으로 받는다. posture는 아직 구독하지 않는다. `ControlEdgeOrder`와 Preview target rotation은 observable display rotation을 읽고, ImageCapture target rotation은 기기 방향 listener를 읽는다. `UseCase.snapToSurfaceRotation()` 결과와 display rotation은 같은 Surface 회전 규약이다. control content는 두 값을 각도로 바꾼 뒤 `device target rotation − display rotation`을 정규화한다. 기기를 따라 Window도 회전하면 추가 UI 회전은 0이다. UI 배치와 CameraX/GL transform 사이에는 코드 의존성을 만들지 않는다.
 
 `ImageCapture.targetRotation`은 `OrientationEventListener`의 양자화된 기기 방향을 사용한다. `Preview.targetRotation`은 화면 좌표계에 맞도록 실제 display rotation을 사용한다. Portrait 요청이 적용된 Phone에서는 display가 유지되어 Preview도 유지되지만 Capture와 control content는 물리적 기기 방향을 계속 반영한다. 각 신호는 독립적으로 구독하고 수명 관리한다.
 
@@ -134,9 +137,9 @@ fun CameraAdaptiveLayout(
 
 Child composable 트리는 `layoutMode`와 무관하게 항상 동일하게 유지한다(`00` §6) — `when`으로 트리 자체를 스왑하지 않는다. Custom `Layout`(measure/place)이 실제로 필요해지는 지점까지는 표준 Compose primitive(`Row`/`Column`/`Box` 조합)로 버틴다. 미리 만들지 않는다.
 
-**P0는 `Portrait` 분기의 measure/place만 채운다.** `Landscape`/`Tabletop`/`Book`은 타입은 존재하되 구현은 `TODO()`로 남긴다 — `00` §3, §4가 요구한 "구조는 처음부터, 구현은 순서대로"를 여기서 구체화한 것이다.
+초기에는 Portrait부터 구현했고, 현재 고정 `Box` 트리에서 Portrait/Landscape 배치를 모두 처리한다. `Tabletop`/`Book` 타입과 TODO는 두지 않았다. 실제 자세 이벤트와 필요한 UI가 확인되면 해당 타입과 배치를 함께 추가한다.
 
-**Material3 Adaptive 라이브러리(`SupportingPaneScaffold` 등)는 채택하지 않는다.** 그 라이브러리는 list-detail 내비게이션 UI를 위해 설계된 것이라, 고정 3-region(StartControls/Preview/EndControls) 카메라 레이아웃엔 맞지 않는다. `androidx.window`(`WindowInfoTracker`, `FoldingFeature`)는 posture 감지에만 쓰고, 레이아웃 자체는 위 스케치처럼 직접 만든다.
+현재 고정 3-region(StartControls/Preview/EndControls)은 표준 `Box`로 구현할 수 있어 별도 Adaptive scaffold를 도입하지 않았다. `androidx.window`의 자세 이벤트 구독도 아직 연결하지 않았다. 구체 구현은 [CameraScreen](../app/src/main/java/com/newfeelcamera/ui/camera/CameraScreen.kt)과 [CameraLayoutMode](../app/src/main/java/com/newfeelcamera/ui/camera/layout/CameraLayoutMode.kt)를 따른다.
 
 ## 7. Filter / LUT 아키텍처 — 공유 입력과 분리된 실행 경로
 
@@ -160,27 +163,22 @@ CameraUiState.selectedFilm (단일 source of truth)
 
 ## 8. Filter 모델 확장성
 
-```kotlin
-data class FilmFilter(
-    val id: String,
-    val displayName: String,
-    val params: FilterParams,
-)
-```
+현재 [FilmPreset](../app/src/main/java/com/newfeelcamera/camera/filter/FilmPreset.kt)은 LUT 자산 경로를 가진 `WARM`·`DUSK` enum이다. 별도의 `FilmFilter`/`FilterParams` 추상화는 사용하지 않는다.
 
 P0는 이 리스트가 정확히 2개다(`00` §3) — 런타임 필터 조합/블렌딩 파이프라인은 만들지 않는다. 목록을 늘리는 것은 P1이다(`00` §4).
 
-"현재 선택된 Film"은 이 목록과 별개의 상태다 — 어떤 `FilmFilter`가 지금 활성인지를 가리키는 값이며, `00` §1/§10의 source of truth가 바로 이 값이다. 이 상태는 UI State(`CameraViewModel`, §2)가 들고 있고, Preview와 Capture는 §7의 규칙대로 작업용 snapshot만 전달받는다.
+"현재 선택된 Film"은 이 목록과 별개의 상태다 — 어떤 `FilmPreset`이 지금 활성인지를 가리키는 값이며, `00` §1/§10의 source of truth가 바로 이 값이다. 이 상태는 UI State(`CameraViewModel`, §2)가 들고 있고, Preview와 Capture는 §7의 규칙대로 작업용 snapshot만 전달받는다.
 
 ## 9. DI — Hilt constructor injection부터 사용한다
 
 `CameraController`처럼 Hilt가 생성할 수 있는 클래스는 `@Inject constructor`와 `@ApplicationContext`로 주입한다. Module은 `ProcessCameraProvider`/Executor처럼 생성자를 직접 호출할 수 없는 객체를 제공하거나, 인터페이스 구현을 교체해야 할 때만 추가한다. Controller는 camera session 상태를 가지므로 `@Singleton`으로 만들지 않고, `CameraViewModel` 생성자에 주입된 인스턴스를 해당 화면 범위에서 사용한다.
 
-## 10. 알려진 오픈 아이템 요약
+## 10. 현재 결정과 후속 검토
 
-| 항목 | 분류 | 확정 위치(예정) |
+| 항목 | 현재 상태 | 근거·후속 범위 |
 |---|---|---|
-| minSdk | TBD — skeleton 생성 전 확정 | `00` §2 |
-| SurfaceProvider 재사용 필요 여부·정도 | Verify First | `05-lifecycle-and-resource-ownership.md` |
-| `Tabletop`/`Book`의 구체적 배치 계산 | Verify First (P1) | `04-adaptive-layout.md` |
-| DI 프레임워크·scope | Verify First | 구현 시점 |
+| minSdk | 29로 확정 | `00` §2, `app/build.gradle.kts` |
+| SurfaceProvider 소유권 | GL View 소유, Renderer가 binding 수명 관리 | §4, `05` §4·§8 |
+| DI 프레임워크·scope | Hilt, Controller는 CameraViewModel 범위에서 사용 | §9 |
+| `Tabletop`/`Book` | 자세별 타입·UI 보류 | 실제 자세 이벤트와 UI 요구 확인 후 결정 |
+| Capture Context loss | 자동 복구 미구현 | `05` §9에서 후속 범위로 구분 |

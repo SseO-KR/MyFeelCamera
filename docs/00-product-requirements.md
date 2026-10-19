@@ -1,19 +1,21 @@
 # 00. Product Requirements
 
+현재 코드 기준은 1.0.4 (5)다. P0/P1은 초기 개발 순서를 설명하며, 현재 기능·빌드 범위는 [README](../README.md)와 아래 지원 범위를 따른다. 초기 계획에서 달라진 결정은 해당 절에 반영한다.
+
 ## 1. 목적
 
 Android용 필름 카메라 앱을 만든다. 이 프로젝트는 두 목표를 동등한 우선순위로 갖는다.
 
 1. 실제로 안정적으로 동작하는 필름 카메라 앱을 완성한다.
-2. CameraX, Jetpack Compose, Android lifecycle, Surface, OpenGL ES, SurfaceTexture, OES texture, shader, LUT 처리, adaptive layout을 직접 구현하며 학습한다.
+2. CameraX, Jetpack Compose, Android lifecycle, Surface, OpenGL ES, SurfaceTexture, OES texture, shader, LUT 처리, adaptive layout을 구현하고 코드를 분석하며 학습한다.
 
-두 번째 목표 때문에 AI는 요구사항 정리·architecture 설계·책임 분리·module/package 구조·interface/class skeleton·함수 signature·TODO·구현 순서 제안·코드 리뷰까지만 담당한다. CameraX/OpenGL/Compose custom layout 등 핵심 구현은 AI가 대신 완성하지 않는다 — 이 원칙은 이 문서 이후 모든 설계 문서와 코드 골격에 적용된다.
+초기에는 AI의 설명·골격·리뷰를 받으며 핵심 코드를 직접 작성했다. 이후 구현 속도와 학습 방식을 조정해 AI와 동작하는 구현을 먼저 만들고, 코드 흐름을 따라가며 모르는 개념과 대안을 학습하는 방식으로 전환했다. 구현·수정·테스트 지원 범위와 사례는 [AI 활용 문서](portfolio/ai-collaboration.md)에 정리한다.
 
 ### 핵심 불변식 (Core Invariant)
 
 > 사용자가 실시간 Preview에서 본 LUT 필터 결과와, 실제 촬영해 저장한 사진의 필터 결과는 시각적으로 최대한 일치해야 한다.
 
-"최대한 일치"는 픽셀 단위로 동일한 바이트를 요구하지 않는다. Preview와 Capture의 **실행 방식**(셰이더 구현을 공유하는지, 각각 독립된 파이프라인으로 구현하는지)은 지금 정하지 않는다 — 실험과 구현을 거치며 결정한다(§10). 지금 확정하는 것은 실행 방식이 아니라 **입력**이다:
+"최대한 일치"는 픽셀 단위로 동일한 바이트를 요구하지 않는다. 초기에는 Preview와 Capture의 실행 방식 결정을 미루고 **입력**의 일관성을 먼저 정했다. 현재는 각자의 GL Context와 셰이더 진입점에서 같은 필름과 LUT를 사용하는 경로를 구현했다(§10):
 
 - Preview와 Capture는 반드시 **같은 Filter/LUT source of truth**(같은 필터 파라미터 모델 인스턴스, 같은 LUT asset)를 참조해야 한다.
 - 이 source of truth가 둘로 갈라지면(예: Preview용 파라미터와 Capture용 파라미터가 별도로 존재) 핵심 불변식을 지킬 방법이 없어지므로, 이것만은 지금 확정한다.
@@ -22,9 +24,10 @@ Android용 필름 카메라 앱을 만든다. 이 프로젝트는 두 목표를 
 
 | 항목 | 값 | 비고 |
 |---|---|---|
-| minSdk | TBD — 프로젝트 skeleton(Gradle build 파일) 생성 전 확정 | 지금 architecture 설계 자체를 막는 값은 아니다(주로 권한 처리 분기·일부 API 가용성에만 영향). 다만 Gradle build 파일은 구체적 숫자 없이 만들 수 없으므로 "Later"가 아니라 "다음 마일스톤(skeleton 생성) 전에 결정해야 하는 TBD"로 구분한다 |
-| compileSdk / targetSdk | 빌드 시점 최신 stable | |
-| 화면 폼팩터 | Phone / Foldable / Large screen(태블릿) / Multi-window(resized) | **아키텍처는 전부 대응 가능하게 설계한다 — §6** |
+| minSdk | 29 (Android 10) | MediaStore 저장에서 API 28 이하의 저장소 권한 분기를 추가하지 않는 선택 |
+| compileSdk / targetSdk | 37 / 37 | 현재 [빌드 설정](../app/build.gradle.kts) 기준 |
+| 그래픽 | OpenGL ES 3.0 필수 | Manifest의 하드웨어 요구 조건 |
+| 화면 폼팩터 | Phone 중심, 실제 창 크기에 따른 Portrait/Landscape 배치 | Foldable 자세별 UI는 후속 범위이며 큰 화면 검증 범위는 [검증 문서](portfolio/validation.md) 참고 |
 | 카메라 | 후면 카메라 전용 (확정) | P0는 후면 전용으로 확정한다. 전면 카메라는 현재 scope 밖 — 지원 여부, 전환 UI 모두 다루지 않는다 |
 
 ## 3. P0 기능
@@ -42,7 +45,9 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 
 ## 4. P1 이후
 
-- Landscape / Large screen / Foldable(Tabletop, Book 등) 레이아웃의 실제 구현 — **아키텍처 자체는 P0부터 이 모드들을 배제하지 않는 구조로 만들어져 있어야 한다(§6). P1은 "타입/구조는 있는데 비어 있던 자리"를 채우는 작업이지, 새 구조를 만드는 작업이 아니다.**
+초기 확장 목록이다. 현재는 Zoom·Flash·중앙 AF/AE·최근 사진·볼륨 셔터·설정 영속화가 연결돼 있다. 추가 필름과 폴더블 자세별 UI, 성능 튜닝은 후속 범위다.
+
+- 실제 창 크기에 따른 Portrait/Landscape 배치는 구현했다. Foldable의 Tabletop/Book 등 추가 모드는 자세 이벤트와 UI 요구를 관찰한 뒤 타입과 배치를 함께 추가한다(§6).
 - 기본 Zoom / Flash / 중앙 고정 AF·AE
 - 카메라 화면에는 이 앱에서 저장한 가장 최근 사진의 썸네일을 표시하고, 누르면 해당 사진을 갤러리 앱에서 연다. 저장한 사진이 없으면 갤러리 버튼은 비활성화한다.
 - 필터를 여러 개로 확장, 필터 선택 UI 고도화
@@ -53,7 +58,8 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 - 사진 저장이 성공하면 촬영을 막지 않는 짧은 안내 문구를 표시하고, 실패하면 기존 촬영 오류 메시지를 사용자에게 보여준다.
 - 설정 화면에서 시작 필름(Warm/Dusk)과 프리뷰 격자 표시 여부를 변경하고 앱 재실행 후에도 유지한다. 시작 필름은 카메라 화면의 초기 선택값이며, 카메라 화면에서 일시적으로 필름을 바꾸는 동작은 설정값을 덮어쓰지 않는다. 격자 설정은 Preview 위 UI 오버레이만 제어하고 저장 사진에는 영향을 주지 않는다.
 - **v1 초기 배포 정책:** 무료 다운로드, 촬영 횟수 제한 없음, 광고 없음, 인앱결제 없음. 화면·볼륨 키 셔터 모두 구매 상태나 과거의 무료 촬영 카운터에 의존하지 않는다. 국내외 배포 국가 목록은 출시 전에 확정한다.
-- v1 기본 배포 빌드에는 Firebase Analytics·Crashlytics SDK를 포함하지 않는다. 이용 분석을 다시 켜려면 사용자 동의·설정 변경 흐름, 개인정보처리방침, Play 데이터 보안 신고를 먼저 일치시킨다.
+- 배포용 Release AAB에는 Firebase Analytics·Crashlytics SDK를 기본 포함해 앱 사용과 오류를 파악한다. `firebaseEnabled` 빌드 옵션은 사용하지 않으며, Firebase 설정 파일이 없으면 Release 빌드를 실패시킨다. 데이터 수집 방식은 사용자 선택, 개인정보처리방침, Play 데이터 보안 신고와 일치시킨다. **(사용자 요청, 2026-10-09)**
+- 최초 실행에서 사용 통계와 오류 보고를 각각 선택하며, 기본 선택은 모두 꺼짐이다. 선택하지 않아도 촬영 기능을 사용할 수 있고 설정에서 변경할 수 있다. Firebase는 둘 중 하나를 선택한 뒤 초기화한다. Analytics 철회는 즉시 적용하고 Crashlytics 철회는 SDK 계약에 따라 다음 앱 실행부터 적용한다. **(글로벌 출시 개인정보 정책 / Firebase API Contract, 2026-10-09)**
 - 기존 24장 한도와 일회성 무제한 구매는 초기 배포에서 사용하지 않는다. 유료화 재검토 시 기존 무료 사용자 경험, 판매 국가·세금, 결제·복원·환불 정책을 새로 확정한다. 이전 설계와 남겨 둔 Billing 구현은 [일회성 무제한 구매 문서](features/one-time-unlimited-purchase.md)에 기록한다.
 - GitHub에 소스를 공개한다. README 안내 문구와 공개 라이선스는 출시 전에 별도로 확정한다.
 
@@ -61,28 +67,28 @@ P0는 아래 루프가 **Portrait 한 방향에서** 실기기 검증 가능한 
 
 - 유료화와 관련된 계정·서버 기반 구매 검증·사용량 관리, 온보딩 플로우. v1에는 촬영 횟수 제한이 없다.
 - RAW, manual exposure, manual focus, 고급 color management
-- 셔터음·암전·필름 감기 인터랙션
+- 추가 암전·필름 감기 인터랙션. 기본 셔터음과 on/off 설정은 구현했다.
 - 범용 필터 체인, 런타임 필터 강도 슬라이더, 커스텀 필터 에디터
 - grain/vignette 등 LUT 외 필름 효과의 제품 채택 여부 — 제공된 shader는 지원하지만 P0 요구사항은 아니다
-- CameraX/GL 계층에 대한 자동화된 계측(instrumented) 테스트 하네스 — 로그 기반 수동 검증을 우선한다
+- CameraX/GL 계측 테스트의 기기·시나리오 범위 확대. 현재 생명주기 7개와 회전·비율 5개 테스트가 있다.
 - 모든 OEM별 카메라 edge case 대응, 과도한 performance optimization
 
 ## 6. Orientation / Adaptive 정책
 
 **아키텍처는 처음부터 Portrait / Landscape / Large screen / Foldable 전부를 대응 가능한 구조로 설계한다.** "Portrait 전용 구조를 먼저 만들고 나중에 adaptive하게 리팩터링한다"는 방식은 명시적으로 피한다. 구체적으로:
 
-- 레이아웃을 표현하는 타입(모드 구분)은 처음부터 Portrait 외의 모드를 포함한 형태로 정의한다. 아직 구현하지 않는 모드는 타입 자리는 있되 내부 구현이 `TODO()`인 상태로 둔다 — 타입 자체가 없는 상태로 두지 않는다.
+- `CameraLayoutMode`는 `Portrait`와 `Landscape`를 갖는 sealed interface다. 현재 두 배치를 구현했으며, Tabletop/Book 같은 미확정 타입을 TODO로 미리 만들지 않는다. 추가 모드는 실제 자세 이벤트와 UI 요구를 확인한 뒤 확장한다.
 - UI를 구성하는 Composable 트리는 모드에 따라 통째로 스왑되지 않고, 하나의 트리를 유지한 채 measure/place만 모드별로 달라지는 구조를 전제로 한다. (세부 타입/Composable 설계는 `01-architecture.md`에서 다룬다.)
 - 현재 Camera와 Settings가 같은 `MainActivity`를 사용하므로 Phone에서는 Activity의 Portrait orientation을 요청한다. 설정 이동 시에도 방향 요청을 바꾸지 않아 Window 축 교환에 따른 전체 remeasure, Preview 크기 변경과 control 재배치의 체감 지연을 피한다. 기본 카메라처럼 촬영 프레임은 유지하고 읽기 방향이 있는 content만 기기 방향을 따라 회전시킨다. 이 요청은 모든 환경에서 Window 방향을 보장하는 아키텍처 불변식이 아니다. 큰 화면·폴드·멀티윈도우·제조사 정책 등으로 요청이 적용되지 않아 실제 Window가 바뀌면 Camera와 Settings 모두 실제 크기/방향에 대응해야 한다.
 - Portrait 요청이 적용돼 Window가 유지되는 동안 StartControls는 앱 좌표상 상단, Preview는 중앙, EndControls는 하단에 고정한다. 기기를 오른쪽으로 돌리면 고정된 하단 EndControls가 사용자 기준 왼쪽에, 왼쪽으로 돌리면 오른쪽에, 180°에서는 위쪽에 보인다. 이 효과를 만들기 위해 Rail이나 Preview를 기기 방향에 따라 재배치하지 않는다.
 - Rail 배경과 PreviewSlot은 회전시키지 않는다. 버튼 아이콘, Film 정보, Preview overlay text처럼 읽기 방향이 있는 개별 콘텐츠만 실제 기기 방향을 따라 회전한다. `OrientationEventListener`의 물리 각도와 CameraX target rotation은 반대 방향 규약이므로, UI 각도는 실제 display rotation과 양자화된 device target rotation의 규약을 변환해 합성한다.
-- Window/layout 신호, display rotation, 물리적 기기 방향은 별개다. 실제 Window 크기와 posture는 `CameraLayoutMode`를, display rotation은 adaptive fallback의 UI 좌표계와 `Preview.targetRotation`을 결정한다. `ImageCapture.targetRotation`은 기기 방향 관찰값을 `Surface.ROTATION_*`으로 양자화한 신호를 사용한다. Preview와 ImageCapture가 항상 같은 회전 source를 쓴다고 가정하지 않는다.
+- Window/layout 신호, display rotation, 물리적 기기 방향은 별개다. 현재 실제 Window 너비·높이는 `CameraLayoutMode`를, display rotation은 adaptive fallback의 UI 좌표계와 `Preview.targetRotation`을 결정한다. `ImageCapture.targetRotation`은 기기 방향 관찰값을 `Surface.ROTATION_*`으로 양자화한 신호를 사용한다. Preview와 ImageCapture가 항상 같은 회전 source를 쓴다고 가정하지 않는다.
 
 **카메라/LUT P0 검증은 Portrait부터 시작한다.** 다만 현재 사용자 요구에 따라 3-region UI의 방향별 배치는 PreviewView 단계부터 구현·검증한다. CameraX `targetRotation`과 GL texture transform은 UI layout과 별도의 카메라 회전 단계에서 구현·검증한다.
 
 ## 7. Foldable 정책
 
-Foldable posture는 비즈니스 state가 아니라 presentation/layout input으로 취급한다. §6의 원칙을 그대로 따른다 — 아키텍처는 posture를 입력으로 받을 자리를 처음부터 갖고, 실제 Tabletop/Book 배치 로직은 P1 이후 실기기/에뮬레이터 관찰을 거쳐 구현한다(추측성 설계를 피하기 위해 — Verify First).
+Foldable posture를 도입한다면 presentation/layout input으로 취급한다. 현재는 힌지 자세를 구독하지 않으며, 창 크기에 따른 두 배치만 사용한다. Tabletop/Book의 타입·입력·배치는 실제 이벤트와 필요한 UI를 관찰한 뒤 추가한다. **(Later / Verify First)**
 
 ## 8. 기술 선택 — PreviewView를 사용하지 않는 이유
 
@@ -120,32 +126,25 @@ Camera device
 - 필터 파라미터를 표현하는 모델은 하나여야 하고, Preview와 Capture 양쪽이 그 **같은 인스턴스**를 참조해야 한다.
 - 이 모델은 LUT asset 참조를 포함해 "어떤 필터가 적용 중인가"를 완전히 표현할 수 있어야 한다.
 
-**지금 확정하지 않는 것 (Verify First — 실험 후 결정):**
-- Preview와 Capture가 셰이더 구현/코드를 공유하는지, 각자 독립적으로 구현하는지.
-- Capture가 Preview와 같은 GL 파이프라인을 재사용하는지, 다른 실행 방식을 쓰는지.
+**구현하며 확정한 것 (Implementation Decision):**
+- Preview는 OES 입력, Capture는 Bitmap에서 올린 2D texture 입력을 처리하므로 셰이더 진입점을 나눈다.
+- Preview의 GLSurfaceView와 Capture의 전용 스레드가 각각 GL Context·자원을 소유하고 같은 LUT 자산과 색보정 규칙을 사용한다.
 
-두 경로가 결과적으로 다른 코드로 구현되더라도, **같은 입력(같은 파라미터, 같은 LUT asset)에서 출발한다는 것**만으로 핵심 불변식을 지키는 데 필요한 최소 제약은 충족한다. 실행 방식의 통일 여부는 구현하면서 판단한다.
+두 경로가 결과적으로 다른 코드로 구현되더라도, **같은 입력(같은 파라미터, 같은 LUT asset)에서 출발한다는 것**만으로 핵심 불변식을 지키는 데 필요한 최소 제약은 충족한다. 두 셰이더의 공통 색보정 코드가 달라지지 않도록 함께 검토한다.
 
 사용자가 촬영 전 Film을 선택·변경할 수 있다는 것(§3)은 이 요구사항을 구체화한다 — "선택된 Film"이 곧 이 source of truth이고, 선택이 바뀌면 그 변경은 Preview와 다음 Capture 양쪽에 동일하게 반영되어야 한다.
 
 ## 11. LUT 리소스
 
-LUT는 이 프로젝트가 별도로 제공하는 제품 리소스다. 예정 위치: `app/src/main/assets/lut/`. P0는 2개의 LUT 파일로 시작한다(§3).
-
-파일이 도착하기 전까지 다음은 전부 미정이다 — 기존 어떤 프로젝트의 LUT 처리 방식도 참고하지 않고, 실제 파일을 분석해 새로 판단한다:
-
-- 포맷
-- Dimension
-- 1D/3D 여부
-- `DOMAIN_MIN` / `DOMAIN_MAX`
-- Data ordering
-- GPU representation
+제공된 WARM·DUSK LUT는 `app/src/main/assets/lut/`에 있다. 각 파일은 98,304바이트의 32×32×32 RGB 데이터이며 현재 셰이더는 3D texture로 샘플링한다. 파일 형식과 GPU 표현을 같은 요구로 취급하지 않으며, 분석 근거는 [렌더링·LUT 설계](03-rendering-and-lut.md)에 둔다.
 
 ## 12. 성능 목표
 
 지금 수치를 정하지 않는다(Later). 실측 없는 숫자는 근거 없는 정밀도다 — P0가 Portrait에서 실기기 동작을 마친 뒤, 실측 기반으로 정한다. 방향성만 명시한다: Preview는 사용자가 버벅임을 느끼지 않는 수준으로 부드러워야 하고, 촬영 후 저장까지의 지연은 사용자가 "멈췄다"고 느끼지 않는 선이어야 한다 — 둘 다 구체적 수치가 아니라 실기기 확인 대상이다.
 
 ## 13. 명시적으로 하지 않을 것 (Non-goals, P0 기준)
+
+아래는 초기 P0에서 범위를 좁힐 때의 목록이다. 현재 구현 범위는 §4와 README를 따른다.
 
 - Landscape / Large screen / Foldable의 실제 레이아웃 구현(아키텍처 자리는 마련하되 구현은 P1)
 - 결제 / Entitlement / 무료 장수 제한, 온보딩 플로우

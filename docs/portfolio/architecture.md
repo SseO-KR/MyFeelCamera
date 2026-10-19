@@ -58,7 +58,7 @@ flowchart TD
 
 Repository에도 인터페이스를 일괄 추가하지 않았습니다. 구현이 하나인 계약을 그대로 복제하기보다, 실제로 교체할 구현이나 제어 가능한 테스트 대역이 필요할 때 해당 경계를 추출하기로 했습니다. ViewModel은 설정 저장소의 세부 API 대신 Repository를 사용합니다.
 
-반면 `CaptureAnalytics`는 Firebase 구현과 기본 no-op 구현이 실제로 존재하므로 인터페이스를 둡니다. 같은 원칙을 적용하더라도 경계의 사용 목적에 따라 선택이 달라집니다.
+반면 `CaptureAnalytics`는 Firebase 구현과 설정 파일이 없는 Debug용 no-op 구현이 실제로 존재하므로 인터페이스를 둡니다. 같은 원칙을 적용하더라도 경계의 사용 목적에 따라 선택이 달라집니다.
 
 | 현재 선택 | 재검토할 조건 |
 | --- | --- |
@@ -75,7 +75,7 @@ Repository에도 인터페이스를 일괄 추가하지 않았습니다. 구현�
 
 | 판단 주제 | 선택과 이유 | 감수한 책임 |
 | --- | --- | --- |
-| 비동기 처리 흐름 | CameraX의 suspend 촬영 경로와 ViewModel의 `try/catch/finally`로 순서·오류·취소·촬영 상태 복구를 한 흐름에서 다룹니다. 콜백을 단계마다 연결하면 복구 경로가 흩어질 수 있다는 제약을 고려했습니다. | 촬영 작업이 ViewModel 수명에 연결되므로, 화면을 떠난 뒤에도 반드시 저장해야 하는 요구가 생기면 작업 수명을 다시 정해야 합니다. |
+| 비동기 처리 흐름 | CameraX의 suspend 촬영 경로와 ViewModel의 `try/catch/finally`로 순서·오류·취소·촬영 상태 복구를 한 흐름에서 다룹니다. 콜백을 단계마다 연결하면 복구 경로가 흩어질 수 있다는 제약을 고려했습니다. | 촬영 작업이 ViewModel 수명에 연결되므로, ViewModel이 정리된 뒤에도 저장을 완료해야 한다면 작업 수명을 다시 정해야 합니다. |
 | GL 실행과 자원 관리 | `CaptureProcessor`가 단일 스레드 Executor를 CoroutineDispatcher로 감싸, offscreen EGL·GL 작업을 같은 물리 스레드에서 실행합니다. | 전용 Executor와 EGL Context의 종료·해제를 소유해야 합니다. |
 
 코루틴을 사용한다는 사실만으로 GL 작업이 전용 스레드에서 실행되는 것은 아닙니다. 이 구현에서는 `captureDispatcher`가 실행 스레드를 정합니다. 취소는 다시 전파하고, 처리·저장 오류는 사용자 안내로 연결합니다. **(현재 구현 결정)**
@@ -89,7 +89,7 @@ ViewModel의 촬영 작업
   → 성공 안내 또는 오류 안내 / 촬영 상태 복구
 ```
 
-현재 촬영 작업은 ViewModel 범위에 연결되어 있습니다. 화면을 떠난 뒤에도 저장을 반드시 완료해야 하는 제품 요구가 생기면 작업 수명과 원본 보존 방식을 다시 설계해야 합니다. **(현재 선택의 한계)**
+설정 화면으로 이동해도 카메라 destination이 back stack에 남아 있으면 ViewModel은 유지됩니다. 단순한 화면 이탈과 ViewModel 정리는 다릅니다. destination 제거로 ViewModel이 정리되거나 프로세스가 종료된 뒤에도 저장을 보장해야 한다면, 작업 수명과 원본 보존 방식을 다시 설계해야 합니다. **(현재 선택의 한계)**
 
 관련 코드: [CameraViewModel](../../app/src/main/java/com/newfeelcamera/ui/camera/CameraViewModel.kt) · [CaptureProcessor](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureProcessor.kt) · [CaptureEglSession](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureEglSession.kt)
 
