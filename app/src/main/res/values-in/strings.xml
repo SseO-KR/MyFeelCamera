@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">Versi baru tersedia</string>
-    <string name="update_from_store">Perbarui aplikasi melalui Google Play.</string>
+    <string name="update_from_store">Perbarui ke versi terbaru melalui Google Play.\nAnda dapat terus memotret dan memperbarui nanti.</string>
     <string name="update_now">Perbarui</string>
     <string name="later">Nanti</string>
     <string name="play_store_open_failed">Google Play tidak dapat dibuka.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">Ambil foto</string>
     <string name="free_capture_count_failed">Sisa foto gratis tidak dapat diperiksa.</string>
     <string name="free_capture_limit_used">Anda telah menggunakan semua foto gratis.</string>
-    <string name="camera_permission_required">Izin kamera diperlukan.</string>
+    <string name="camera_permission_required">Izinkan akses kamera untuk mengambil foto.</string>
     <string name="photo_saved_count_failed">Foto tersimpan, tetapi jumlah foto gratis tidak dapat diperbarui.</string>
     <string name="camera_unknown_error">Terjadi kesalahan yang tidak diketahui saat memproses foto.</string>
     <string name="camera_not_ready">Kamera belum siap.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">Buka di browser</string>
     <string name="privacy_policy_open_failed">Kebijakan privasi tidak dapat dibuka.</string>
     <string name="current_version">Versi saat ini</string>
+    <string name="camera_initialization_failed">Kamera tidak dapat dimulai. Coba lagi.</string>
+    <string name="grant_camera_permission">Izinkan akses kamera</string>
+    <string name="open_app_settings">Buka setelan aplikasi</string>
+    <string name="camera_permission_settings_required">Izinkan akses kamera di setelan aplikasi untuk mengambil foto.</string>
+    <string name="app_settings_open_failed">Setelan aplikasi tidak dapat dibuka.</string>
+    <string name="camera_permission_intro_title">Siap mulai memotret?</string>
+    <string name="camera_permission_intro_message">Izinkan akses kamera untuk melihat pratinjau efek film dan mengambil foto.\n\nFoto disimpan di galeri perangkat Anda.</string>
+    <string name="start_camera">Mulai</string>
     <string name="switch_to_film">Ganti ke film %1$s</string>
     <string name="zoom_level">Perbesaran %1$.1f kali</string>
     <string name="flash">Flash</string>
+    <string name="telemetry_title">Bantu menyempurnakan FeelCamera</string>
+    <string name="telemetry_consent_description">Pilih data yang dikirim ke Google Firebase. Foto Anda tidak pernah diunggah. Semua fitur kamera tetap dapat digunakan tanpa persetujuan, dan pilihan dapat diubah di Setelan.</string>
+    <string name="analytics_setting">Statistik penggunaan</string>
+    <string name="analytics_setting_description">Mengirim interaksi aplikasi, perkiraan lokasi, dan pengenal aplikasi untuk memahami penggunaan.</string>
+    <string name="crash_reporting_setting">Laporan error</string>
+    <string name="crash_reporting_setting_description">Mengirim log kerusakan, data diagnostik, dan pengenal aplikasi, termasuk laporan yang sudah tersimpan di perangkat ini, untuk menemukan dan memperbaiki error.</string>
+    <string name="crash_reporting_restart_notice">Menonaktifkan laporan error berlaku setelah aplikasi ditutup sepenuhnya dan dibuka kembali.</string>
+    <string name="telemetry_save_choices">Simpan pilihan</string>
+    <string name="telemetry_decline">Jangan izinkan keduanya</string>
 </resources>

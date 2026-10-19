@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">Đã có phiên bản mới</string>
-    <string name="update_from_store">Cập nhật ứng dụng trên Google Play.</string>
+    <string name="update_from_store">Cập nhật lên phiên bản mới nhất trên Google Play.\nBạn có thể tiếp tục chụp ảnh và cập nhật sau.</string>
     <string name="update_now">Cập nhật</string>
     <string name="later">Để sau</string>
     <string name="play_store_open_failed">Không mở được Google Play.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">Chụp ảnh</string>
     <string name="free_capture_count_failed">Không kiểm tra được số lượt chụp miễn phí còn lại.</string>
     <string name="free_capture_limit_used">Bạn đã dùng hết lượt chụp miễn phí.</string>
-    <string name="camera_permission_required">Cần cấp quyền truy cập camera.</string>
+    <string name="camera_permission_required">Cho phép truy cập máy ảnh để chụp ảnh.</string>
     <string name="photo_saved_count_failed">Ảnh đã được lưu nhưng không cập nhật được số lượt chụp miễn phí.</string>
     <string name="camera_unknown_error">Đã xảy ra lỗi không xác định khi xử lý ảnh.</string>
     <string name="camera_not_ready">Camera chưa sẵn sàng.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">Mở trong trình duyệt</string>
     <string name="privacy_policy_open_failed">Không thể mở chính sách quyền riêng tư.</string>
     <string name="current_version">Phiên bản hiện tại</string>
+    <string name="camera_initialization_failed">Không thể khởi động máy ảnh. Hãy thử lại.</string>
+    <string name="grant_camera_permission">Cho phép truy cập máy ảnh</string>
+    <string name="open_app_settings">Mở cài đặt ứng dụng</string>
+    <string name="camera_permission_settings_required">Cho phép truy cập máy ảnh trong cài đặt ứng dụng để chụp ảnh.</string>
+    <string name="app_settings_open_failed">Không thể mở cài đặt ứng dụng.</string>
+    <string name="camera_permission_intro_title">Bắt đầu chụp ảnh nhé?</string>
+    <string name="camera_permission_intro_message">Cho phép truy cập máy ảnh để xem trước hiệu ứng phim và chụp ảnh.\n\nẢnh được lưu vào thư viện trên thiết bị của bạn.</string>
+    <string name="start_camera">Bắt đầu</string>
     <string name="switch_to_film">Chuyển sang bộ lọc %1$s</string>
     <string name="zoom_level">Mức thu phóng %1$.1f lần</string>
     <string name="flash">Đèn flash</string>
+    <string name="telemetry_title">Giúp cải thiện FeelCamera</string>
+    <string name="telemetry_consent_description">Chọn dữ liệu gửi đến Google Firebase. Ảnh của bạn không bao giờ được tải lên. Bạn vẫn dùng được mọi tính năng chụp ảnh khi không đồng ý và có thể đổi lựa chọn trong Cài đặt.</string>
+    <string name="analytics_setting">Thống kê sử dụng</string>
+    <string name="analytics_setting_description">Gửi tương tác trong ứng dụng, vị trí gần đúng và mã định danh ứng dụng để hiểu cách sử dụng.</string>
+    <string name="crash_reporting_setting">Báo cáo lỗi</string>
+    <string name="crash_reporting_setting_description">Gửi nhật ký sự cố, dữ liệu chẩn đoán và mã định danh ứng dụng, bao gồm báo cáo đã lưu trên thiết bị này, để tìm và sửa lỗi.</string>
+    <string name="crash_reporting_restart_notice">Việc tắt báo cáo lỗi có hiệu lực sau khi bạn đóng hoàn toàn rồi mở lại ứng dụng.</string>
+    <string name="telemetry_save_choices">Lưu lựa chọn</string>
+    <string name="telemetry_decline">Không cho phép cả hai</string>
 </resources>

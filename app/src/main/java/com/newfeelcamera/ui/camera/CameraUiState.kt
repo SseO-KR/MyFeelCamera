@@ -8,6 +8,11 @@ import com.newfeelcamera.data.settings.ShutterSoundLevel
 data class CameraUiState(
     val isSettingsLoaded: Boolean = false,
     val hasCameraPermission: Boolean = false,
+    val hasSeenCameraPermissionIntro: Boolean = false,
+    val hasRequestedCameraPermission: Boolean = false,
+    val isCameraReady: Boolean = false,
+    val isCameraInitializing: Boolean = false,
+    val cameraInitializationFailed: Boolean = false,
     val isCapturing: Boolean = false,
     val latestPhotoUri: Uri? = null,
     val lastSavedPhotoUri: Uri? = null,
@@ -20,4 +25,7 @@ data class CameraUiState(
     val maxZoomRatio: Float = 1f,
     val hasFlashUnit: Boolean = false,
     val isFlashEnabled: Boolean = false,
-)
+) {
+    val canCapture: Boolean
+        get() = isSettingsLoaded && hasCameraPermission && isCameraReady && !isCapturing
+}

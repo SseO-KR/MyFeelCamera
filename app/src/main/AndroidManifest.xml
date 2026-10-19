@@ -17,6 +17,9 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
+    <uses-feature
+        android:glEsVersion="0x00030000"
+        android:required="true" />
 
     <application
         android:name=".application.FeelCameraApp"
@@ -27,12 +30,26 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.NewFeelCamera">
+        <!-- SDK는 Release에 포함하되 사용자의 선택 전에는 초기화하지 않는다. -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
         <meta-data
             android:name="firebase_analytics_collection_enabled"
-            android:value="${firebaseCollectionEnabled}" />
+            android:value="false" />
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
-            android:value="${firebaseCollectionEnabled}" />
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_analytics_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_user_data"
+            android:value="false" />
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />

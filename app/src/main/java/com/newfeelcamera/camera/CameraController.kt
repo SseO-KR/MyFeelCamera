@@ -13,6 +13,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.ZoomState
 import androidx.camera.core.takePicture
 import androidx.core.content.ContextCompat
+import androidx.concurrent.futures.await
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.newfeelcamera.camera.capture.CaptureException
@@ -22,6 +24,9 @@ import com.newfeelcamera.camera.filter.FilmPreset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.Closeable
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 class CameraController @Inject constructor (
     @param:ApplicationContext private val appContext: Context,
@@ -31,6 +36,8 @@ class CameraController @Inject constructor (
     private var preview: Preview? = null
     private var imageCapture: ImageCapture? = null
     private var camera: Camera? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var isClosed = false
     private var zoomStateLiveData: LiveData<ZoomState>? = null
     private var zoomStateObserver: Observer<ZoomState>? = null
 
@@ -40,72 +47,80 @@ class CameraController @Inject constructor (
     private var pendingZoomRatio: Float? = null
     private var flashEnabled = false
 
-    fun bind(
+    suspend fun bind(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
         onCameraStateChanged: (ZoomState, Boolean) -> Unit,
-    ){
-        val providerFuture = ProcessCameraProvider.getInstance(appContext)
+    ) {
+        val provider = ProcessCameraProvider.getInstance(appContext).await()
+        currentCoroutineContext().ensureActive()
+        if (isClosed || lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+            throw CancellationException("Camera binding owner is no longer available")
+        }
+        cameraProvider = provider
 
-        providerFuture.addListener({
-            val cameraProvider = providerFuture.get()
-
-            val previewUseCase = Preview.Builder()
-                .setTargetRotation(previewTargetRotation)
-                .build()
-                .apply {
-                    setSurfaceProvider(surfaceProvider)
-                }
-
-            val capture = ImageCapture.Builder()
-                .setTargetRotation(imageCaptureTargetRotation)
-                .setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG)
-                .setFlashMode(if (flashEnabled) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
-                .build()
-
-            clearZoomObserver()
-            camera = null
-            pendingZoomRatio = null
-            cameraProvider.unbindAll()
-
-            val boundCamera = cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                previewUseCase,
-                capture,
-            )
-
-            preview = previewUseCase
-            imageCapture = capture
-            camera = boundCamera
-
-            val hasFlashUnit = boundCamera.cameraInfo.hasFlashUnit()
-            if (!hasFlashUnit) {
-                flashEnabled = false
-                capture.flashMode = ImageCapture.FLASH_MODE_OFF
+        val previewUseCase = Preview.Builder()
+            .setTargetRotation(previewTargetRotation)
+            .build()
+            .apply {
+                setSurfaceProvider(surfaceProvider)
             }
 
-            val zoomState = boundCamera.cameraInfo.zoomState
-            var restoreZoom = true
-            val observer = Observer<ZoomState> { state ->
-                onCameraStateChanged(state, hasFlashUnit)
-                if (restoreZoom) {
-                    restoreZoom = false
-                    requestedZoomRatio = requestedZoomRatio.coerceIn(
-                        state.minZoomRatio,
-                        state.maxZoomRatio,
-                    )
-                    if (requestedZoomRatio != state.zoomRatio) {
-                        requestZoom(boundCamera, requestedZoomRatio)
-                    }
-                }
-            }
-            zoomStateLiveData = zoomState
-            zoomStateObserver = observer
-            zoomState.observe(lifecycleOwner, observer)
-        },
-            ContextCompat.getMainExecutor(appContext)
+        val capture = ImageCapture.Builder()
+            .setTargetRotation(imageCaptureTargetRotation)
+            .setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG)
+            .setFlashMode(if (flashEnabled) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
+            .build()
+
+        unbind()
+
+        val boundCamera = provider.bindToLifecycle(
+            lifecycleOwner,
+            CameraSelector.DEFAULT_BACK_CAMERA,
+            previewUseCase,
+            capture,
         )
+
+        preview = previewUseCase
+        imageCapture = capture
+        camera = boundCamera
+
+        val hasFlashUnit = boundCamera.cameraInfo.hasFlashUnit()
+        if (!hasFlashUnit) {
+            flashEnabled = false
+            capture.flashMode = ImageCapture.FLASH_MODE_OFF
+        }
+
+        val zoomState = boundCamera.cameraInfo.zoomState
+        var restoreZoom = true
+        val observer = Observer<ZoomState> { state ->
+            onCameraStateChanged(state, hasFlashUnit)
+            if (restoreZoom) {
+                restoreZoom = false
+                requestedZoomRatio = requestedZoomRatio.coerceIn(
+                    state.minZoomRatio,
+                    state.maxZoomRatio,
+                )
+                if (requestedZoomRatio != state.zoomRatio) {
+                    requestZoom(boundCamera, requestedZoomRatio)
+                }
+            }
+        }
+        zoomStateLiveData = zoomState
+        zoomStateObserver = observer
+        zoomState.observe(lifecycleOwner, observer)
+    }
+
+    fun unbind() {
+        clearZoomObserver()
+        camera = null
+        pendingZoomRatio = null
+        val useCases = listOfNotNull(preview, imageCapture)
+        preview = null
+        imageCapture = null
+        if (useCases.isNotEmpty()) {
+            cameraProvider?.unbind(*useCases.toTypedArray())
+        }
     }
 
     private fun isSurfaceRotation(rotation: Int): Boolean =
@@ -196,9 +211,8 @@ class CameraController @Inject constructor (
     }
 
     override fun close() {
-        clearZoomObserver()
-        camera = null
-        pendingZoomRatio = null
+        isClosed = true
+        unbind()
         captureProcessor.close()
     }
 

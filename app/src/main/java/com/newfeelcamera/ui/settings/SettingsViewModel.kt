@@ -9,6 +9,7 @@ import com.newfeelcamera.R
 import com.newfeelcamera.camera.filter.FilmPreset
 import com.newfeelcamera.data.settings.AppSettingsRepository
 import com.newfeelcamera.data.settings.ShutterSoundLevel
+import com.newfeelcamera.data.analytics.TelemetryConsent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ data class SettingsUiState(
     val showGrid: Boolean = true,
     val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
     val mustPlayShutterSound: Boolean = CameraInfo.mustPlayShutterSound(),
+    val telemetryConsent: TelemetryConsent = TelemetryConsent(),
     @field:StringRes val errorMessageRes: Int? = null,
 )
 
@@ -43,6 +45,7 @@ class SettingsViewModel @Inject constructor(
                         startFilm = settings.startFilm,
                         showGrid = settings.showGrid,
                         shutterSoundLevel = settings.shutterSoundLevel,
+                        telemetryConsent = settings.telemetryConsent,
                     )
                 }
             }
@@ -94,6 +97,23 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 settingsRepository.setShutterSoundLevel(level)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                showWriteError(error)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    fun setTelemetryConsent(analyticsEnabled: Boolean, crashReportingEnabled: Boolean) {
+        val current = _uiState.value
+        if (current.isLoading || current.isSaving) return
+        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
+        viewModelScope.launch {
+            try {
+                settingsRepository.setTelemetryConsent(analyticsEnabled, crashReportingEnabled)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

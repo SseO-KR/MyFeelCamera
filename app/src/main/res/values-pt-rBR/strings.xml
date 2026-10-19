@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">Uma nova versão está disponível</string>
-    <string name="update_from_store">Atualize o app pelo Google Play.</string>
+    <string name="update_from_store">Atualize para a versão mais recente pelo Google Play.\nVocê pode continuar tirando fotos e atualizar mais tarde.</string>
     <string name="update_now">Atualizar</string>
     <string name="later">Mais tarde</string>
     <string name="play_store_open_failed">Não foi possível abrir o Google Play.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">Tirar foto</string>
     <string name="free_capture_count_failed">Não foi possível verificar quantas fotos grátis restam.</string>
     <string name="free_capture_limit_used">Você usou todas as fotos grátis.</string>
-    <string name="camera_permission_required">É necessária permissão para usar a câmera.</string>
+    <string name="camera_permission_required">Permita o acesso à câmera para tirar fotos.</string>
     <string name="photo_saved_count_failed">A foto foi salva, mas não foi possível atualizar o número de fotos grátis.</string>
     <string name="camera_unknown_error">Ocorreu um erro desconhecido ao processar a foto.</string>
     <string name="camera_not_ready">A câmera ainda não está pronta.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">Abrir no navegador</string>
     <string name="privacy_policy_open_failed">Não foi possível abrir a política de privacidade.</string>
     <string name="current_version">Versão atual</string>
+    <string name="camera_initialization_failed">Não foi possível iniciar a câmera. Tente novamente.</string>
+    <string name="grant_camera_permission">Permitir acesso à câmera</string>
+    <string name="open_app_settings">Abrir configurações do app</string>
+    <string name="camera_permission_settings_required">Permita o acesso à câmera nas configurações do app para tirar fotos.</string>
+    <string name="app_settings_open_failed">Não foi possível abrir as configurações do app.</string>
+    <string name="camera_permission_intro_title">Vamos começar a fotografar?</string>
+    <string name="camera_permission_intro_message">Permita o acesso à câmera para visualizar os efeitos de filme e tirar fotos.\n\nSuas fotos são salvas na galeria do dispositivo.</string>
+    <string name="start_camera">Começar</string>
     <string name="switch_to_film">Mudar para o filtro %1$s</string>
     <string name="zoom_level">Zoom de %1$.1f vezes</string>
     <string name="flash">Flash</string>
+    <string name="telemetry_title">Ajude a melhorar o FeelCamera</string>
+    <string name="telemetry_consent_description">Escolha quais dados enviar ao Google Firebase. Suas fotos nunca são enviadas. Todas as funções da câmera funcionam sem consentimento, e você pode alterar sua escolha nas configurações.</string>
+    <string name="analytics_setting">Estatísticas de uso</string>
+    <string name="analytics_setting_description">Envia interações com o app, localização aproximada e identificadores do app para entender seu uso.</string>
+    <string name="crash_reporting_setting">Relatórios de erros</string>
+    <string name="crash_reporting_setting_description">Envia registros de falhas, diagnósticos e identificadores do app, incluindo relatórios já armazenados neste dispositivo, para encontrar e corrigir erros.</string>
+    <string name="crash_reporting_restart_notice">Desativar os relatórios de erros passa a valer depois de fechar completamente e reabrir o app.</string>
+    <string name="telemetry_save_choices">Salvar escolhas</string>
+    <string name="telemetry_decline">Não permitir nenhum</string>
 </resources>

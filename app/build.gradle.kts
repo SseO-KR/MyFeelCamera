@@ -5,11 +5,10 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// v1 기본 빌드는 Firebase SDK를 제외한다. 동의 흐름이 준비되기 전까지 명시적 테스트에서만 포함한다.
-val firebaseEnabled = providers.gradleProperty("firebaseEnabled")
-    .map(String::toBoolean)
-    .getOrElse(false) && file("google-services.json").isFile
-val firebaseDebugCollectionEnabled = firebaseEnabled &&
+// 설정 파일이 있는 개발 환경과 모든 Release 빌드에 운영 모니터링 SDK를 포함한다.
+// 설정 파일이 없는 공개 소스의 Debug 빌드만 no-op 구현을 사용한다.
+val firebaseConfigured = file("google-services.json").isFile
+val firebaseDebugCollectionEnabled = firebaseConfigured &&
     providers.gradleProperty("firebaseDebugCollectionEnabled")
         .map(String::toBoolean)
         .getOrElse(false)
@@ -18,15 +17,15 @@ val monetizationCodeEnabled = providers.gradleProperty("monetizationCodeEnabled"
     .map(String::toBoolean)
     .getOrElse(false)
 
-if (firebaseEnabled) {
+if (firebaseConfigured) {
     pluginManager.apply("com.google.gms.google-services")
     pluginManager.apply("com.google.firebase.crashlytics")
 }
 
-// Firebase 의존성이 없는 공개 빌드에는 SDK 참조가 없는 구현만 컴파일한다.
+// Firebase 설정이 없는 환경에서도 Debug 빌드로 카메라 기능을 개발할 수 있다.
 android.sourceSets.named("main") {
     kotlin.directories.add(
-        if (firebaseEnabled) "src/firebase/java" else "src/noFirebase/java"
+        if (firebaseConfigured) "src/firebase/java" else "src/noFirebase/java"
     )
     if (monetizationCodeEnabled) {
         kotlin.directories.add("src/deferredMonetization/java")
@@ -46,9 +45,10 @@ android {
         applicationId = "com.newfeelcamera"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 5
+        versionName = "1.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "FIREBASE_CONFIGURED", firebaseConfigured.toString())
 
         if (monetizationCodeEnabled) {
             val playBillingPublicKey = providers.gradleProperty("playBillingPublicKey")
@@ -60,10 +60,10 @@ android {
 
     buildTypes {
         debug {
-            manifestPlaceholders["firebaseCollectionEnabled"] = firebaseDebugCollectionEnabled.toString()
+            buildConfigField("boolean", "TELEMETRY_ALLOWED", firebaseDebugCollectionEnabled.toString())
         }
         release {
-            manifestPlaceholders["firebaseCollectionEnabled"] = "false"
+            buildConfigField("boolean", "TELEMETRY_ALLOWED", "true")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -87,7 +87,7 @@ android {
 }
 
 dependencies {
-    if (firebaseEnabled) {
+    if (firebaseConfigured) {
         implementation(platform(libs.firebase.bom))
         implementation(libs.firebase.analytics)
         implementation(libs.firebase.crashlytics)
@@ -95,6 +95,7 @@ dependencies {
 
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.concurrent.futures.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
@@ -129,4 +130,13 @@ dependencies {
         implementation(libs.billing.ktx)
     }
     implementation(libs.play.app.update)
+}
+
+// 모니터링이 빠진 AAB가 실수로 배포되지 않도록 Release 빌드에서 확인한다.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        check(firebaseConfigured) {
+            "Release builds require app/google-services.json for Firebase Analytics and Crashlytics."
+        }
+    }
 }

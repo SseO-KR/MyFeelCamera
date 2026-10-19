@@ -24,10 +24,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -96,7 +100,8 @@ import kotlinx.coroutines.withContext
 private fun CameraPreviewBindingEffect(
     hasCameraPermission: Boolean,
     surfaceProvider: Preview.SurfaceProvider?,
-    onBindCamera: (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
+    bindingAttempt: Int,
+    onBindCamera: suspend (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -104,6 +109,7 @@ private fun CameraPreviewBindingEffect(
         lifecycleOwner,
         surfaceProvider,
         hasCameraPermission,
+        bindingAttempt,
     ) {
         if (hasCameraPermission && surfaceProvider != null) {
             onBindCamera(
@@ -168,7 +174,10 @@ private fun rememberDisplayRotation(): Int {
 @Composable
 fun CameraScreen(
     uiState: CameraUiState,
-    onBindCamera: (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
+    onBindCamera: suspend (LifecycleOwner, Preview.SurfaceProvider) -> Unit,
+    permissionRecovery: CameraPermissionRecovery,
+    permissionRequestInFlight: Boolean,
+    onRecoverCameraPermission: () -> Unit,
     onDisplayRotationChanged: (Int) -> Unit,
     onFilmSelected: (FilmPreset) -> Unit,
     onZoomInClick: () -> Unit,
@@ -197,10 +206,12 @@ fun CameraScreen(
     val surfaceProvider = remember {
         mutableStateOf<Preview.SurfaceProvider?>(null)
     }
+    var bindingAttempt by remember { mutableIntStateOf(0) }
 
     CameraPreviewBindingEffect(
         hasCameraPermission = uiState.hasCameraPermission,
         surfaceProvider = surfaceProvider.value,
+        bindingAttempt = bindingAttempt,
         onBindCamera = onBindCamera,
     )
 
@@ -222,6 +233,7 @@ fun CameraScreen(
             showCameraPreview = uiState.hasCameraPermission,
             onSurfaceProviderReady = { surfaceProvider.value = it },
             isCapturing = uiState.isCapturing,
+            canCapture = uiState.canCapture,
             selectedFilm = uiState.selectedFilm,
             showGrid = uiState.showGrid,
             zoomRatio = uiState.zoomRatio,
@@ -239,6 +251,60 @@ fun CameraScreen(
             onShutterClick = onShutterClick,
             onSettingsClick = onSettingsClick,
         )
+
+        when {
+            !uiState.hasCameraPermission -> CameraRecoveryPanel(
+                message = stringResource(
+                    if (permissionRecovery == CameraPermissionRecovery.OpenAppSettings) {
+                        R.string.camera_permission_settings_required
+                    } else {
+                        R.string.camera_permission_required
+                    },
+                ),
+                actionLabel = stringResource(
+                    if (permissionRecovery == CameraPermissionRecovery.OpenAppSettings) {
+                        R.string.open_app_settings
+                    } else {
+                        R.string.grant_camera_permission
+                    },
+                ),
+                enabled = !permissionRequestInFlight,
+                onAction = onRecoverCameraPermission,
+                modifier = Modifier.align(Alignment.Center),
+            )
+            uiState.cameraInitializationFailed -> CameraRecoveryPanel(
+                message = stringResource(R.string.camera_initialization_failed),
+                actionLabel = stringResource(R.string.retry),
+                enabled = !uiState.isCameraInitializing,
+                onAction = { bindingAttempt += 1 },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CameraRecoveryPanel(
+    message: String,
+    actionLabel: String,
+    enabled: Boolean,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .padding(24.dp)
+            .widthIn(max = 340.dp)
+            .background(Rail, RoundedCornerShape(12.dp))
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(text = message, color = Ink, textAlign = TextAlign.Center)
+        TextButton(onClick = onAction, enabled = enabled) {
+            Text(text = actionLabel, color = if (enabled) Accent else InkDim)
+        }
     }
 }
 
@@ -251,6 +317,7 @@ private fun CameraControlLayout(
     showCameraPreview: Boolean,
     onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit,
     isCapturing: Boolean,
+    canCapture: Boolean,
     selectedFilm: FilmPreset,
     showGrid: Boolean,
     zoomRatio: Float,
@@ -342,6 +409,7 @@ private fun CameraControlLayout(
             isVertical = !isPortrait,
             contentRotationDegrees = contentRotationDegrees,
             isCapturing = isCapturing,
+            canCapture = canCapture,
             hasFlashUnit = hasFlashUnit,
             isFlashEnabled = isFlashEnabled,
             latestPhotoUri = latestPhotoUri,
@@ -471,6 +539,7 @@ private fun EndControlRail(
     isVertical: Boolean,
     contentRotationDegrees: Float,
     isCapturing: Boolean,
+    canCapture: Boolean,
     hasFlashUnit: Boolean,
     isFlashEnabled: Boolean,
     latestPhotoUri: Uri?,
@@ -488,6 +557,7 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                canCapture = canCapture,
                 hasFlashUnit = hasFlashUnit,
                 isFlashEnabled = isFlashEnabled,
                 latestPhotoUri = latestPhotoUri,
@@ -506,6 +576,7 @@ private fun EndControlRail(
         ) {
             EndRailActions(
                 isCapturing = isCapturing,
+                canCapture = canCapture,
                 hasFlashUnit = hasFlashUnit,
                 isFlashEnabled = isFlashEnabled,
                 latestPhotoUri = latestPhotoUri,
@@ -522,6 +593,7 @@ private fun EndControlRail(
 @Composable
 private fun EndRailActions(
     isCapturing: Boolean,
+    canCapture: Boolean,
     hasFlashUnit: Boolean,
     isFlashEnabled: Boolean,
     latestPhotoUri: Uri?,
@@ -540,6 +612,7 @@ private fun EndRailActions(
     )
     ShutterButton(
         isCapturing = isCapturing,
+        enabled = canCapture,
         onClick = onShutterClick,
     )
     RailAction(
@@ -1042,9 +1115,10 @@ private fun DialCircle(
 @Composable
 private fun ShutterButton(
     isCapturing: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val isEnabled = !isCapturing
+    val isEnabled = enabled && !isCapturing
     val accessibilityLabel = stringResource(R.string.shutter)
     val savingLabel = stringResource(R.string.saving)
 

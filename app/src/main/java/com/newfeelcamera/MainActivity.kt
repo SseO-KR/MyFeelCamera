@@ -3,29 +3,26 @@ package com.newfeelcamera
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.newfeelcamera.ui.design.Accent
-import com.newfeelcamera.ui.design.Background
-import com.newfeelcamera.ui.design.Ink
-import com.newfeelcamera.ui.design.InkDim
+import com.newfeelcamera.ui.design.FeelCameraDialog
 import com.newfeelcamera.ui.navigation.FeelCameraNavHost
+import com.newfeelcamera.ui.settings.SettingsViewModel
+import com.newfeelcamera.ui.settings.TelemetryConsentDialog
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.core.net.toUri
 
@@ -43,31 +40,34 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         hideSystemBars()
         setContent {
+            val monitoringViewModel: SettingsViewModel = hiltViewModel()
+            val monitoringState by monitoringViewModel.uiState.collectAsStateWithLifecycle()
+            val needsMonitoringChoice = BuildConfig.FIREBASE_CONFIGURED && BuildConfig.TELEMETRY_ALLOWED &&
+                !monitoringState.isLoading && !monitoringState.telemetryConsent.hasMadeChoice
             FeelCameraNavHost(
                 registerVolumeShutterHandler = ::registerVolumeShutterHandler,
                 onCameraPermissionHandled = { cameraPermissionHandled = true },
             )
-            if (cameraPermissionHandled && updateAvailable && !updatePromptHandled) {
-                AlertDialog(
-                    onDismissRequest = ::dismissUpdatePrompt,
-                    title = { Text(stringResource(R.string.update_available)) },
-                    text = { Text(stringResource(R.string.update_from_store)) },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            dismissUpdatePrompt()
-                            openPlayStore()
-                        }) {
-                            Text(stringResource(R.string.update_now), color = Accent)
-                        }
+            if (cameraPermissionHandled && needsMonitoringChoice) {
+                TelemetryConsentDialog(
+                    isSaving = monitoringState.isSaving,
+                    errorMessageRes = monitoringState.errorMessageRes,
+                    onSave = monitoringViewModel::setTelemetryConsent,
+                )
+            }
+            if (cameraPermissionHandled && !monitoringState.isLoading && !needsMonitoringChoice &&
+                updateAvailable && !updatePromptHandled
+            ) {
+                FeelCameraDialog(
+                    title = stringResource(R.string.update_available),
+                    message = stringResource(R.string.update_from_store),
+                    confirmLabel = stringResource(R.string.update_now),
+                    dismissLabel = stringResource(R.string.later),
+                    onConfirm = {
+                        dismissUpdatePrompt()
+                        openPlayStore()
                     },
-                    dismissButton = {
-                        TextButton(onClick = ::dismissUpdatePrompt) {
-                            Text(stringResource(R.string.later), color = InkDim)
-                        }
-                    },
-                    containerColor = Background,
-                    titleContentColor = Ink,
-                    textContentColor = InkDim,
+                    onDismiss = ::dismissUpdatePrompt,
                 )
             }
         }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">Доступна новая версия</string>
-    <string name="update_from_store">Обновите приложение через Google Play.</string>
+    <string name="update_from_store">Обновите приложение до последней версии в Google Play.\nВы можете продолжить снимать и обновить приложение позже.</string>
     <string name="update_now">Обновить</string>
     <string name="later">Позже</string>
     <string name="play_store_open_failed">Не удалось открыть Google Play.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">Сделать фото</string>
     <string name="free_capture_count_failed">Не удалось проверить оставшееся число бесплатных снимков.</string>
     <string name="free_capture_limit_used">Вы использовали все бесплатные снимки.</string>
-    <string name="camera_permission_required">Требуется разрешение на использование камеры.</string>
+    <string name="camera_permission_required">Разрешите доступ к камере, чтобы делать снимки.</string>
     <string name="photo_saved_count_failed">Снимок сохранён, но число бесплатных снимков не удалось обновить.</string>
     <string name="camera_unknown_error">При обработке снимка произошла неизвестная ошибка.</string>
     <string name="camera_not_ready">Камера ещё не готова.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">Открыть в браузере</string>
     <string name="privacy_policy_open_failed">Не удалось открыть политику конфиденциальности.</string>
     <string name="current_version">Текущая версия</string>
+    <string name="camera_initialization_failed">Не удалось запустить камеру. Попробуйте ещё раз.</string>
+    <string name="grant_camera_permission">Разрешить доступ к камере</string>
+    <string name="open_app_settings">Открыть настройки приложения</string>
+    <string name="camera_permission_settings_required">Чтобы делать снимки, разрешите доступ к камере в настройках приложения.</string>
+    <string name="app_settings_open_failed">Не удалось открыть настройки приложения.</string>
+    <string name="camera_permission_intro_title">Начнём снимать?</string>
+    <string name="camera_permission_intro_message">Разрешите доступ к камере, чтобы просматривать эффекты плёнки и делать снимки.\n\nФотографии сохраняются в галерее устройства.</string>
+    <string name="start_camera">Начать</string>
     <string name="switch_to_film">Переключить на фильтр %1$s</string>
     <string name="zoom_level">Масштаб %1$.1f раза</string>
     <string name="flash">Вспышка</string>
+    <string name="telemetry_title">Помочь улучшить FeelCamera</string>
+    <string name="telemetry_consent_description">Выберите, какие данные отправлять в Google Firebase. Ваши фотографии никогда не загружаются. Все функции камеры доступны без согласия. Выбор можно изменить в настройках.</string>
+    <string name="analytics_setting">Статистика использования</string>
+    <string name="analytics_setting_description">Отправляет сведения о действиях в приложении, примерном местоположении и идентификаторы приложения для анализа использования.</string>
+    <string name="crash_reporting_setting">Отчёты об ошибках</string>
+    <string name="crash_reporting_setting_description">Отправляет журналы сбоев, диагностические данные и идентификаторы приложения, включая отчёты, уже сохранённые на устройстве, для поиска и исправления ошибок.</string>
+    <string name="crash_reporting_restart_notice">Отключение отчётов об ошибках действует после полного закрытия и повторного открытия приложения.</string>
+    <string name="telemetry_save_choices">Сохранить выбор</string>
+    <string name="telemetry_decline">Не разрешать ничего</string>
 </resources>

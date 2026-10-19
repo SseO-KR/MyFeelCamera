@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">يتوفر إصدار جديد</string>
-    <string name="update_from_store">يمكنك تحديث التطبيق من Google Play.</string>
+    <string name="update_from_store">يمكنك التحديث إلى أحدث إصدار من Google Play.\nيمكنك مواصلة التصوير والتحديث لاحقًا.</string>
     <string name="update_now">تحديث</string>
     <string name="later">لاحقًا</string>
     <string name="play_store_open_failed">تعذر فتح Google Play.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">التقاط صورة</string>
     <string name="free_capture_count_failed">تعذر التحقق من عدد الصور المجانية المتبقية.</string>
     <string name="free_capture_limit_used">لقد استخدمت جميع الصور المجانية.</string>
-    <string name="camera_permission_required">يلزم منح إذن الكاميرا.</string>
+    <string name="camera_permission_required">اسمح بالوصول إلى الكاميرا لالتقاط الصور.</string>
     <string name="photo_saved_count_failed">تم حفظ الصورة، لكن تعذر تحديث عدد الصور المجانية.</string>
     <string name="camera_unknown_error">حدث خطأ غير معروف أثناء معالجة الصورة.</string>
     <string name="camera_not_ready">الكاميرا غير جاهزة بعد.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">فتح في المتصفح</string>
     <string name="privacy_policy_open_failed">تعذّر فتح سياسة الخصوصية.</string>
     <string name="current_version">الإصدار الحالي</string>
+    <string name="camera_initialization_failed">تعذّر تشغيل الكاميرا. حاول مرة أخرى.</string>
+    <string name="grant_camera_permission">السماح بالوصول إلى الكاميرا</string>
+    <string name="open_app_settings">فتح إعدادات التطبيق</string>
+    <string name="camera_permission_settings_required">اسمح بالوصول إلى الكاميرا في إعدادات التطبيق لالتقاط الصور.</string>
+    <string name="app_settings_open_failed">تعذّر فتح إعدادات التطبيق.</string>
+    <string name="camera_permission_intro_title">هل نبدأ التصوير؟</string>
+    <string name="camera_permission_intro_message">اسمح بالوصول إلى الكاميرا لمعاينة تأثيرات الأفلام والتقاط الصور.\n\nتُحفظ صورك في معرض جهازك.</string>
+    <string name="start_camera">ابدأ</string>
     <string name="switch_to_film">التبديل إلى فيلم %1$s</string>
     <string name="zoom_level">التكبير %1$.1f مرة</string>
     <string name="flash">الفلاش</string>
+    <string name="telemetry_title">المساعدة في تحسين FeelCamera</string>
+    <string name="telemetry_consent_description">اختر البيانات التي تُرسل إلى Google Firebase. لا تُرفع صورك مطلقًا. يمكنك استخدام جميع ميزات الكاميرا دون الموافقة، وتغيير اختيارك في الإعدادات.</string>
+    <string name="analytics_setting">إحصاءات الاستخدام</string>
+    <string name="analytics_setting_description">يرسل تفاعلات التطبيق والموقع التقريبي ومعرّفات التطبيق لفهم كيفية استخدامه.</string>
+    <string name="crash_reporting_setting">تقارير الأخطاء</string>
+    <string name="crash_reporting_setting_description">يرسل سجلات الأعطال وبيانات التشخيص ومعرّفات التطبيق، بما فيها التقارير المحفوظة على هذا الجهاز، لاكتشاف الأخطاء وإصلاحها.</string>
+    <string name="crash_reporting_restart_notice">يسري إيقاف تقارير الأخطاء بعد إغلاق التطبيق بالكامل وإعادة فتحه.</string>
+    <string name="telemetry_save_choices">حفظ الاختيارات</string>
+    <string name="telemetry_decline">عدم السماح بأي منهما</string>
 </resources>

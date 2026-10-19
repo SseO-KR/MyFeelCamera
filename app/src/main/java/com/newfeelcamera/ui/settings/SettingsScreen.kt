@@ -2,6 +2,7 @@ package com.newfeelcamera.ui.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -57,6 +58,16 @@ import com.newfeelcamera.ui.labelRes
 private const val PRIVACY_POLICY_URL =
     "https://curly-crowberry-6e3.notion.site/FeelCamera-3f4a6411e1a4805f968df6a70c04a331"
 
+internal fun openPrivacyPolicy(context: Context) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
+    } catch (_: SecurityException) {
+        Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
+    }
+}
+
 @Composable
 fun SettingsRoute(
     onBackClick: () -> Unit,
@@ -70,15 +81,13 @@ fun SettingsRoute(
         onStartFilmSelected = viewModel::setStartFilm,
         onGridChanged = viewModel::setShowGrid,
         onShutterSoundLevelSelected = viewModel::setShutterSoundLevel,
-        onPrivacyPolicyClick = {
-            try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
-            } catch (_: ActivityNotFoundException) {
-                Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
-            } catch (_: SecurityException) {
-                Toast.makeText(context, R.string.privacy_policy_open_failed, Toast.LENGTH_SHORT).show()
-            }
+        onAnalyticsChanged = { enabled ->
+            viewModel.setTelemetryConsent(enabled, uiState.telemetryConsent.crashReportingEnabled)
         },
+        onCrashReportingChanged = { enabled ->
+            viewModel.setTelemetryConsent(uiState.telemetryConsent.analyticsEnabled, enabled)
+        },
+        onPrivacyPolicyClick = { openPrivacyPolicy(context) },
         onBackClick = onBackClick,
     )
 }
@@ -89,6 +98,8 @@ fun SettingsScreen(
     onStartFilmSelected: (FilmPreset) -> Unit,
     onGridChanged: (Boolean) -> Unit,
     onShutterSoundLevelSelected: (ShutterSoundLevel) -> Unit,
+    onAnalyticsChanged: (Boolean) -> Unit,
+    onCrashReportingChanged: (Boolean) -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -284,6 +295,30 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                    }
+                }
+
+                if (BuildConfig.FIREBASE_CONFIGURED && BuildConfig.TELEMETRY_ALLOWED) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.telemetry_title),
+                            modifier = Modifier.semantics { heading() },
+                            color = Ink,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        TelemetryChoices(
+                            analyticsEnabled = uiState.telemetryConsent.analyticsEnabled,
+                            crashReportingEnabled = uiState.telemetryConsent.crashReportingEnabled,
+                            onAnalyticsChanged = onAnalyticsChanged,
+                            onCrashReportingChanged = onCrashReportingChanged,
+                            enabled = !uiState.isSaving,
+                        )
+                        Text(
+                            text = stringResource(R.string.crash_reporting_restart_notice),
+                            color = InkDim,
+                            fontSize = 13.sp,
+                        )
                     }
                 }
 

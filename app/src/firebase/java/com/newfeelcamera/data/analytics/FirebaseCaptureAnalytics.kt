@@ -14,10 +14,12 @@ import javax.inject.Inject
 
 class FirebaseCaptureAnalytics @Inject constructor(
     @ApplicationContext context: Context,
+    private val collectionController: TelemetryCollectionController,
 ) : CaptureAnalytics {
     private val analytics by lazy { FirebaseAnalytics.getInstance(context) }
 
     override fun photoSaved(event: PhotoSavedEvent) {
+        if (!collectionController.canRecordAnalyticsEvents) return
         val parameters = Bundle().apply {
             putString("film", when (event.film) {
                 FilmPreset.WARM -> "warm"

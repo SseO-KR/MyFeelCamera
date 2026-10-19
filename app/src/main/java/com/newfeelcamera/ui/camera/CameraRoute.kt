@@ -4,18 +4,27 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.Settings
 import android.view.OrientationEventListener
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.LocalActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.UseCase
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -24,6 +33,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.newfeelcamera.R
+import com.newfeelcamera.ui.design.FeelCameraDialog
 import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
@@ -101,6 +111,27 @@ fun CameraRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val activity = LocalActivity.current
+    var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
+    var permissionIntroDismissed by rememberSaveable { mutableStateOf(false) }
+    var permissionRequestInFlight by rememberSaveable { mutableStateOf(false) }
+    var permissionRecovery by remember { mutableStateOf(CameraPermissionRecovery.RequestPermission) }
+
+    fun updatePermission(granted: Boolean) {
+        if (granted) hasRequestedPermission = false
+        viewModel.onIntent(CameraAction.CameraPermissionChanged(granted))
+        permissionRecovery = cameraPermissionRecovery(
+            hasRequestedPermission = hasRequestedPermission || uiState.hasRequestedCameraPermission,
+            shouldShowRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
+            } == true,
+        )
+    }
+
+    fun hasCameraPermission(): Boolean = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.CAMERA,
+    ) == PackageManager.PERMISSION_GRANTED
 
     LaunchedEffect(viewModel, lifecycleOwner, context) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -114,25 +145,45 @@ fun CameraRoute(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
-        viewModel.onIntent(
-            CameraAction.CameraPermissionChanged(granted),
-        )
+        permissionRequestInFlight = false
+        updatePermission(granted)
+        viewModel.saveCameraPermissionState(hasRequestedPermission = !granted)
         onCameraPermissionHandled()
     }
 
-    LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA,
-        ) == PackageManager.PERMISSION_GRANTED
+    fun requestCameraPermission() {
+        if (permissionRequestInFlight) return
+        permissionIntroDismissed = true
+        hasRequestedPermission = true
+        permissionRequestInFlight = true
+        viewModel.saveCameraPermissionState(hasRequestedPermission = true)
+        permissionLauncher.launch(Manifest.permission.CAMERA)
+    }
 
-        viewModel.onIntent(
-            CameraAction.CameraPermissionChanged(granted),
-        )
+    val showPermissionIntro = uiState.isSettingsLoaded &&
+        !uiState.hasCameraPermission &&
+        !uiState.hasSeenCameraPermissionIntro &&
+        !permissionIntroDismissed
 
-        if (!granted) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        } else {
+    LaunchedEffect(uiState.isSettingsLoaded, uiState.hasRequestedCameraPermission) {
+        updatePermission(hasCameraPermission())
+    }
+
+    LaunchedEffect(
+        uiState.isSettingsLoaded,
+        uiState.hasCameraPermission,
+        uiState.hasSeenCameraPermissionIntro,
+        uiState.hasRequestedCameraPermission,
+        showPermissionIntro,
+        permissionRequestInFlight,
+    ) {
+        if (!uiState.isSettingsLoaded) return@LaunchedEffect
+        if (uiState.hasCameraPermission &&
+            (!uiState.hasSeenCameraPermissionIntro || uiState.hasRequestedCameraPermission)
+        ) {
+            viewModel.saveCameraPermissionState(hasRequestedPermission = false)
+        }
+        if (!showPermissionIntro && !permissionRequestInFlight) {
             onCameraPermissionHandled()
         }
     }
@@ -142,6 +193,7 @@ fun CameraRoute(
     }
 
     LifecycleResumeEffect(viewModel) {
+        updatePermission(hasCameraPermission())
         viewModel.refreshLatestPhoto()
         val unregister = registerVolumeShutterHandler {
             viewModel.onIntent(CameraAction.ShutterClicked)
@@ -152,6 +204,25 @@ fun CameraRoute(
     CameraScreen(
         uiState = uiState,
         onBindCamera = viewModel::bindCamera,
+        permissionRecovery = permissionRecovery,
+        permissionRequestInFlight = permissionRequestInFlight || !uiState.isSettingsLoaded,
+        onRecoverCameraPermission = {
+            if (permissionRecovery == CameraPermissionRecovery.OpenAppSettings) {
+                val intent = Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    "package:${context.packageName}".toUri(),
+                )
+                try {
+                    context.startActivity(intent)
+                } catch (error: ActivityNotFoundException) {
+                    Toast.makeText(context, R.string.app_settings_open_failed, Toast.LENGTH_SHORT).show()
+                } catch (error: SecurityException) {
+                    Toast.makeText(context, R.string.app_settings_open_failed, Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                requestCameraPermission()
+            }
+        },
         onDisplayRotationChanged = { rotation ->
             viewModel.onIntent(
                 CameraAction.DisplayRotationChanged(rotation),
@@ -183,4 +254,18 @@ fun CameraRoute(
         },
         onSettingsClick = onOpenSettings,
     )
+
+    if (showPermissionIntro) {
+        FeelCameraDialog(
+            title = stringResource(R.string.camera_permission_intro_title),
+            message = stringResource(R.string.camera_permission_intro_message),
+            confirmLabel = stringResource(R.string.start_camera),
+            dismissLabel = stringResource(R.string.later),
+            onConfirm = ::requestCameraPermission,
+            onDismiss = {
+                permissionIntroDismissed = true
+                viewModel.saveCameraPermissionState(hasRequestedPermission = false)
+            },
+        )
+    }
 }

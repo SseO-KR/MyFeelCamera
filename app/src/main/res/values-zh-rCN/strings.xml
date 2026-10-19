@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="update_available">有新版本可用</string>
-    <string name="update_from_store">可在 Google Play 更新应用。</string>
+    <string name="update_available">新版本已准备好</string>
+    <string name="update_from_store">可通过 Google Play 更新至最新版本。\n您可以继续拍照，稍后再更新。</string>
     <string name="update_now">更新</string>
     <string name="later">稍后</string>
     <string name="play_store_open_failed">无法打开 Google Play。</string>
@@ -26,7 +26,7 @@
     <string name="shutter">拍照</string>
     <string name="free_capture_count_failed">无法查看剩余免费拍摄次数。</string>
     <string name="free_capture_limit_used">免费拍摄次数已用完。</string>
-    <string name="camera_permission_required">需要相机权限。</string>
+    <string name="camera_permission_required">请允许访问相机以拍摄照片。</string>
     <string name="photo_saved_count_failed">照片已保存，但无法更新免费拍摄次数。</string>
     <string name="camera_unknown_error">处理照片时发生未知错误。</string>
     <string name="camera_not_ready">相机尚未准备就绪。</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">在浏览器中打开</string>
     <string name="privacy_policy_open_failed">无法打开隐私政策。</string>
     <string name="current_version">当前版本</string>
+    <string name="camera_initialization_failed">无法启动相机，请重试。</string>
+    <string name="grant_camera_permission">允许使用相机</string>
+    <string name="open_app_settings">打开应用设置</string>
+    <string name="camera_permission_settings_required">请在应用设置中允许使用相机以拍摄照片。</string>
+    <string name="app_settings_open_failed">无法打开应用设置。</string>
+    <string name="camera_permission_intro_title">开始拍照吧？</string>
+    <string name="camera_permission_intro_message">预览胶片效果和拍摄照片需要访问相机。\n\n拍摄的照片会保存到设备相册。</string>
+    <string name="start_camera">开始</string>
     <string name="switch_to_film">切换到%1$s滤镜</string>
     <string name="zoom_level">缩放%1$.1f倍</string>
     <string name="flash">闪光灯</string>
+    <string name="telemetry_title">帮助改进 FeelCamera</string>
+    <string name="telemetry_consent_description">请选择要发送给 Google Firebase 的数据。您的照片不会上传。不同意也可以使用所有拍摄功能，并可在设置中更改选择。</string>
+    <string name="analytics_setting">使用统计</string>
+    <string name="analytics_setting_description">发送应用互动信息、大致位置和应用标识符，以了解应用的使用情况。</string>
+    <string name="crash_reporting_setting">错误报告</string>
+    <string name="crash_reporting_setting_description">发送崩溃日志、诊断信息和应用标识符（包括已保存在此设备上的报告），以查找并修复错误。</string>
+    <string name="crash_reporting_restart_notice">关闭错误报告后，需要完全关闭并重新打开应用才会生效。</string>
+    <string name="telemetry_save_choices">保存选择</string>
+    <string name="telemetry_decline">全部不允许</string>
 </resources>

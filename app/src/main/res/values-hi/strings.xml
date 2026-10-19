@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_available">नया संस्करण उपलब्ध है</string>
-    <string name="update_from_store">Google Play से ऐप अपडेट करें।</string>
+    <string name="update_from_store">Google Play से नवीनतम संस्करण में अपडेट करें।\nआप फ़ोटो लेना जारी रख सकते हैं और बाद में अपडेट कर सकते हैं।</string>
     <string name="update_now">अपडेट करें</string>
     <string name="later">बाद में</string>
     <string name="play_store_open_failed">Google Play नहीं खुल सका।</string>
@@ -26,7 +26,7 @@
     <string name="shutter">फ़ोटो लें</string>
     <string name="free_capture_count_failed">शेष मुफ़्त फ़ोटो की संख्या जाँची नहीं जा सकी।</string>
     <string name="free_capture_limit_used">आपने सभी मुफ़्त फ़ोटो का उपयोग कर लिया है।</string>
-    <string name="camera_permission_required">कैमरा अनुमति आवश्यक है।</string>
+    <string name="camera_permission_required">फ़ोटो लेने के लिए कैमरे की अनुमति दें।</string>
     <string name="photo_saved_count_failed">फ़ोटो सहेज ली गई, लेकिन मुफ़्त फ़ोटो की संख्या अपडेट नहीं हो सकी।</string>
     <string name="camera_unknown_error">फ़ोटो प्रोसेस करते समय कोई अज्ञात त्रुटि हुई।</string>
     <string name="camera_not_ready">कैमरा अभी तैयार नहीं है।</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">ब्राउज़र में खोलें</string>
     <string name="privacy_policy_open_failed">गोपनीयता नीति नहीं खोली जा सकी।</string>
     <string name="current_version">मौजूदा संस्करण</string>
+    <string name="camera_initialization_failed">कैमरा शुरू नहीं हो सका। फिर से कोशिश करें।</string>
+    <string name="grant_camera_permission">कैमरे की अनुमति दें</string>
+    <string name="open_app_settings">ऐप की सेटिंग खोलें</string>
+    <string name="camera_permission_settings_required">फ़ोटो लेने के लिए ऐप की सेटिंग में कैमरे की अनुमति दें।</string>
+    <string name="app_settings_open_failed">ऐप की सेटिंग नहीं खुल सकीं।</string>
+    <string name="camera_permission_intro_title">फ़ोटो लेना शुरू करें?</string>
+    <string name="camera_permission_intro_message">फ़िल्म प्रभावों का पूर्वावलोकन देखने और फ़ोटो लेने के लिए कैमरे की अनुमति दें।\n\nआपकी फ़ोटो डिवाइस की गैलरी में सहेजी जाती हैं।</string>
+    <string name="start_camera">शुरू करें</string>
     <string name="switch_to_film">%1$s फ़िल्म पर बदलें</string>
     <string name="zoom_level">ज़ूम %1$.1f गुना</string>
     <string name="flash">फ़्लैश</string>
+    <string name="telemetry_title">FeelCamera को बेहतर बनाने में मदद करें</string>
+    <string name="telemetry_consent_description">Google Firebase को भेजा जाने वाला डेटा चुनें। आपकी फ़ोटो कभी अपलोड नहीं की जातीं। अनुमति दिए बिना भी कैमरे की सभी सुविधाएँ इस्तेमाल कर सकते हैं और सेटिंग में अपना चुनाव बदल सकते हैं।</string>
+    <string name="analytics_setting">उपयोग के आँकड़े</string>
+    <string name="analytics_setting_description">ऐप का उपयोग समझने के लिए ऐप में की गई गतिविधियाँ, अनुमानित स्थान और ऐप पहचानकर्ता भेजता है।</string>
+    <string name="crash_reporting_setting">त्रुटि रिपोर्ट</string>
+    <string name="crash_reporting_setting_description">त्रुटियाँ ढूँढने और ठीक करने के लिए क्रैश लॉग, जाँच संबंधी डेटा और ऐप पहचानकर्ता भेजता है, जिनमें इस डिवाइस पर पहले से सहेजी गई रिपोर्ट भी शामिल हैं।</string>
+    <string name="crash_reporting_restart_notice">त्रुटि रिपोर्ट बंद करने का असर ऐप को पूरी तरह बंद करके दोबारा खोलने पर होता है।</string>
+    <string name="telemetry_save_choices">चुनाव सहेजें</string>
+    <string name="telemetry_decline">दोनों की अनुमति न दें</string>
 </resources>

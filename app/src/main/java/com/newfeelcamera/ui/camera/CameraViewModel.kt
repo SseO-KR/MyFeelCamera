@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 import javax.inject.Inject
 
 sealed interface CameraAction {
@@ -75,6 +76,8 @@ class CameraViewModel @Inject constructor(
                         selectedFilm = if (startFilmChanged) settings.startFilm else current.selectedFilm,
                         showGrid = settings.showGrid,
                         shutterSoundLevel = settings.shutterSoundLevel,
+                        hasSeenCameraPermissionIntro = settings.hasSeenCameraPermissionIntro,
+                        hasRequestedCameraPermission = settings.hasRequestedCameraPermission,
                     )
                 }
             }
@@ -82,12 +85,30 @@ class CameraViewModel @Inject constructor(
 
     }
 
+    fun saveCameraPermissionState(hasRequestedPermission: Boolean) {
+        viewModelScope.launch {
+            try {
+                settingsRepository.saveCameraPermissionState(hasRequestedPermission)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: IOException) {
+                Log.w(TAG, "Unable to save camera permission state", error)
+                notices.post(R.string.settings_save_failed)
+            }
+        }
+    }
+
     fun onIntent(intent: CameraAction){
         when (intent){
             is CameraAction.CameraPermissionChanged -> {
-                _uiState.value = _uiState.value.copy(
-                    hasCameraPermission = intent.granted
-                )
+                if (!intent.granted) cameraController.unbind()
+                _uiState.update {
+                    it.copy(
+                        hasCameraPermission = intent.granted,
+                        isCameraReady = it.isCameraReady && intent.granted,
+                        cameraInitializationFailed = it.cameraInitializationFailed && intent.granted,
+                    )
+                }
             }
             is CameraAction.DisplayRotationChanged -> {
                 cameraController.updatePreviewTargetRotation(
@@ -124,15 +145,29 @@ class CameraViewModel @Inject constructor(
         }
     }
 
-    fun bindCamera(
+    suspend fun bindCamera(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
     ) {
-        cameraController.bind(
-            lifecycleOwner = lifecycleOwner,
-            surfaceProvider = surfaceProvider,
-            onCameraStateChanged = ::onCameraStateChanged,
-        )
+        _uiState.update {
+            it.copy(isCameraReady = false, isCameraInitializing = true, cameraInitializationFailed = false)
+        }
+        try {
+            cameraController.bind(
+                lifecycleOwner = lifecycleOwner,
+                surfaceProvider = surfaceProvider,
+                onCameraStateChanged = ::onCameraStateChanged,
+            )
+            _uiState.update { it.copy(isCameraReady = true) }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to initialize camera", error)
+            cameraController.unbind()
+            _uiState.update { it.copy(isCameraReady = false, cameraInitializationFailed = true) }
+        } finally {
+            _uiState.update { it.copy(isCameraInitializing = false) }
+        }
     }
 
     private fun onCameraStateChanged(zoomState: ZoomState, hasFlashUnit: Boolean) {
@@ -176,6 +211,11 @@ class CameraViewModel @Inject constructor(
 
         if (!stateAtShutter.hasCameraPermission) {
             notices.post(R.string.camera_permission_required)
+            return
+        }
+
+        if (!stateAtShutter.isCameraReady) {
+            notices.post(R.string.camera_not_ready)
             return
         }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="update_available">Yeni bir sürüm mevcut</string>
-    <string name="update_from_store">Uygulamayı Google Play üzerinden güncelleyin.</string>
+    <string name="update_available">Yeni bir sürüm hazır</string>
+    <string name="update_from_store">Google Play üzerinden en son sürüme güncelleyebilirsiniz.\nFotoğraf çekmeye devam edip daha sonra güncelleyebilirsiniz.</string>
     <string name="update_now">Güncelle</string>
     <string name="later">Daha sonra</string>
     <string name="play_store_open_failed">Google Play açılamadı.</string>
@@ -26,7 +26,7 @@
     <string name="shutter">Fotoğraf çek</string>
     <string name="free_capture_count_failed">Kalan ücretsiz fotoğraf sayısı kontrol edilemedi.</string>
     <string name="free_capture_limit_used">Tüm ücretsiz fotoğraflarınızı kullandınız.</string>
-    <string name="camera_permission_required">Kamera izni gerekiyor.</string>
+    <string name="camera_permission_required">Fotoğraf çekmek için kamera erişimine izin verin.</string>
     <string name="photo_saved_count_failed">Fotoğraf kaydedildi ancak ücretsiz fotoğraf sayısı güncellenemedi.</string>
     <string name="camera_unknown_error">Fotoğraf işlenirken bilinmeyen bir hata oluştu.</string>
     <string name="camera_not_ready">Kamera henüz hazır değil.</string>
@@ -71,7 +71,24 @@
     <string name="privacy_policy_description">Tarayıcıda aç</string>
     <string name="privacy_policy_open_failed">Gizlilik politikası açılamadı.</string>
     <string name="current_version">Geçerli sürüm</string>
+    <string name="camera_initialization_failed">Kamera başlatılamadı. Lütfen tekrar deneyin.</string>
+    <string name="grant_camera_permission">Kamera erişimine izin ver</string>
+    <string name="open_app_settings">Uygulama ayarlarını aç</string>
+    <string name="camera_permission_settings_required">Fotoğraf çekmek için uygulama ayarlarında kamera erişimine izin verin.</string>
+    <string name="app_settings_open_failed">Uygulama ayarları açılamadı.</string>
+    <string name="camera_permission_intro_title">Fotoğraf çekmeye başlayalım mı?</string>
+    <string name="camera_permission_intro_message">Film efektlerini önizlemek ve fotoğraf çekmek için kamera erişimine izin verin.\n\nFotoğraflarınız cihazınızın galerisine kaydedilir.</string>
+    <string name="start_camera">Başla</string>
     <string name="switch_to_film">%1$s filmine geç</string>
     <string name="zoom_level">Yakınlaştırma %1$.1f kat</string>
     <string name="flash">Flaş</string>
+    <string name="telemetry_title">FeelCamera’yı geliştirmeye yardımcı olun</string>
+    <string name="telemetry_consent_description">Google Firebase’e hangi verilerin gönderileceğini seçin. Fotoğraflarınız hiçbir zaman yüklenmez. İzin vermeden tüm kamera özelliklerini kullanabilir ve seçiminizi Ayarlar’dan değiştirebilirsiniz.</string>
+    <string name="analytics_setting">Kullanım istatistikleri</string>
+    <string name="analytics_setting_description">Kullanımı anlamak için uygulama etkileşimlerini, yaklaşık konumu ve uygulama tanımlayıcılarını gönderir.</string>
+    <string name="crash_reporting_setting">Hata raporları</string>
+    <string name="crash_reporting_setting_description">Hataları bulup düzeltmek için bu cihazda kayıtlı raporlar dahil çökme günlüklerini, tanılama verilerini ve uygulama tanımlayıcılarını gönderir.</string>
+    <string name="crash_reporting_restart_notice">Hata raporlarını kapatma, uygulamayı tamamen kapatıp yeniden açtıktan sonra geçerli olur.</string>
+    <string name="telemetry_save_choices">Seçimleri kaydet</string>
+    <string name="telemetry_decline">Hiçbirine izin verme</string>
 </resources>
