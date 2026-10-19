@@ -89,4 +89,4 @@
 4. **제품 판단과 구현 가능성을 나눠 봤습니다.** 준비하던 결제는 세무·운영 부담을 고려해 보류했고, 분석은 수집 동의를 연결한 뒤 Release에 포함했습니다. [제품 범위 결정](product-and-development.md#초기-출시-범위를-바꾼-이유)
 5. **AI가 작성한 결과물도 활용 범위에 포함했습니다.** 기능 코드·테스트뿐 아니라 README와 상세 문서에도 AI의 작성 지원을 받았습니다. README의 WARM·DUSK 소개 이미지는 에뮬레이터 UI에 직접 촬영한 사진을 합성했습니다.
 
-실기기 검증은 Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 진행했습니다. [검증 범위](validation.md#실기기-검증-완료)
+실기기 검증은 Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 진행했습니다. [실기기 확인 환경](validation.md#실기기-확인-환경)

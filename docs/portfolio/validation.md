@@ -8,7 +8,7 @@
 
 - [검증 기준](#검증-기준)
 - [빌드와 자동 테스트 기록](#빌드와-자동-테스트-기록)
-- [실기기 검증 완료](#실기기-검증-완료)
+- [실기기 확인 환경](#실기기-확인-환경)
 - [이전 버전의 앱 동작 점검](#이전-버전의-앱-동작-점검)
 - [다음에 해결할 과제](#다음에-해결할-과제)
 - [검증을 이어가는 방법](#검증을-이어가는-방법)
@@ -42,7 +42,7 @@
 
 테스트 코드: [기본 단위 테스트](../../app/src/test/java/com/newfeelcamera) · [생명주기 테스트](../../app/src/androidTest/java/com/newfeelcamera/camera/gl/CameraRendererLifecycleTest.kt) · [회전 테스트](../../app/src/androidTest/java/com/newfeelcamera/camera/gl/PreviewRotationTest.kt)
 
-## 실기기 검증 완료
+## 실기기 확인 환경
 
 아래 두 기기에서 직접 앱을 사용하며 실기기 검증을 진행했습니다.
 

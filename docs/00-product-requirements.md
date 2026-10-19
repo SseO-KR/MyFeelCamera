@@ -13,12 +13,12 @@ Android용 필름 카메라 앱을 만든다. 이 프로젝트는 두 목표를 
 
 ### 핵심 불변식 (Core Invariant)
 
-> 사용자가 실시간 Preview에서 본 LUT 필터 결과와, 실제 촬영해 저장한 사진의 필터 결과는 시각적으로 최대한 일치해야 한다.
+> 셔터를 누를 때 Preview에서 본 LUT 필터 효과와 저장 사진의 필터 효과는 시각적으로 최대한 일치해야 한다.
 
 "최대한 일치"는 픽셀 단위로 동일한 바이트를 요구하지 않는다. 초기에는 Preview와 Capture의 실행 방식 결정을 미루고 **입력**의 일관성을 먼저 정했다. 현재는 각자의 GL Context와 셰이더 진입점에서 같은 필름과 LUT를 사용하는 경로를 구현했다(§10):
 
-- Preview와 Capture는 반드시 **같은 Filter/LUT source of truth**(같은 필터 파라미터 모델 인스턴스, 같은 LUT asset)를 참조해야 한다.
-- 이 source of truth가 둘로 갈라지면(예: Preview용 파라미터와 Capture용 파라미터가 별도로 존재) 핵심 불변식을 지킬 방법이 없어지므로, 이것만은 지금 확정한다.
+- 필름 선택의 원본 상태는 `CameraUiState.selectedFilm`으로 두고, Preview와 Capture는 같은 `FilmPreset` 정의와 LUT asset을 사용한다.
+- Preview는 현재 선택을 반영하고, Capture는 셔터 순간의 선택을 snapshot으로 고정해 저장까지 사용한다. Capture가 진행되는 동안 UI 선택을 바꿔도 이미 시작한 사진의 필름은 바뀌지 않는다.
 
 ## 2. 지원 범위
 
@@ -123,16 +123,17 @@ Camera device
 §1 핵심 불변식을 구현 차원에서 다시 명시한다.
 
 **지금 확정하는 것 (Fix Now):**
-- 필터 파라미터를 표현하는 모델은 하나여야 하고, Preview와 Capture 양쪽이 그 **같은 인스턴스**를 참조해야 한다.
-- 이 모델은 LUT asset 참조를 포함해 "어떤 필터가 적용 중인가"를 완전히 표현할 수 있어야 한다.
+- 필름 모델과 LUT asset 정의를 공유하고, 선택 상태의 원본은 `CameraUiState.selectedFilm`으로 둔다.
+- Preview는 현재 선택을 사용하고, Capture는 셔터 순간의 선택을 작업용 snapshot으로 전달받아 저장까지 유지한다.
+- 필름 모델은 LUT asset 참조를 포함해 "어떤 필터를 적용하는가"를 표현해야 한다.
 
 **구현하며 확정한 것 (Implementation Decision):**
 - Preview는 OES 입력, Capture는 Bitmap에서 올린 2D texture 입력을 처리하므로 셰이더 진입점을 나눈다.
 - Preview의 GLSurfaceView와 Capture의 전용 스레드가 각각 GL Context·자원을 소유하고 같은 LUT 자산과 색보정 규칙을 사용한다.
 
-두 경로가 결과적으로 다른 코드로 구현되더라도, **같은 입력(같은 파라미터, 같은 LUT asset)에서 출발한다는 것**만으로 핵심 불변식을 지키는 데 필요한 최소 제약은 충족한다. 두 셰이더의 공통 색보정 코드가 달라지지 않도록 함께 검토한다.
+두 경로는 **동일한 필름 선택에 동일한 LUT와 색보정 규칙을 적용**하도록 구성한다. 실제 입력과 실행 시점이 다르므로 시각적 일치 여부는 별도로 검증하고, 두 셰이더의 공통 색보정 코드가 달라지지 않도록 함께 검토한다.
 
-사용자가 촬영 전 Film을 선택·변경할 수 있다는 것(§3)은 이 요구사항을 구체화한다 — "선택된 Film"이 곧 이 source of truth이고, 선택이 바뀌면 그 변경은 Preview와 다음 Capture 양쪽에 동일하게 반영되어야 한다.
+선택을 바꾸면 Preview와 다음 Capture에 반영하며, 이미 진행 중인 Capture는 셔터 순간의 선택을 유지한다.
 
 ## 11. LUT 리소스
 

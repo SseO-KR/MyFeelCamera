@@ -168,7 +168,7 @@
 
 ## 실기기 검증 환경
 
-Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증을 진행했다. 이후에는 다른 기기·화면으로 회귀 범위를 넓히고 촬영 해상도별 저장 지연·최대 메모리를 측정한다. [검증 범위](portfolio/validation.md#실기기-검증-완료)
+Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증을 진행했다. 이후에는 다른 기기·화면으로 회귀 범위를 넓히고 촬영 해상도별 저장 지연·최대 메모리를 측정한다. [실기기 확인 환경](portfolio/validation.md#실기기-확인-환경)
 
 ## 별도 운영 인프라 — Firebase 연결
 
