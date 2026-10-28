@@ -19,6 +19,11 @@ datastorePreferences = "1.2.1"
 ksp = "2.2.10-2.0.2"
 material3 = "1.4.0"
 foundationLayout = "1.12.0"
+androidTest = "1.7.0"
+espresso = "3.7.0"
+uiAutomator = "2.3.0"
+coroutines = "1.10.2"
+mockito = "5.23.0"
 # Firebase 공식 가이드 및 Google Maven POM 확인(2026-09-27).
 firebaseBom = "34.19.0"
 googleServices = "4.5.0"
@@ -44,6 +49,13 @@ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidTest" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiAutomator" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 

@@ -62,7 +62,8 @@ internal class CaptureEglSession private constructor(
 
     companion object {
 
-        fun create(): CaptureEglSession {
+        fun create(width: Int = 1, height: Int = 1): CaptureEglSession {
+            require(width > 0 && height > 0)
             val ownerThread = Thread.currentThread()
 
             val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
@@ -111,9 +112,9 @@ internal class CaptureEglSession private constructor(
                     config,
                     intArrayOf(
                         EGL14.EGL_WIDTH,
-                        1,
+                        width,
                         EGL14.EGL_HEIGHT,
-                        1,
+                        height,
                         EGL14.EGL_NONE,
                     ),
                     0,

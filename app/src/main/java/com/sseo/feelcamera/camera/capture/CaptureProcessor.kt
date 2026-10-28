@@ -1,10 +1,6 @@
 package com.sseo.feelcamera.camera.capture
 
-import android.content.ContentValues
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.sseo.feelcamera.camera.filter.FilmPreset
@@ -41,6 +37,7 @@ class CaptureProcessor @Inject constructor(
 
     private var eglSession: CaptureEglSession? = null
     private var glRenderer: CaptureGlRenderer? = null
+    private val photoWriter = MediaStorePhotoWriter(appContext.contentResolver)
 
     private fun getOrCreateEglSession(): CaptureEglSession {
         check(!isClosed.get()) {
@@ -105,6 +102,21 @@ class CaptureProcessor @Inject constructor(
         }
     }
 
+    /** 호출자가 bitmap을 소유한다. CameraX와 동일한 렌더링·저장 경로를 사용한다. */
+    internal suspend fun processAndSave(input: CaptureInput): SavedPhoto =
+        withContext(captureDispatcher) {
+            check(!isClosed.get()) { "CaptureProcessor is already closed." }
+            try {
+                renderAndSave(input)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: CaptureException) {
+                throw error
+            } catch (error: Exception) {
+                throw CaptureException.ProcessingFailed(error)
+            }
+        }
+
     private fun getOrCreateGlRenderer(): CaptureGlRenderer {
         glRenderer?.let { return it }
 
@@ -131,114 +143,10 @@ class CaptureProcessor @Inject constructor(
                 filteredBitmap.width,
                 filteredBitmap.height,
             )
-            val uri = saveBitmapToMediaStore(filteredBitmap)
+            val uri = photoWriter.save(filteredBitmap)
             SavedPhoto(uri, orientation)
         } finally {
             filteredBitmap.recycle()
-        }
-    }
-
-    private fun saveBitmapToMediaStore(
-        bitmap: Bitmap,
-    ): Uri {
-        val contentResolver = appContext.contentResolver
-
-        val contentValues = ContentValues().apply {
-            put(
-                MediaStore.Images.Media.DISPLAY_NAME,
-                "NewFeelCamera_${System.currentTimeMillis()}.jpg",
-            )
-            put(
-                MediaStore.Images.Media.MIME_TYPE,
-                "image/jpeg",
-            )
-            put(
-                MediaStore.Images.Media.RELATIVE_PATH,
-                "Pictures/FeelCamera",
-            )
-            put(
-                MediaStore.Images.Media.IS_PENDING,
-                1,
-            )
-        }
-
-        val uri = try {
-            contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues,
-            )
-        } catch (error: Exception) {
-            throw CaptureException.SaveFailed(error)
-        } ?: throw CaptureException.SaveFailed(
-            IllegalStateException(
-                "MediaStore insert returned null.",
-            ),
-        )
-
-        var isPublished = false
-
-        try {
-            val outputStream = contentResolver.openOutputStream(
-                uri,
-                "w",
-            ) ?: error(
-                "MediaStore output stream could not be opened.",
-            )
-
-            outputStream.use { stream ->
-                val compressed = bitmap.compress(
-                    Bitmap.CompressFormat.JPEG,
-                    JPEG_QUALITY,
-                    stream,
-                )
-
-                check(compressed) {
-                    "Bitmap JPEG compression failed."
-                }
-            }
-
-            val publishedValues = ContentValues().apply {
-                put(
-                    MediaStore.Images.Media.IS_PENDING,
-                    0,
-                )
-            }
-
-            val updatedRows = contentResolver.update(
-                uri,
-                publishedValues,
-                null,
-                null,
-            )
-
-            check(updatedRows > 0) {
-                "Failed to publish MediaStore image."
-            }
-
-            isPublished = true
-            return uri
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: CaptureException) {
-            throw error
-        } catch (error: Exception) {
-            throw CaptureException.SaveFailed(error)
-        } finally {
-            if (!isPublished) {
-                runCatching {
-                    contentResolver.delete(
-                        uri,
-                        null,
-                        null,
-                    )
-                }.onFailure { cleanupError ->
-                    Log.w(
-                        TAG,
-                        "Failed to delete incomplete MediaStore item: uri=$uri",
-                        cleanupError,
-                    )
-                }
-            }
         }
     }
 
@@ -275,6 +183,5 @@ class CaptureProcessor @Inject constructor(
     private companion object {
         const val TAG = "CaptureProcessor"
         const val THREAD_NAME = "NewFeel-Capture"
-        const val JPEG_QUALITY = 95
     }
 }

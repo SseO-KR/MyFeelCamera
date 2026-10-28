@@ -20,6 +20,8 @@ import java.util.concurrent.Executor
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
+internal data class RenderedPreviewFrame(val film: FilmPreset, val sequence: Long)
+
 class CameraRenderer(
     private val assetManager: AssetManager,
     private val requestRender: () -> Unit,
@@ -42,6 +44,11 @@ class CameraRenderer(
     // 이 lock을 잡은 상태에서 GL Thread 종료를 기다리면 안 된다.
     private val resourceLock = Any()
     private var frameAvailable = false
+    private var hasPreviewFrame = false
+    @Volatile
+    internal var renderedFrame: RenderedPreviewFrame? = null
+        private set
+    private var frameSequence = 0L
     private val textureTransform = FloatArray(16)
     private val previewTransform = PreviewTextureTransform()
     private var displayRotation = Surface.ROTATION_0
@@ -97,6 +104,8 @@ class CameraRenderer(
         // EGL context 재생성됐다면 기존 SurfaceRequest는 새 SurfaceTexture를 사용할 수 없으므로 invalidate
         retireActiveBinding()
         frameAvailable = false
+        hasPreviewFrame = false
+        renderedFrame = null
         Matrix.setIdentityM(textureTransform, 0)
         if (closed) return@synchronized
 
@@ -213,6 +222,7 @@ class CameraRenderer(
         if (frameAvailable) {
             frameAvailable = false
             surfaceTexture.updateTexImage()
+            hasPreviewFrame = true
             surfaceTexture.getTransformMatrix(textureTransform)
 
             if(shouldLogTextureTransform){
@@ -236,6 +246,10 @@ class CameraRenderer(
             outputHeight = outputHeight,
         )
         drawCameraTexture(binding.textureId)
+        if (hasPreviewFrame) {
+            // UI 상태 변경과 해당 필름으로 실제 그린 프레임을 구별한다.
+            renderedFrame = RenderedPreviewFrame(selectedFilm, ++frameSequence)
+        }
     }
 
     // GL 준비 여부와 무관하게 요청을 받아 보관한다. GL 생성은 Renderer 콜백에서만 한다.
@@ -260,6 +274,8 @@ class CameraRenderer(
         retireActiveBinding()
 
         cameraTransformSnapshot = null
+        hasPreviewFrame = false
+        renderedFrame = null
         pendingRequest = surfaceRequest
         surfaceRequest.setTransformationInfoListener(resultExecutor) { info ->
             onTransformationInfo(
@@ -469,6 +485,8 @@ class CameraRenderer(
     // GLSurfaceView의 GL Thread 종료가 완료된 뒤 호출한다. 일시 detach는 재연결 가능하다.
     fun onViewDetached() = synchronized(resourceLock) {
         viewAttached = false
+        hasPreviewFrame = false
+        renderedFrame = null
         ownerContext = EGL14.EGL_NO_CONTEXT
         pendingGlDeletes.clear()
         program = 0
@@ -481,6 +499,8 @@ class CameraRenderer(
     fun close() = synchronized(resourceLock) {
         if (closed) return@synchronized
         closed = true
+        hasPreviewFrame = false
+        renderedFrame = null
         pendingRequest?.let {
             it.clearTransformationInfoListener()
             it.willNotProvideSurface()

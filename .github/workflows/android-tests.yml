@@ -1,0 +1,102 @@
+name: Android tests
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+    inputs:
+      e2e:
+        description: Include experimental camera E2E tests (not yet validated)
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 18 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-tests-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Install compile SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Verify frozen film references
+        run: python3 scripts/generate_film_references.py --check
+      - name: Unit tests, lint and test APK build
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-check-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-test-apks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
+          retention-days: 3
+
+  device-tests:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        # Confirmed 31 tests on API 35; nightly also covers minSdk 29.
+        api-level: ${{ fromJSON(github.event_name == 'schedule' && '[29,35]' || '[35]') }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/download-artifact@v8
+        with:
+          name: android-test-apks
+          path: app/build/outputs/apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          ram-size: 2048M
+          disable-animations: true
+          emulator-options: >-
+            -no-window -no-snapshot -noaudio -no-boot-anim
+            -gpu swiftshader_indirect
+            -camera-front none
+            -camera-back ${{ inputs.e2e == true && format('imagefile:{0}/app/src/androidTest/assets/film/camera-input.png', github.workspace) || 'none' }}
+          script: bash scripts/run_android_ci.sh ${{ inputs.e2e == true && 'extended' || 'standard' }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-device-api-${{ matrix.api-level }}
+          path: app/build/ci-device/
+          if-no-files-found: warn
+          retention-days: 14

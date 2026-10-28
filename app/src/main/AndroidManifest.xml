@@ -31,9 +31,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NewFeelCamera">
         <!-- SDK는 Release에 포함하되 사용자의 선택 전에는 초기화하지 않는다. -->
+        <!-- Firebase 없는 Debug에서도 제거 선언만 유지한다. 실제 등록되는 provider가 아니다. -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
             android:authorities="${applicationId}.firebaseinitprovider"
+            tools:ignore="MissingClass"
             tools:node="remove" />
         <meta-data
             android:name="firebase_analytics_collection_enabled"

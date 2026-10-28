@@ -124,6 +124,8 @@ flowchart TD
 
 ## 검증과 빌드
 
+Push와 PR에서는 GitHub Actions로 단위 테스트 15개·Lint·앱/테스트 APK 빌드와 확인된 계측 테스트 31개를 실행합니다. 기본 검사는 API 35, 야간 검사는 API 29·35를 사용합니다. 촬영 E2E는 고정 카메라 입력 환경 검증이 끝나지 않아 수동 실행에서만 선택할 수 있습니다. 기준 이미지, 실행 범위와 검증 기록은 [자동화 테스트 문서](docs/testing.md)에 정리했습니다.
+
 배포용 applicationId와 namespace는 `com.sseo.feelcamera`입니다. 새 Play 개발자 계정의 무료 앱으로 등록하기 위해 기존 `com.newfeelcamera`에서 변경했습니다. 기존 테스트 앱과는 별도 설치이며, 설정·수집 동의와 기존 앱 소유의 최근 사진 목록을 자동 이전하지 않습니다. 새로 촬영하는 사진은 `Pictures/FeelCamera`에 저장하며, 기존 폴더의 사진은 이동하지 않습니다. [Firebase 설정과 신규 등록 범위](docs/features/firebase-monitoring.md#새-play-계정의-앱-등록-2026-10-26)
 
 Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증을 진행했습니다.

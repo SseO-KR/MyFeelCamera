@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -121,6 +122,7 @@ fun SettingsScreen(
             TextButton(
                 onClick = onBackClick,
                 enabled = !uiState.isSaving,
+                modifier = Modifier.testTag("settings_back"),
             ) {
                 Text(text = stringResource(R.string.back), color = if (uiState.isSaving) InkDim else Ink)
             }
@@ -177,6 +179,7 @@ fun SettingsScreen(
                     FilmPreset.entries.forEach { film ->
                         Row(
                             modifier = Modifier
+                                .testTag("start_film_${film.name}")
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp)
                                 .selectable(
@@ -216,6 +219,7 @@ fun SettingsScreen(
                             role = Role.Switch,
                             onValueChange = onGridChanged,
                         )
+                        .testTag("settings_grid")
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -267,6 +271,7 @@ fun SettingsScreen(
                         ShutterSoundLevel.entries.forEach { level ->
                             Row(
                                 modifier = Modifier
+                                    .testTag("shutter_sound_${level.name}")
                                     .fillMaxWidth()
                                     .heightIn(min = 48.dp)
                                     .selectable(

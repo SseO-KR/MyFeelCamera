@@ -1,0 +1,31 @@
+{
+  "generator": "CPU RGB8 LUT trilinear interpolation; R fastest, then G, B",
+  "effects": "LUT strength 1; grain and vignette disabled (current production settings)",
+  "lut_sha256": {
+    "warm": "16cb0d9969bab29c8e13dc4e969cc671335fa5fdf9fb8f3dee651eab7f26a83c",
+    "dusk": "c5190aa4014ff7fd312920e04d44bb8fc05c376c196919e5a2466e4957e8e206"
+  },
+  "camera_input_rgb": [
+    128,
+    128,
+    128
+  ],
+  "camera_expected_rgb": {
+    "warm": [
+      67,
+      56,
+      47
+    ],
+    "dusk": [
+      57,
+      61,
+      70
+    ]
+  },
+  "png_sha256": {
+    "input.png": "d6f208f26113f55915bbfe8b3ac3539c6aabc3a4cc53de43deb223cd1284fe89",
+    "camera-input.png": "79417210dc2705e64dde9c917363ab674662b41b45bd70bad1d38d4745b2b44b",
+    "warm.png": "2ef168efdd156bcb1306ffbc6196385d5d0a1679d429cf87772eac250cc4fce4",
+    "dusk.png": "8fd4294d3b21b64872a754ae6eb1c90beee02af993d62c63c86fa72994f0cc06"
+  }
+}

@@ -58,9 +58,11 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
@@ -95,6 +97,8 @@ import com.sseo.feelcamera.ui.labelRes
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+internal val LatestPhotoUriKey = SemanticsPropertyKey<String>("LatestPhotoUri")
 
 @Composable
 private fun CameraPreviewBindingEffect(
@@ -302,7 +306,7 @@ private fun CameraRecoveryPanel(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(text = message, color = Ink, textAlign = TextAlign.Center)
-        TextButton(onClick = onAction, enabled = enabled) {
+        TextButton(onClick = onAction, enabled = enabled, modifier = Modifier.testTag("camera_recovery")) {
             Text(text = actionLabel, color = if (enabled) Accent else InkDim)
         }
     }
@@ -649,6 +653,7 @@ private fun FlashControl(
     val glyphColor = if (!hasFlashUnit) InkDim else if (isFlashEnabled) Accent else Ink
     DialCircle(
         modifier = Modifier
+            .testTag("flash")
             .semantics {
                 contentDescription = label
                 if (!hasFlashUnit) stateDescription = unavailableLabel
@@ -864,7 +869,7 @@ private fun PreviewPlaceholderScene(
 private fun RuleOfThirdsGrid(
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.testTag("camera_grid")) {
         Row(Modifier.fillMaxSize()) {
             Spacer(Modifier.weight(1f))
             GridLine(Modifier
@@ -943,6 +948,7 @@ private fun FilmDial(
 
     Column(
         modifier = Modifier
+            .testTag("film_dial")
             .semantics {
                 contentDescription = accessibilityLabel
                 stateDescription = filmName
@@ -1125,6 +1131,7 @@ private fun ShutterButton(
     Box(
         modifier = Modifier
             .size(68.dp)
+            .testTag("shutter")
             .semantics {
                 contentDescription = accessibilityLabel
                 if (isCapturing) stateDescription = savingLabel
@@ -1151,12 +1158,12 @@ private fun ShutterButton(
 @Composable
 private fun GalleryThumbnail(uri: Uri?) {
     val context = LocalContext.current
-    val thumbnail by produceState<ImageBitmap?>(initialValue = null, uri) {
+    val thumbnail by produceState<Pair<Uri, ImageBitmap>?>(initialValue = null, uri) {
         value = null
         if (uri != null) {
             value = withContext(Dispatchers.IO) {
                 try {
-                    context.contentResolver.loadThumbnail(uri, Size(96, 96), null).asImageBitmap()
+                    uri to context.contentResolver.loadThumbnail(uri, Size(96, 96), null).asImageBitmap()
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Exception) {
@@ -1169,6 +1176,8 @@ private fun GalleryThumbnail(uri: Uri?) {
     Box(
         modifier = Modifier
             .size(30.dp)
+            .testTag("gallery_thumbnail")
+            .semantics { this[LatestPhotoUriKey] = uri?.toString().orEmpty() }
             .clip(RoundedCornerShape(5.dp))
             .background(
                 Brush.linearGradient(
@@ -1177,12 +1186,13 @@ private fun GalleryThumbnail(uri: Uri?) {
             )
             .border(1.dp, Hair, RoundedCornerShape(5.dp)),
     ) {
-        thumbnail?.let { image ->
+        thumbnail?.takeIf { it.first == uri }?.let { (loadedUri, image) ->
             Image(
                 bitmap = image,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().testTag("gallery_image")
+                    .semantics { this[LatestPhotoUriKey] = loadedUri.toString() },
             )
         }
     }

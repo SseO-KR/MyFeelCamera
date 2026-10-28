@@ -22,6 +22,9 @@ class CameraGlSurfaceView @JvmOverloads constructor(
         renderer = renderer,
     )
 
+    internal val renderedFrame: RenderedPreviewFrame?
+        get() = renderer.renderedFrame
+
     init {
         setEGLContextClientVersion(3)
         preserveEGLContextOnPause = true
