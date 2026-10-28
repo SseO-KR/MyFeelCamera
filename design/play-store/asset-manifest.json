@@ -153,8 +153,8 @@
   },
   "target_app": {
     "package": "com.sseo.feelcamera",
-    "versionName": "1.0.4",
-    "versionCode": 5,
+    "versionName": "1.0.0",
+    "versionCode": 1,
     "note": "New Play account registration target; app and capture retain the original screenshot provenance."
   }
 }

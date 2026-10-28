@@ -12,7 +12,7 @@
 
 ## 새 Play 계정의 앱 등록 (2026-10-26)
 
-- 사용자 요청에 따라 `applicationId`, `namespace`, 소스 기본 패키지를 `com.newfeelcamera`에서 `com.sseo.feelcamera`로 변경한다. 버전은 `1.0.4 (5)`를 유지하며 v1 무료·무제한 촬영, 광고·인앱결제 없음 정책을 유지한다. **(User Request / Implementation Decision)**
+- 사용자 요청에 따라 `applicationId`, `namespace`, 소스 기본 패키지를 `com.newfeelcamera`에서 `com.sseo.feelcamera`로 변경한다. 새 Play 앱의 현재 등록 버전은 `1.0.0 (1)`이며 v1 무료·무제한 촬영, 광고·인앱결제 없음 정책을 유지한다. 아래 `1.0.4 (5)` 검증과 서명 파일은 패키지 변경 당시 이력이다. **(User Request / Implementation Decision)**
 - 기존 Firebase 프로젝트 `newfeelcamera`에 새 Android 앱을 추가하고 사용자가 제공한 `google-services.json`으로 교체한다. 설정 파일에는 기존·새 패키지의 client가 모두 있으며 Google Services 플러그인이 새 `applicationId`와 일치하는 client를 선택해야 한다. 설정 파일은 계속 Git에서 제외한다. **(Configuration Contract / Verify First)**
 - 새 패키지는 기존 테스트 앱과 별도 설치다. 기존 앱 설정·수집 동의를 자동 이전하지 않는다. 새 사진은 `Pictures/FeelCamera`에 저장하고 기존 폴더의 사진은 이동하지 않는다. 파일 이름은 유지하며 최근 사진은 새 폴더에서 새 패키지가 소유한 항목을 조회한다. 기존 테스트 앱 소유 사진을 새 앱에서 자동 조회하는 기능은 추가하지 않는다. **(Implementation Decision)**
 - 이전 Play 앱의 결제 라이선스 공개키는 공용 Gradle 설정에서 제거한다. 보관된 결제 코드는 패키지 변경 후에도 선택적으로 컴파일할 수 있게 하되, 수익화 재개 시 새 Play 앱의 공개키와 상품 설정을 다시 준비한다. **(Implementation Decision)**
@@ -105,4 +105,4 @@ Crashlytics 수집 철회는 SDK 계약에 따라 다음 프로세스 실행부�
 
 2026-10-09 검증: 추가 옵션 없는 `:app:bundleRelease` 및 `:app:testDebugUnitTest`를 통과했다. 동의 선택의 저장·복원·철회를 검증하는 2개 테스트를 포함해 단위 테스트 11개가 통과했다. Release AAB의 DEX와 R8 매핑에서 Analytics, Crashlytics, 런타임 수집 제어 구현의 포함을 확인했다. 최종 Manifest에 자동 초기화 Provider와 광고 ID·결제 권한이 없고, 수집·광고 동의 기본값은 모두 false다. Runtime의 Release 수집 허용 값은 true이며 저장된 사용자 선택이 활성화를 결정한다. Crashlytics 매핑 업로드 작업과 Release Lint도 통과했다. 생성한 검증 AAB는 미서명 상태다. 실제 기기·콘솔 수신 검증은 수행하지 않았다. **(Observed / Verification Limit)**
 
-현재 1.0.4 (5) 코드에서 단위 테스트 11개, Release Lint(오류 0개·경고 45개), Debug APK·Release AAB 빌드를 확인했다. 로컬 Firebase 설정을 사용했으며 Crashlytics 매핑 업로드는 제외했다. 커밋할 파일만 복사한 별도 환경에서도 Firebase 설정 파일 없이 Debug APK 빌드와 단위 테스트 11개를 통과했고, `FIREBASE_CONFIGURED`·`TELEMETRY_ALLOWED`가 모두 false인 것을 확인했다. 이 결과는 기기에서 동의 변경·이벤트 수신을 확인한 결과와 구분한다. [현재 검증 기록](../portfolio/validation.md#빌드와-자동-테스트-기록)
+2026-10-19의 1.0.4 (5) 코드에서 단위 테스트 11개, Release Lint(오류 0개·경고 45개), Debug APK·Release AAB 빌드를 확인했다. 로컬 Firebase 설정을 사용했으며 Crashlytics 매핑 업로드는 제외했다. 커밋할 파일만 복사한 별도 환경에서도 Firebase 설정 파일 없이 Debug APK 빌드와 단위 테스트 11개를 통과했고, `FIREBASE_CONFIGURED`·`TELEMETRY_ALLOWED`가 모두 false인 것을 확인했다. 이 결과는 기기에서 동의 변경·이벤트 수신을 확인한 결과와 구분한다. [검증 기록](../portfolio/validation.md#빌드와-자동-테스트-기록)

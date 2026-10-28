@@ -40,7 +40,7 @@ Google Play 스토어용 소개 이미지입니다. WARM·DUSK 화면은 에뮬�
 | 항목 | 현재 범위 |
 | --- | --- |
 | 개발 형태·기간 | Android 개인 프로젝트 · 2026.08–진행 중 |
-| 현재 코드 버전 | 1.0.4 (versionCode 5) |
+| 현재 코드 버전 | 1.0.0 (1) |
 | 주요 기능 | WARM·DUSK 실시간 필터와 JPEG 저장, 화면·볼륨 키 셔터, 시작 필름·격자·셔터음 설정 |
 | 지원 환경 | Android 10 이상 · 후면 카메라 · OpenGL ES 3.0 |
 | 첫 배포 방향 | 무료·무제한 촬영 · 광고·인앱결제 없음 |
@@ -128,7 +128,7 @@ flowchart TD
 
 Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증을 진행했습니다.
 
-현재 `com.sseo.feelcamera`의 1.0.4 (5)는 Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug 빌드를 통과했습니다. Release Lint(오류 0개·경고 32개), Release AAB 빌드와 계측 테스트 APK 컴파일도 통과했습니다(2026-10-26). 보관 중인 결제 코드를 포함한 별도 검사에서는 단위 테스트 14개가 통과했습니다. GL 생명주기·회전 계측 테스트 실행은 이전 버전의 기록으로 구분하며 새 패키지로 기기를 실행하지는 않았습니다. 큰 화면·폴더블 자세별 동작과 촬영 지연·최대 메모리 측정은 후속 과제입니다. [검증 범위와 기록](docs/portfolio/validation.md)
+현재 `com.sseo.feelcamera`의 배포 버전은 1.0.0 (1)입니다. 패키지 변경 당시의 1.0.4 (5)는 Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug 빌드를 통과했습니다. Release Lint(오류 0개·경고 32개), Release AAB 빌드와 계측 테스트 APK 컴파일도 통과했습니다(2026-10-26). 보관 중인 결제 코드를 포함한 별도 검사에서는 단위 테스트 14개가 통과했습니다. 이 결과와 GL 생명주기·회전 계측 테스트 실행은 검사 당시 버전의 기록으로 구분하며 새 패키지로 기기를 실행하지는 않았습니다. 큰 화면·폴더블 자세별 동작과 촬영 지연·최대 메모리 측정은 후속 과제입니다. [검증 범위와 기록](docs/portfolio/validation.md)
 
 JDK 21과 Android SDK Platform 37을 준비하고, Android Studio의 SDK 설정 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 지정합니다. 저장소의 Gradle Wrapper를 사용합니다.
 
