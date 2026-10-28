@@ -56,6 +56,7 @@
 - `ImageProxy`의 buffer에는 target rotation이 직접 적용되지 않을 수 있으므로 `imageInfo.rotationDegrees`와 `cropRect`를 Capture 입력의 일부로 함께 전달한다. 회전·crop은 GL 변환 또는 저장 메타데이터 중 한 곳에서 정확히 한 번만 적용하고, Step 10에서 Preview와 비교한다. **(Android/CameraX API Contract, Verify First — 최종 transform 검증)**
 - `ImageProxy`는 앱이 닫아야 한다. 필요한 bitmap/metadata를 확보하는 성공 경로뿐 아니라 decode·GL·저장 실패 경로에서도 반드시 `close()`하며, 큰 이미지 decode·GL·JPEG 저장은 Main Thread가 아닌 직렬 Capture worker에서 수행한다. **(Android/CameraX API Contract, Implementation Decision)**
 - `CameraController.takePhoto()`는 one-shot 작업을 suspend 함수로 노출하고, `CameraViewModel`은 `viewModelScope`의 한 `try/catch/finally`에서 성공·실패·`isCapturing` 복구를 관리한다. `CancellationException`은 일반 촬영 오류로 변환하지 않고 다시 전파한다. **(Implementation Decision)**
+- 촬영음은 촬영 요청 직전이 아니라 suspend `takePicture(onCaptureStarted = ...)`의 노출 시작 콜백에서 재생한다. 플래시 준비 중에 소리가 먼저 나지 않도록 CameraX가 알리는 실제 촬영 시작에 연결한다. `onCaptureStarted`는 같은 촬영의 이미지 반환보다 먼저 한 번 호출되며, CameraX도 이 콜백에서 촬영음을 재생하도록 권장한다. **(Implementation Decision, [CameraX API Contract](https://developer.android.com/reference/androidx/camera/core/ImageCapture.OnImageCapturedCallback#onCaptureStarted()))**
 - Capture는 셔터를 누른 순간의 `selectedFilm` snapshot을 입력으로 받는다. 처리 도중 UI에서 Film을 바꿔도 이미 시작된 사진의 LUT는 바뀌지 않는다. **(Implementation Decision — `01` §7)**
 - 촬영된 원본에 필터를 실제로 적용하는 방식은 이 문서의 범위 밖이다(`03`).
 
@@ -63,6 +64,7 @@
 
 - Zoom +/−는 바인딩된 `Camera`의 `CameraControl.setZoomRatio()`를 0.5배씩 변경한다. `CameraInfo.zoomState`의 최소·최대값으로 제한하고 실제 배율을 UI에 표시한다. 같은 카메라의 Preview와 ImageCapture에 적용한다. 카메라를 다시 바인딩하면 요청 배율을 새 `CameraControl`에 다시 적용한다. **(Product Requirement, CameraX API Contract, Implementation Decision)**
 - Flash 버튼은 후면 카메라의 `hasFlashUnit()`이 참일 때에만 촬영 플래시 OFF/ON을 전환한다. `ImageCapture.flashMode`에 적용하고 다시 바인딩해도 선택을 유지한다. 지속 점등하는 torch와 AUTO 모드는 이 버튼의 범위 밖이다. **(Product Requirement, CameraX API Contract, Implementation Decision)**
+- 플래시 ON에서 저장 사진도 실제로 어두워지는가? 프리뷰가 어두워지는 시점이나 저장 완료 시점을 노출 시점으로 간주하지 않고, 해당 실기기의 촬영 요청·노출 시작·이미지 반환 로그와 같은 장면의 OFF/ON 저장 결과로 확인한다. 현재 코드는 앱에서 촬영 중 플래시를 끄지 않으며, 발광과 노출의 동기화는 CameraX/기기 카메라 구현이 담당한다. **(Verify First, Current Implementation)**
 - 갤러리 썸네일은 `Pictures/FeelCamera`의 공개 완료된 최신 이미지를 MediaStore에서 찾고, 저장 직후와 카메라 화면 복귀 때 갱신한다. 앱 소유 미디어만 사용하므로 저장소 읽기 권한을 추가하지 않는다. 탭하면 사진 URI를 `ACTION_VIEW`로 열고 읽기 권한을 전달한다. **(Product Requirement, Android MediaStore API Contract, Implementation Decision)**
 
 ## 6. 이 문서에서 다루지 않는 것

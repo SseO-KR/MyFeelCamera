@@ -194,15 +194,20 @@ class CameraController @Inject constructor (
         val capture = imageCapture
             ?: throw CaptureException.CameraNotReady()
 
-        Log.d(TAG, "takePhoto film=$film")
-
-        onShutter()
+        Log.d(TAG, "takePhoto film=$film flashMode=${capture.flashMode}")
 
         val imageProxy = try {
-            capture.takePicture()
+            capture.takePicture(
+                onCaptureStarted = {
+                    Log.d(TAG, "Capture started")
+                    onShutter()
+                },
+            )
         } catch (error: ImageCaptureException) {
             throw CaptureException.CameraCaptureFailed(error)
         }
+
+        Log.d(TAG, "Capture image received timestampNs=${imageProxy.imageInfo.timestamp}")
 
         return captureProcessor.processAndSave(
             imageProxy = imageProxy,
