@@ -55,7 +55,7 @@
 | 직접 수행 | 반복 알림에 필요한 동작 정의 → StateFlow·SharedFlow·Channel 대안 비교 → 구현·수정 방향 검토 → 테스트 범위 결정 |
 | AI | 문제 경로 분석 → 대안 설명 → 코드 수정·테스트 작성 → 실행 결과와 한계 보고 |
 
-확인 가능한 구현: [CameraNoticeStore](../../app/src/main/java/com/newfeelcamera/ui/camera/CameraNoticeStore.kt) · [단위 테스트](../../app/src/test/java/com/newfeelcamera/ui/camera/CameraNoticeStoreTest.kt)
+확인 가능한 구현: [CameraNoticeStore](../../app/src/main/java/com/sseo/feelcamera/ui/camera/CameraNoticeStore.kt) · [단위 테스트](../../app/src/test/java/com/sseo/feelcamera/ui/camera/CameraNoticeStoreTest.kt)
 
 ## 사례 2 촬영 분석의 계획과 구현
 
@@ -69,7 +69,7 @@
 
 무료·무제한 출시를 결정한 2026-10-08에는 동의·고지 준비를 위해 Firebase SDK를 기본 빌드에서 제외했습니다. 이후 2026-10-09에 Release 기본 포함으로 정책을 바꾸고, 첫 실행에서 Analytics·Crashlytics를 각각 선택하며 설정에서 변경하는 흐름을 연결했습니다. 현재 코드는 선택에 따라 수집하고, `photo_saved`의 콘솔 수신 확인은 별도 과제로 남겨 두었습니다.
 
-확인 가능한 구현: [이벤트 계약](../../app/src/main/java/com/newfeelcamera/data/analytics/CaptureAnalytics.kt) · [Firebase 구현](../../app/src/firebase/java/com/newfeelcamera/data/analytics/FirebaseCaptureAnalytics.kt) · [사진 방향 테스트](../../app/src/test/java/com/newfeelcamera/camera/capture/PhotoOrientationTest.kt) · [운영 문서](../features/firebase-monitoring.md)
+확인 가능한 구현: [이벤트 계약](../../app/src/main/java/com/sseo/feelcamera/data/analytics/CaptureAnalytics.kt) · [Firebase 구현](../../app/src/firebase/java/com/sseo/feelcamera/data/analytics/FirebaseCaptureAnalytics.kt) · [사진 방향 테스트](../../app/src/test/java/com/sseo/feelcamera/camera/capture/PhotoOrientationTest.kt) · [운영 문서](../features/firebase-monitoring.md)
 
 ## 사례 3 AI의 설명을 빌드 결과로 수정
 

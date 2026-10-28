@@ -84,7 +84,7 @@ flowchart TD
 - **결정:** Controller는 SurfaceProvider를 전달받아 연결하고, GL/View 쪽이 공급 자원을 관리합니다. CameraX 사용 완료 뒤 Android 자원을 해제하며, GL 텍스처는 소유 Context가 current일 때만 지웁니다.
 - **검증:** 2026-09-23 계측 테스트에서 Surface 20회 교체, 늦은 완료 콜백, Context 교체 시 자원 정리를 확인했습니다.
 
-[자원 소유권과 해제 순서](docs/portfolio/preview-lifecycle.md) · [렌더러 구현](app/src/main/java/com/newfeelcamera/camera/gl/CameraRenderer.kt) · [생명주기 테스트](app/src/androidTest/java/com/newfeelcamera/camera/gl/CameraRendererLifecycleTest.kt)
+[자원 소유권과 해제 순서](docs/portfolio/preview-lifecycle.md) · [렌더러 구현](app/src/main/java/com/sseo/feelcamera/camera/gl/CameraRenderer.kt) · [생명주기 테스트](app/src/androidTest/java/com/sseo/feelcamera/camera/gl/CameraRendererLifecycleTest.kt)
 
 ### 2. 사진 처리 중 필름을 바꾸면 어떤 필름으로 저장할까?
 
@@ -93,7 +93,7 @@ flowchart TD
 - **결정:** `CameraViewModel`이 셔터를 받아들일 때 필름을 `filmAtShutter`로 고정해 촬영 경로에 전달합니다. 두 경로는 같은 `FilmPreset`과 LUT 자산을 사용합니다.
 - **검증:** 2026-10-08의 1.0.1 (2) 점검에서 DUSK 촬영 직후 WARM으로 변경해도 저장 JPEG와 로그에 DUSK가 유지됐습니다.
 
-[필터·촬영 파이프라인](docs/portfolio/filter-pipeline.md) · [상태 고정 코드](app/src/main/java/com/newfeelcamera/ui/camera/CameraViewModel.kt) · [당시 검사 범위](docs/portfolio/validation.md#이전-버전의-앱-동작-점검)
+[필터·촬영 파이프라인](docs/portfolio/filter-pipeline.md) · [상태 고정 코드](app/src/main/java/com/sseo/feelcamera/ui/camera/CameraViewModel.kt) · [당시 검사 범위](docs/portfolio/validation.md#이전-버전의-앱-동작-점검)
 
 ### 3. 휴대폰과 큰 화면의 회전 정책을 어떻게 나눌까?
 
@@ -102,7 +102,7 @@ flowchart TD
 - **결정:** 휴대폰은 **세로 화면을 요청**하고 글자·아이콘과 저장 사진의 방향을 따로 처리하되, 창 크기가 바뀌는 화면은 실제 너비·높이에 맞춰 배치하도록 했습니다.
 - **검증:** 휴대폰 에뮬레이터에서 90° 회전·설정 왕복 시 창이 세로로 유지되고 복귀 후 프리뷰가 다시 표시됨을 확인했습니다. 현재 방향 정책의 큰 화면 경로 재검증은 후속 과제입니다.
 
-[정책 변경과 기기별 확인 범위](docs/portfolio/rotation-and-layout.md) · [배치 구현](app/src/main/java/com/newfeelcamera/ui/camera/CameraScreen.kt) · [휴대폰 복귀 점검 기록](docs/06-implementation-roadmap.md#step-15--settings-navigation과-phone-activity-portrait-유지)
+[정책 변경과 기기별 확인 범위](docs/portfolio/rotation-and-layout.md) · [배치 구현](app/src/main/java/com/sseo/feelcamera/ui/camera/CameraScreen.kt) · [휴대폰 복귀 점검 기록](docs/06-implementation-roadmap.md#step-15--settings-navigation과-phone-activity-portrait-유지)
 
 ## 기술·제품 판단
 
@@ -124,9 +124,11 @@ flowchart TD
 
 ## 검증과 빌드
 
+배포용 applicationId와 namespace는 `com.sseo.feelcamera`입니다. 새 Play 개발자 계정의 무료 앱으로 등록하기 위해 기존 `com.newfeelcamera`에서 변경했습니다. 기존 테스트 앱과는 별도 설치이며, 설정·수집 동의와 기존 앱 소유의 최근 사진 목록을 자동 이전하지 않습니다. 새로 촬영하는 사진은 `Pictures/FeelCamera`에 저장하며, 기존 폴더의 사진은 이동하지 않습니다. [Firebase 설정과 신규 등록 범위](docs/features/firebase-monitoring.md#새-play-계정의-앱-등록-2026-10-26)
+
 Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증을 진행했습니다.
 
-현재 1.0.4 (5)는 Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug 빌드를 통과했고, Release AAB 빌드도 확인했습니다. GL 생명주기·회전 계측 테스트는 이전 버전의 실행 기록으로 구분했습니다. 큰 화면·폴더블 자세별 동작과 촬영 지연·최대 메모리 측정은 후속 과제입니다. [검증 범위와 기록](docs/portfolio/validation.md)
+현재 `com.sseo.feelcamera`의 1.0.4 (5)는 Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug 빌드를 통과했습니다. Release Lint(오류 0개·경고 32개), Release AAB 빌드와 계측 테스트 APK 컴파일도 통과했습니다(2026-10-26). 보관 중인 결제 코드를 포함한 별도 검사에서는 단위 테스트 14개가 통과했습니다. GL 생명주기·회전 계측 테스트 실행은 이전 버전의 기록으로 구분하며 새 패키지로 기기를 실행하지는 않았습니다. 큰 화면·폴더블 자세별 동작과 촬영 지연·최대 메모리 측정은 후속 과제입니다. [검증 범위와 기록](docs/portfolio/validation.md)
 
 JDK 21과 Android SDK Platform 37을 준비하고, Android Studio의 SDK 설정 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 지정합니다. 저장소의 Gradle Wrapper를 사용합니다.
 

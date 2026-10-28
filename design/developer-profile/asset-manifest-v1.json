@@ -1,0 +1,35 @@
+{
+  "created": "2026-10-26",
+  "developer": "SseO_KR",
+  "generator": "built-in image_gen",
+  "palette": [
+    "#0D0D0D",
+    "#F5F0E8",
+    "#D4A853"
+  ],
+  "export_processing": "Resampling and file-format encoding only; original generated artwork retained.",
+  "headerJpegQuality": 94,
+  "specification": "https://support.google.com/googleplay/android-developer/answer/9873827?hl=en",
+  "assets": [
+    {
+      "file": "developer-icon-512-v1.png",
+      "width": 512,
+      "height": 512,
+      "format": "png",
+      "channels": 4,
+      "opaque": true,
+      "bytes": 198562,
+      "sha256": "71cccc798d8c72bcec7f9de05554020932b96bdf437245932b47c31717c8b9a8"
+    },
+    {
+      "file": "developer-header-4096x2304-v1.jpg",
+      "width": 4096,
+      "height": 2304,
+      "format": "jpeg",
+      "channels": 3,
+      "opaque": true,
+      "bytes": 809364,
+      "sha256": "f83ab6688511a2c3c13869b993496fd720d51ad7052e1ba33a04038b451a6ea4"
+    }
+  ]
+}

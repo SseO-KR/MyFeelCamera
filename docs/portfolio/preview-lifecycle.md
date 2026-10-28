@@ -26,7 +26,7 @@ Controller가 공급의 세부 구현까지 소유하면 렌더러의 최신 텍
 
 이후 Controller는 `Preview.SurfaceProvider`를 전달받아 CameraX에 연결하고, GL/View 쪽이 공급에 필요한 렌더링 자원을 관리하도록 정리했습니다. **객체가 얼마나 오래 사는지와 함께, 누가 자원을 생성하고 복구할 수 있는지를 기준으로 소유권을 판단했습니다.** **(설계 수정)**
 
-관련 코드: [CameraController](../../app/src/main/java/com/newfeelcamera/camera/CameraController.kt) · [CameraSurfaceProvider](../../app/src/main/java/com/newfeelcamera/camera/gl/CameraSurfaceProvider.kt) · [CameraGlSurfaceView](../../app/src/main/java/com/newfeelcamera/camera/gl/CameraGlSurfaceView.kt)
+관련 코드: [CameraController](../../app/src/main/java/com/sseo/feelcamera/camera/CameraController.kt) · [CameraSurfaceProvider](../../app/src/main/java/com/sseo/feelcamera/camera/gl/CameraSurfaceProvider.kt) · [CameraGlSurfaceView](../../app/src/main/java/com/sseo/feelcamera/camera/gl/CameraGlSurfaceView.kt)
 
 ## 해제 시점을 분리한 방법
 
@@ -43,7 +43,7 @@ Controller가 공급의 세부 구현까지 소유하면 렌더러의 최신 텍
 
 Surface 요청·완료·프레임 콜백과 draw·폐기 상태는 공통 lock으로 직렬화했습니다. Android 자원의 해제와 GL 텍스처 삭제를 별도 작업으로 관리해, View 종료 뒤에 완료 콜백이 도착하는 경우도 다뤘습니다. **(현재 구현 결정)**
 
-관련 코드: [CameraRenderer](../../app/src/main/java/com/newfeelcamera/camera/gl/CameraRenderer.kt)
+관련 코드: [CameraRenderer](../../app/src/main/java/com/sseo/feelcamera/camera/gl/CameraRenderer.kt)
 
 ## 화면 재생성과 자원 복구를 나눠 다루기
 
@@ -61,4 +61,4 @@ Surface 요청·완료·프레임 콜백과 draw·폐기 상태는 공통 lock�
 
 이 과정을 통해 “카메라 생명주기”를 하나의 수명으로 다루는 대신 Composition, View, Surface, EGL, CameraX 각각의 생성·종료 조건을 구분하게 됐습니다. 소유권을 정할 때도 오래 살아 있는 객체보다 실제 자원 생성과 복구 책임을 먼저 살펴보게 됐습니다.
 
-근거 문서: [자원 소유권 상세와 2026-09-23 결과](../05-lifecycle-and-resource-ownership.md) · [생명주기 테스트 코드](../../app/src/androidTest/java/com/newfeelcamera/camera/gl/CameraRendererLifecycleTest.kt) · [최근 검증 범위](validation.md)
+근거 문서: [자원 소유권 상세와 2026-09-23 결과](../05-lifecycle-and-resource-ownership.md) · [생명주기 테스트 코드](../../app/src/androidTest/java/com/sseo/feelcamera/camera/gl/CameraRendererLifecycleTest.kt) · [최근 검증 범위](validation.md)

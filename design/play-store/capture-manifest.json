@@ -62,5 +62,11 @@
     "source": "Project owner explanation",
     "documentation": "README.md"
   },
-  "asset_scope": "The three presentation images used in the repository README."
+  "asset_scope": "The three presentation images used in the repository README.",
+  "target_app": {
+    "package": "com.sseo.feelcamera",
+    "versionName": "1.0.4",
+    "versionCode": 5,
+    "note": "New Play account registration target; app and capture retain the original screenshot provenance."
+  }
 }

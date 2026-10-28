@@ -4,11 +4,27 @@
 
 ## 범위와 결정
 
-- 프로젝트 `newfeelcamera`, Android 패키지 `com.newfeelcamera`에 Analytics와 Crashlytics 기본 SDK를 연결한다. Auth, Firestore, Storage, Performance, Remote Config, 결제·무료 한도 변경은 포함하지 않는다. **(User Request / Implementation Decision)**
+- 프로젝트 `newfeelcamera`, Android 패키지 `com.sseo.feelcamera`에 Analytics와 Crashlytics 기본 SDK를 연결한다. Auth, Firestore, Storage, Performance, Remote Config, 결제·무료 한도 변경은 포함하지 않는다. **(User Request / Implementation Decision)**
 - `app/google-services.json`은 로컬에만 두고 기존 `.gitignore`를 유지한다. JSON이 있으면 추가 옵션 없이 Firebase 플러그인·SDK·소스를 포함한다. JSON이 없는 공개 소스에서는 Debug만 no-op으로 빌드할 수 있으며 Release는 실패한다. **(Release Requirement, 2026-10-09)**
 - Manifest의 자동 수집 기본값은 off이며 런타임의 사용자 선택이 각 SDK의 수집을 활성화한다. 기본 Debug에서는 초기화·수집을 하지 않고, `-PfirebaseDebugCollectionEnabled=true`로 동의 흐름을 검증할 수 있다. 광고 ID·광고 저장·광고 사용자 데이터·광고 개인화 동의는 모두 거부한다. **(Implementation Decision, 2026-10-09)**
 - 자동 초기화 Provider를 Manifest에서 제거하고 `FeelCameraApp`이 저장된 선택을 읽는다. 하나 이상 허용한 경우 `FirebaseApp.initializeApp()` 후 Analytics consent/collection 및 Crashlytics collection을 각각 설정한다. 촬영 이벤트는 Analytics 허용 상태에서만 호출한다. **(Implementation Decision, 2026-10-09)**
 - BoM으로 SDK 버전을 맞추고 별도 `-ktx` 모듈은 사용하지 않는다. 공식 가이드와 Google Maven POM에서 BoM `34.19.0`, Google Services `4.5.0`, Crashlytics 플러그인 `3.0.8` 배포를 확인했다(2026-09-27). 실제 AGP 9.3.1 호환성은 빌드 결과로 확인한다. **(Firebase API Contract / Verify First)**
+
+## 새 Play 계정의 앱 등록 (2026-10-26)
+
+- 사용자 요청에 따라 `applicationId`, `namespace`, 소스 기본 패키지를 `com.newfeelcamera`에서 `com.sseo.feelcamera`로 변경한다. 버전은 `1.0.4 (5)`를 유지하며 v1 무료·무제한 촬영, 광고·인앱결제 없음 정책을 유지한다. **(User Request / Implementation Decision)**
+- 기존 Firebase 프로젝트 `newfeelcamera`에 새 Android 앱을 추가하고 사용자가 제공한 `google-services.json`으로 교체한다. 설정 파일에는 기존·새 패키지의 client가 모두 있으며 Google Services 플러그인이 새 `applicationId`와 일치하는 client를 선택해야 한다. 설정 파일은 계속 Git에서 제외한다. **(Configuration Contract / Verify First)**
+- 새 패키지는 기존 테스트 앱과 별도 설치다. 기존 앱 설정·수집 동의를 자동 이전하지 않는다. 새 사진은 `Pictures/FeelCamera`에 저장하고 기존 폴더의 사진은 이동하지 않는다. 파일 이름은 유지하며 최근 사진은 새 폴더에서 새 패키지가 소유한 항목을 조회한다. 기존 테스트 앱 소유 사진을 새 앱에서 자동 조회하는 기능은 추가하지 않는다. **(Implementation Decision)**
+- 이전 Play 앱의 결제 라이선스 공개키는 공용 Gradle 설정에서 제거한다. 보관된 결제 코드는 패키지 변경 후에도 선택적으로 컴파일할 수 있게 하되, 수익화 재개 시 새 Play 앱의 공개키와 상품 설정을 다시 준비한다. **(Implementation Decision)**
+- 빌드와 정적 검사를 통과해도 새 앱의 Analytics·Crashlytics 콘솔 수신을 확인한 것은 아니다. 기기·콘솔 수신, Play App Signing 및 업로드 서명, 공개 개인정보처리방침과 새 Play 앱의 데이터 보안·테스트 트랙 설정은 별도 확인한다. 에뮬레이터는 해당 작업에 대한 명시적 허가 전까지 실행하지 않는다. **(Verify First)**
+
+2026-10-26 검증: 새 설정 파일은 제공된 원본과 바이트 단위로 일치하며 Git 제외를 유지한다. Firebase 포함·제외 Debug 빌드와 각각 단위 테스트 11개, 계측 테스트 APK 컴파일, Release AAB 빌드, Release Lint(오류 0개·경고 32개)를 통과했다. Firebase 제외·보관 결제 코드 검사는 임시 복사본에서 진행했고 결제 코드 포함 시 14개 테스트가 통과했다. 생성된 Debug/Release Google Services 리소스가 새 Android 앱 ID와 일치하며 Manifest의 Application·Activity·Provider와 계측 APK의 대상 패키지도 새 패키지로 확인했다. Release AAB와 R8 매핑에 이전 패키지가 없고 결제·광고 ID 권한이 없음을 확인했다. Crashlytics 매핑 업로드 작업은 통과했으며 실제 이벤트·크래시의 콘솔 수신은 미검증이다. **(Observed / Verification Limit)**
+
+공개 Notion 개인정보처리방침의 한·영 도입부에 새 패키지와 이전 테스트 패키지를 함께 명시하고 시행일을 2026-10-26으로 갱신한 뒤 다시 읽어 확인했다. SDK 수집 범위와 보관 정책 본문은 변경하지 않았다. **(Observed / Public Policy Update)**
+
+기존 업로드 키스토어의 alias `feelcamera_upload`를 사용하는 Android Studio 서명 빌드가 완료됐다. `app/release/app-release.aab`를 검증하고 등록 대상을 구분하기 위해 `build/releases/feelcamera-1.0.4-5-com.sseo.feelcamera.aab`에도 보관했다. `jarsigner -verify`로 서명을 검증했고 최종 AAB의 새 패키지와 결제·광고 ID 권한 부재를 확인했다. 서명 인증서 PEM과 체크섬·검증 기록은 Git에서 제외되는 `build/reports/package-migration/`에 보관한다. 키스토어와 비밀번호를 저장소에 추가하지 않았다. **(Observed / Signed Release Artifact)**
+
+새 Play 계정에서 남은 작업은 무료 앱 생성, Play App Signing 설정과 서명된 AAB 업로드, 등록정보·데이터 보안·콘텐츠 등급·배포 국가 입력, 테스트 그룹·참여 링크 생성과 비공개 테스트다. 기존 앱의 등록·테스트 이력이 새 패키지에 자동 승계된 것으로 취급하지 않는다. **(Release Checklist / Pending Console Setup)**
 
 ## 사용과 검증
 

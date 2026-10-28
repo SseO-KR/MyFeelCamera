@@ -31,7 +31,8 @@
 
 | 날짜·범위 | 기록된 결과 | 해석 범위 |
 | --- | --- | --- |
-| 2026-10-19 · 현재 1.0.4 (5) | Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug APK 빌드 통과. Release Lint 오류 0개·경고 45개, Release AAB 빌드 통과 | Firebase 제외 검사는 커밋할 파일만 복사한 환경에서 수행. Release는 로컬 Firebase 설정 사용. 기기 실행·콘솔 수신 검증과 Crashlytics 매핑 업로드 제외 |
+| 2026-10-26 · 새 패키지 `com.sseo.feelcamera`, 1.0.4 (5) | Firebase 포함·제외 Debug 빌드와 각각 단위 테스트 11개 통과. Release Lint 오류 0개·경고 32개, Release AAB 빌드, 계측 테스트 APK 컴파일 통과. 보관된 결제 코드 포함 시 단위 테스트 14개 통과 | Firebase 제외·결제 코드 검사는 별도 임시 복사본에서 수행. Google Services 생성 리소스가 새 Firebase 앱과 일치하고 Debug/Release Manifest 및 AAB의 새 패키지와 권한을 확인. Crashlytics 매핑 업로드 작업 통과. 기기 실행·콘솔 이벤트 수신은 미검증 |
+| 2026-10-19 · 패키지 변경 전 1.0.4 (5) | Firebase 포함·제외 환경에서 각각 단위 테스트 11개와 Debug APK 빌드 통과. Release Lint 오류 0개·경고 45개, Release AAB 빌드 통과 | Firebase 제외 검사는 커밋할 파일만 복사한 환경에서 수행. Release는 로컬 Firebase 설정 사용. 기기 실행·콘솔 수신 검증과 Crashlytics 매핑 업로드 제외 |
 | 2026-09-23 · 생명주기 | 기기 테스트 7개 통과, Surface 반복 교체·Context 세대·완료 콜백 검증 | 당시 렌더러의 해당 시나리오 |
 | 2026-09-23 · 회전 포함 | 생명주기 7개 + 회전·비율 5개, 총 12개 통과 | 위 7개를 포함하는 결과이며 별도 19개가 아님 |
 | 2026-10-08 · 배포 전 정적 점검 | 단위 테스트 9개, Release Lint 오류 0개·경고 42개, Release APK/AAB 빌드 통과 | [로드맵에 기록된 결과](../06-implementation-roadmap.md) |
@@ -40,7 +41,7 @@
 
 자동 테스트 통과와 사용 흐름 점검 결과를 함께 봅니다. 위 1.0.4 검사에는 현재 코드의 단위 테스트와 빌드가 포함됩니다. 이전 버전의 기기 테스트는 해당 버전의 기록으로 유지합니다.
 
-테스트 코드: [기본 단위 테스트](../../app/src/test/java/com/newfeelcamera) · [생명주기 테스트](../../app/src/androidTest/java/com/newfeelcamera/camera/gl/CameraRendererLifecycleTest.kt) · [회전 테스트](../../app/src/androidTest/java/com/newfeelcamera/camera/gl/PreviewRotationTest.kt)
+테스트 코드: [기본 단위 테스트](../../app/src/test/java/com/sseo/feelcamera) · [생명주기 테스트](../../app/src/androidTest/java/com/sseo/feelcamera/camera/gl/CameraRendererLifecycleTest.kt) · [회전 테스트](../../app/src/androidTest/java/com/sseo/feelcamera/camera/gl/PreviewRotationTest.kt)
 
 ## 실기기 확인 환경
 

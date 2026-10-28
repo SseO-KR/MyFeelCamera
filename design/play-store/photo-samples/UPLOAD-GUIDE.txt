@@ -1,0 +1,35 @@
+FeelCamera — English assets using user-provided photo samples
+
+SOURCE LABELS
+Attachment 1 is DUSK: sources/dusk.png
+Attachment 2 is WARM: sources/warm.png
+These source PNGs are copied unchanged from the attachments. The user supplied the film labels. Capture dates, app versions, and camera exposure settings have not been independently verified.
+
+FEATURE GRAPHIC
+Upload en-US/feature-graphic-photos-1024x500.png to the Feature graphic field.
+Dimensions: 1024 x 500. RGB PNG without alpha.
+Both full photos appear in the layout, WARM on the left and DUSK on the right.
+The scene is taken from the user's actual supplied samples, with no AI-generated photo content.
+Suggested alt text: FeelCamera WARM and DUSK photo samples showing apartment buildings under a blue sky.
+
+PHOTO EXAMPLES
+en-US/photo-sample-warm-1080x1920.png
+en-US/photo-sample-dusk-1080x1920.png
+Dimensions: 1080 x 1920 each. RGB PNG without alpha.
+These are English promotional photo-example cards, not captured app interfaces. Use them as supplemental examples of the output; prioritize real camera and Settings screenshots in the store's screenshot sequence.
+Suggested alt text, WARM: WARM photo sample with warm sunlight on apartment buildings.
+Suggested alt text, DUSK: DUSK photo sample with cooler blue sky and shaded apartment buildings.
+
+PHOTOGRAPHIC ACCURACY
+The layouts preserve the whole photo and its original aspect ratio. Only proportional downsampling is applied for display. No exposure, contrast, saturation, white-balance, subject, or perspective edits are applied.
+The two attachments are separate captures, so they are not labeled as a controlled before-and-after comparison or the identical shot.
+
+REMAINING SCREENSHOTS
+Still prepare current-version app UI captures, ideally two or more showing the camera controls and WARM/DUSK preview. Do not fabricate the interface or insert these photographs into an old app screenshot as if it were a live preview.
+
+SOURCE AND EXPORT AUDIT
+manifest.json records the source labels, dimensions, SHA-256 values, and exported assets.
+build-assets.cjs contains the editable SVG layouts and export logic. It needs Node.js and sharp; a bundled module path can be supplied through FEELCAMERA_SHARP_MODULE.
+Existing AI-generated feature artwork and its earlier ZIP package remain available as a separate alternative.
+
+Official asset guidance: https://support.google.com/googleplay/android-developer/answer/9866151?hl=en

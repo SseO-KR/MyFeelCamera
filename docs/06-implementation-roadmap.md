@@ -178,3 +178,11 @@ Galaxy S10(Android 12)과 Galaxy S25+(Android 16)에서 직접 실기기 검증�
 ## 이 로드맵이 아직 답하지 않는 것
 
 각 문서가 Verify First로 남긴 항목은 해당 단계에서 검증한다. Step 20의 상품 설정·구매 UX·오프라인 정책은 유료화 재검토 때까지 Feature 문서에 남긴다.
+
+## 새 Play 개발자 계정의 등록 준비 (2026-10-26)
+
+- 사용자 요청으로 applicationId·namespace·Kotlin 기본 패키지를 `com.sseo.feelcamera`로 변경하고 7개 소스 영역의 52개 Kotlin 파일과 문서의 코드 링크를 함께 이동했다. 버전 `1.0.4 (5)`, 무료·무제한 촬영 정책과 사진 저장 폴더는 유지했다.
+- 기존 Firebase 프로젝트에 추가한 새 Android 앱의 설정 파일로 교체했다. 이전 Play 앱의 결제 라이선스 공개키를 공용 Gradle 설정에서 제거했으며, 보관 결제 코드는 기본 배포에 포함하지 않는다.
+- Firebase 포함·제외 빌드와 각각 단위 테스트 11개, Release Lint(오류 0개·경고 32개), Release AAB 빌드, 계측 테스트 APK 컴파일을 통과했다. 보관 결제 코드의 별도 빌드와 단위 테스트 14개도 통과했다. 새 패키지로 기기·에뮬레이터를 실행하지 않았다.
+- 공개 개인정보처리방침과 저장소의 한·영 문서에 새 패키지와 이전 테스트 패키지를 함께 반영했다. Play Console 등록·테스트 트랙과 실제 Analytics·Crashlytics 수신 검증은 빌드 성공과 구분한다. [운영 설정과 배포 전 확인](features/firebase-monitoring.md#새-play-계정의-앱-등록-2026-10-26)
+- 기존 업로드 키스토어를 사용하는 Android Studio 서명 빌드 후 최종 AAB의 JAR 서명과 새 패키지를 확인했다. 업로드용 파일은 `build/releases/feelcamera-1.0.4-5-com.sseo.feelcamera.aab`이며 키스토어·비밀번호는 저장소에 포함하지 않는다.

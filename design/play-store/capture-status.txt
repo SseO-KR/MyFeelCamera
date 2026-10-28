@@ -1,0 +1,11 @@
+COMPLETE — 2026-10-09
+English screenshots: phone 4, 7-inch tablet 4, 10-inch tablet 4.
+Each set contains WARM, DUSK, grid and Settings.
+Package: feelcamera-play-store-complete-en.zip
+Upload mapping: UPLOAD-GUIDE.txt
+Preview: capture-overview.png
+Capture provenance and hashes: capture-manifest.json
+Actual app UI was captured through the Android emulator virtual camera.
+The supplied WARM photo was used as a scene poster for the base capture.
+The final README phone WARM/DUSK images combine emulator UI with developer photographs.
+See README.md and capture-manifest.json for the final composition provenance.

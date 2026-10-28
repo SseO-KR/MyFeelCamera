@@ -1,0 +1,77 @@
+FeelCamera Google Play asset package
+Language: English only
+Prepared: 2026-10-09
+Package: feelcamera-play-store-complete-en.zip
+
+UPLOAD MAPPING
+
+App icon:
+  app-icon-512.png (512 x 512, RGBA PNG)
+
+Feature graphic:
+  en-US/feature-graphic-photos-1024x500.png (1024 x 500, RGB PNG)
+  Uses the user's supplied DUSK and WARM photos. They are separate shots,
+  not an identical-scene before/after comparison.
+
+Phone screenshots:
+  en-US/phone/01-warm.png
+  en-US/phone/02-dusk.png
+  en-US/phone/03-grid.png
+  en-US/phone/04-settings.png
+  All 1080 x 1920, RGB PNG, portrait 9:16.
+
+7-inch tablet screenshots:
+  en-US/tablet-7/01-warm.png
+  en-US/tablet-7/02-dusk.png
+  en-US/tablet-7/03-grid.png
+  en-US/tablet-7/04-settings.png
+  All 1440 x 2560, RGB PNG, portrait 9:16.
+
+10-inch tablet screenshots:
+  en-US/tablet-10/01-warm.png
+  en-US/tablet-10/02-dusk.png
+  en-US/tablet-10/03-grid.png
+  en-US/tablet-10/04-settings.png
+  All 1440 x 2560, RGB PNG, portrait 9:16.
+
+Upload the four PNG files in each folder to its matching Play Console slot.
+Use the numbered order: WARM, DUSK, grid, Settings.
+The two tablet sets have the same pixel resolution but were captured separately
+at 320 and 240 dpi respectively, producing different actual Android layouts.
+
+Store text:
+  en-US/listing.txt
+  Copy the app name, short description and full description into the English
+  listing. This is listing copy; it does not rename the installed app.
+
+Preview and metadata only (do not upload as screenshots):
+  capture-overview.png: contact sheet of the 12 screenshots.
+  capture-manifest.json: dimensions, SHA-256 hashes and capture provenance.
+  UPLOAD-GUIDE.txt: this guide.
+
+CAPTURE PROVENANCE
+
+Base UI captured from app version 1.0.3 (4), API 36. Current code is 1.0.4 (5).
+Build: debug, firebaseDebugCollectionEnabled=true.
+Usage statistics and Crash reports were left off on all capture devices.
+
+The virtual rear camera looked at the user's supplied WARM photograph placed
+as a poster in the emulator scene. That photograph was already filtered;
+the virtual camera and the current app film process it again. These images
+illustrate the actual app UI, not a raw-source filter comparison.
+The README phone WARM and DUSK images use developer photographs composited
+over the preview region of emulator UI captures. See README.md and the
+readme_composition section of capture-manifest.json for the final provenance.
+This composition description applies to those two images only.
+The contact sheet is resized solely for inspection, not for store upload.
+
+The UI capture and final presentation images serve different purposes.
+Physical-device verification environments are documented in
+../../docs/portfolio/validation.md.
+
+The older feature-graphic-1024x500.png and photo-sample-*.png files remain in
+the working folder as earlier alternatives; they are not in this final ZIP.
+Use feature-graphic-photos-1024x500.png for the feature graphic slot.
+
+OFFICIAL REFERENCE
+https://support.google.com/googleplay/android-developer/answer/9866151?hl=en

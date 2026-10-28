@@ -40,7 +40,7 @@ DUSK 선택 → 셔터 → DUSK를 촬영 입력으로 고정 → DUSK 적용 �
 
 화면 버튼과 볼륨 키는 같은 촬영 진입점을 사용합니다. 촬영 중 중복 입력을 제한하고, 성공·실패·취소 후에는 `finally`에서 촬영 상태를 복구합니다. **(현재 코드)**
 
-관련 코드: [CameraViewModel](../../app/src/main/java/com/newfeelcamera/ui/camera/CameraViewModel.kt) · [FilmPreset](../../app/src/main/java/com/newfeelcamera/camera/filter/FilmPreset.kt)
+관련 코드: [CameraViewModel](../../app/src/main/java/com/sseo/feelcamera/ui/camera/CameraViewModel.kt) · [FilmPreset](../../app/src/main/java/com/sseo/feelcamera/camera/filter/FilmPreset.kt)
 
 ## 프리뷰와 촬영의 책임 나누기
 
@@ -55,7 +55,7 @@ DUSK 선택 → 셔터 → DUSK를 촬영 입력으로 고정 → DUSK 적용 �
 
 저장 경로는 이미지 변환 → GPU 필터 → 결과 읽기 → JPEG 인코딩 → MediaStore 공개 순서입니다. 저장을 끝내기 전에는 성공을 알리지 않으며, 촬영별 ImageProxy·Bitmap·GL 자원은 오류 경로에서도 해제하도록 책임을 정했습니다.
 
-관련 코드: [CaptureProcessor](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureProcessor.kt) · [CaptureGlRenderer](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureGlRenderer.kt)
+관련 코드: [CaptureProcessor](../../app/src/main/java/com/sseo/feelcamera/camera/capture/CaptureProcessor.kt) · [CaptureGlRenderer](../../app/src/main/java/com/sseo/feelcamera/camera/capture/CaptureGlRenderer.kt)
 
 ## JPEG 품질과 파일 용량
 

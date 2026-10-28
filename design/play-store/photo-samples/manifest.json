@@ -1,0 +1,46 @@
+{
+  "language": "en-US",
+  "sources": [
+    {
+      "film": "DUSK",
+      "file": "sources/dusk.png",
+      "width": 3060,
+      "height": 4080,
+      "sha256": "b29d68e089c7984f89cc16a7a1b2955402142152801e2383cbb8d767d192734c",
+      "source": "User attachment 1"
+    },
+    {
+      "film": "WARM",
+      "file": "sources/warm.png",
+      "width": 3060,
+      "height": 4080,
+      "sha256": "dbae76303e317b48f1521dc44e5a1dcd60f6fa33a78934ad22ae3acf44457d4e",
+      "source": "User attachment 2"
+    }
+  ],
+  "processing": "Whole-photo embedding and proportional downsampling only. No color adjustments, retouching, or generated photo content.",
+  "usage": "Feature graphic and supplemental photo examples; these do not depict the app UI.",
+  "assets": [
+    {
+      "file": "en-US/feature-graphic-photos-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "hasAlpha": false,
+      "bytes": 286125
+    },
+    {
+      "file": "en-US/photo-sample-warm-1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "hasAlpha": false,
+      "bytes": 1705238
+    },
+    {
+      "file": "en-US/photo-sample-dusk-1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "hasAlpha": false,
+      "bytes": 1415915
+    }
+  ]
+}

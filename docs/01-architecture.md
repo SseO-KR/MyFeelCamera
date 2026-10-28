@@ -15,7 +15,7 @@
 `00`에는 module 구조에 대한 요구사항이 없다 — 학습 목표 목록(CameraX, Compose, lifecycle, Surface, OpenGL ES, SurfaceTexture, OES texture, shader, LUT, adaptive layout)에도 module 경계 자체는 포함돼 있지 않다. 이 프로젝트는 재사용 대상(다른 앱이 이 코드를 가져다 쓰는 시나리오)이 아직 없는 1인 프로젝트이므로, `:domain`/`:data`를 별도 Gradle 모듈로 미리 쪼개는 비용(빌드 그래프, DI 컴포넌트 경계 관리)을 지금 낼 이유가 없다.
 
 ```
-com.newfeelcamera/
+com.sseo.feelcamera/
 ├─ camera/    CameraX 실행과 카메라 Preview/Filter 파이프라인 — UI를 모른다
 │  ├─ gl/     카메라 전용 GLSurfaceView, SurfaceProvider, Renderer, shader 로딩
 │  ├─ filter/ Film/LUT 모델 — Android 프레임워크 비의존
@@ -139,7 +139,7 @@ Child composable 트리는 `layoutMode`와 무관하게 항상 동일하게 유�
 
 초기에는 Portrait부터 구현했고, 현재 고정 `Box` 트리에서 Portrait/Landscape 배치를 모두 처리한다. `Tabletop`/`Book` 타입과 TODO는 두지 않았다. 실제 자세 이벤트와 필요한 UI가 확인되면 해당 타입과 배치를 함께 추가한다.
 
-현재 고정 3-region(StartControls/Preview/EndControls)은 표준 `Box`로 구현할 수 있어 별도 Adaptive scaffold를 도입하지 않았다. `androidx.window`의 자세 이벤트 구독도 아직 연결하지 않았다. 구체 구현은 [CameraScreen](../app/src/main/java/com/newfeelcamera/ui/camera/CameraScreen.kt)과 [CameraLayoutMode](../app/src/main/java/com/newfeelcamera/ui/camera/layout/CameraLayoutMode.kt)를 따른다.
+현재 고정 3-region(StartControls/Preview/EndControls)은 표준 `Box`로 구현할 수 있어 별도 Adaptive scaffold를 도입하지 않았다. `androidx.window`의 자세 이벤트 구독도 아직 연결하지 않았다. 구체 구현은 [CameraScreen](../app/src/main/java/com/sseo/feelcamera/ui/camera/CameraScreen.kt)과 [CameraLayoutMode](../app/src/main/java/com/sseo/feelcamera/ui/camera/layout/CameraLayoutMode.kt)를 따른다.
 
 ## 7. Filter / LUT 아키텍처 — 공유 입력과 분리된 실행 경로
 
@@ -163,7 +163,7 @@ CameraUiState.selectedFilm (단일 source of truth)
 
 ## 8. Filter 모델 확장성
 
-현재 [FilmPreset](../app/src/main/java/com/newfeelcamera/camera/filter/FilmPreset.kt)은 LUT 자산 경로를 가진 `WARM`·`DUSK` enum이다. 별도의 `FilmFilter`/`FilterParams` 추상화는 사용하지 않는다.
+현재 [FilmPreset](../app/src/main/java/com/sseo/feelcamera/camera/filter/FilmPreset.kt)은 LUT 자산 경로를 가진 `WARM`·`DUSK` enum이다. 별도의 `FilmFilter`/`FilterParams` 추상화는 사용하지 않는다.
 
 P0는 이 리스트가 정확히 2개다(`00` §3) — 런타임 필터 조합/블렌딩 파이프라인은 만들지 않는다. 목록을 늘리는 것은 P1이다(`00` §4).
 

@@ -55,7 +55,7 @@ Camera device
 - Renderer는 SurfaceRequest를 보관하고 GL 콜백에서 SurfaceBinding을 만든다. 기존 pending 요청을 교체할 때는 `willNotProvideSurface()`로 끝내고, 사용 중 binding은 `invalidate()`로 새 요청을 유도한다.
 - 퇴역한 binding의 Surface·SurfaceTexture는 CameraX 사용 완료 뒤 해제한다. GL texture 삭제는 별도 관리하며, 늦은 콜백도 원래 binding에만 적용한다(§8).
 
-구체 코드: [CameraGlSurfaceView](../app/src/main/java/com/newfeelcamera/camera/gl/CameraGlSurfaceView.kt) · [CameraRenderer](../app/src/main/java/com/newfeelcamera/camera/gl/CameraRenderer.kt)
+구체 코드: [CameraGlSurfaceView](../app/src/main/java/com/sseo/feelcamera/camera/gl/CameraGlSurfaceView.kt) · [CameraRenderer](../app/src/main/java/com/sseo/feelcamera/camera/gl/CameraRenderer.kt)
 
 ## 5. `onFrameAvailable` → GL 스레드 전달
 

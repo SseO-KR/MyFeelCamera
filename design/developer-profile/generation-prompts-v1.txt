@@ -1,0 +1,39 @@
+BUILT-IN IMAGE_GEN PROMPT SET
+
+DEVELOPER ICON
+
+Generation mode: built-in image_gen
+Use: Google Play developer profile icon, SseO_KR
+Source: developer-icon-source-v1.png
+Upload export: developer-icon-512-v1.png, 512 x 512, RGBA PNG with opaque background
+
+Use case: logo-brand.
+Asset type: Google Play developer profile icon, for the independent developer SseO_KR whose first app is FeelCamera. Create ONE finished square icon, not a presentation or a grid of alternatives.
+Primary request: a distinctive premium geometric S monogram with a subtle optical/film feeling. The S should be built from one broad continuous softly rounded warm-ivory ribbon, with a small restrained amber-gold segment that feels integral to the lower turn. Instantly readable as S at 48 pixels. This is the developer's mark, so the symbol should be versatile enough for future apps.
+Background: perfectly solid near-black charcoal #0D0D0D, opaque and full bleed.
+Palette: warm ivory #F5F0E8 and muted honey amber #D4A853 on charcoal. Match the warm restrained character of a film-camera app. No additional colors.
+Style: refined contemporary graphic identity, simple strong silhouette, confident rounded geometry, carefully balanced negative spaces, nearly flat finish with only the faintest warm tonal modeling. No photorealism, no chrome, no neon, no glossy plastic.
+Composition: square 1:1 canvas. One centered monogram filling approximately 64 percent of the canvas width, balanced generous padding so it survives circular cropping. No external tile frame or rounded-corner mask.
+Text: the monogram S only; no wordmark, no company name, no slogan, no other letters.
+Avoid: a camera pictogram, code brackets, generic circuit-board motifs, decorative sparkles, hairline strokes, extra symbols, mockups, multiple panels, drop shadows, watermark.
+Output intent: crisp high-resolution square source for a 512 x 512 developer icon, opaque background.
+
+
+DEVELOPER HEADER
+
+Generation mode: built-in image_gen, reference-based composition
+Reference: developer-icon-source-v1.png
+Use: Google Play developer profile header, SseO_KR
+Source: developer-header-source-v1.png
+Upload export: developer-header-4096x2304-v1.jpg, 4096 x 2304, sRGB JPEG without transparency
+
+Use case: compositing.
+Asset type: Google Play developer profile HEADER artwork, for the same SseO_KR developer identity as the supplied icon.
+Input image 1: existing developer icon and identity reference. Preserve the distinctive ivory ribbon S monogram, its smooth rounded outline, the small honey-amber lower segment, and its elegant warm finish. Use this exact mark as the central hero.
+Primary request: transform this square identity artwork into a sophisticated cinematic wide 16:9 developer header by expanding the composition around the mark. Make ONE finished full-bleed header image, not a mockup, not a grid.
+Composition: exact 16:9 landscape, intended export 4096 x 2304 pixels. The S mark centered at approximately 21 percent of the full canvas width and 48 percent of the full height, with the whole mark safely inside the central 50 percent of the image width and the middle 60 percent of height. Generous dark breathing space. Important artwork must survive a wide horizontal center crop.
+Backdrop: deep nearly black charcoal #0D0D0D. Add two very broad, softly illuminated sculptural ribbon arcs that continue beyond opposite outer edges, inspired by the same flowing ribbon geometry as the S; keep these peripheral shapes dark, abstract, and understated, their far edges subtly lit in muted honey amber and warm ivory. They create a gentle film-light / optical atmosphere, not extra logos, and never compete with the central mark. Center area remains clean charcoal.
+Palette: restrained warm ivory #F5F0E8, muted amber #D4A853, black charcoal. Tactile matte finish, broad soft studio illumination, almost no visible grain. Premium independent software developer identity with the warm feeling of analog photography.
+Text: NO wordmark or slogan; ONLY the existing S-shaped mark. Do not add SseO_KR, FeelCamera, a tagline, or any other text.
+Invariants: preserve the reference S shape and its color separation. Do not put the icon inside a visible square tile; the header is one coherent full-bleed artwork.
+Avoid: a camera product, phones, screenshots, people, extra props, tiny decorative symbols, circuitry, code brackets, stars, neon, rainbow colors, aggressive glow, thin lines, watermarks, border, collage. Opaque background.

@@ -1,0 +1,32 @@
+{
+  "requirementsSource": "User-provided Play Console screenshot",
+  "maxBytesPerFile": 1000000,
+  "assets": [
+    {
+      "file": "developer-icon-512.jpg",
+      "width": 512,
+      "height": 512,
+      "format": "JPEG",
+      "colourSpace": "srgb",
+      "bitsPerPixel": 24,
+      "hasAlpha": false,
+      "bytes": 22853,
+      "kB": 23,
+      "quality": 94,
+      "sha256": "06a0ebae398f8a8f21cdbbfd9d3b3cf46c204c5adb8f497cfec2e6abd695e4fb"
+    },
+    {
+      "file": "developer-header-4096x2304.jpg",
+      "width": 4096,
+      "height": 2304,
+      "format": "JPEG",
+      "colourSpace": "srgb",
+      "bitsPerPixel": 24,
+      "hasAlpha": false,
+      "bytes": 461969,
+      "kB": 462,
+      "quality": 90,
+      "sha256": "f63e869f18c36bc6e80d983fabccc65cf0ac5d375b12c73e3c0b498707c75c4f"
+    }
+  ]
+}

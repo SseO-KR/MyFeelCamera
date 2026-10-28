@@ -1,0 +1,17 @@
+Generation mode: built-in image_gen
+Input: current launcher artwork (style and palette reference only)
+Export: opaque RGB PNG at 1024 x 500 pixels
+
+Use case: ads-marketing
+Asset type: Google Play feature graphic for the Android app FeelCamera, English-only. A single finished wide horizontal banner, exactly 1024 x 500 pixels, aspect ratio 2.048:1. This is promotional artwork, not an app screenshot.
+Primary request: Make a refined, calm film-camera-themed banner that communicates choosing a film-inspired look before taking a photo. Keep it minimal, legible at small sizes, and suitable for a real camera app.
+Input image: the attached existing launcher artwork is a STYLE AND PALETTE REFERENCE ONLY. Borrow its warm ivory, near-black, and amber palette. Do not paste or redraw the camera icon or invent a phone interface.
+Scene/backdrop: a warm ivory-to-amber background with one editorial photographic vignette occupying the right half: a modest ceramic coffee cup on a cafe windowsill with sunlight, a few soft green leaves, and blurred street architecture beyond. Natural ordinary details, gentle grain, quiet analog photography mood, warm restrained tones. This vignette is illustrative promotional photography, not an example of the actual app filter output. No side-by-side before/after comparison, no split filter demonstration.
+Composition: clean spacious left half for typography, photography on the right. Keep all important text comfortably inside the central safe area: at least 90px from left/right edges and 65px from top/bottom edges. Distinct typographic hierarchy, dark charcoal text on pale warm background, no crowded details.
+Text (verbatim, English only):
+"FeelCamera"
+"Film-inspired color."
+"See it before you shoot."
+"WARM / DUSK"
+The first line is a strong clean brand heading. The second and third are smaller supporting copy. The last line is a very small but legible restrained film-label detail near the supporting copy.
+Constraints: one banner, full bleed opaque rectangular background; no borders, no rounded outer corners, no fake screenshots, no phone/device frames, no app icon, no store badges, no price/free/discount/review/rank claims, no calls to install, no third-party logos, no extra words, no watermarks. Use accurate English spelling.

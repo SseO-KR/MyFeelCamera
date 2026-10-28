@@ -1,19 +1,19 @@
 # FeelCamera 개인정보처리방침 초안
 
-이 문서는 Firebase Analytics·Crashlytics를 포함하고 사용자 선택에 따라 수집하는 FeelCamera Release 빌드(`com.newfeelcamera`)를 기준으로 작성했다. 공개 Notion의 기존 ‘Firebase 미사용’ 내용은 이 문서로 교체해야 한다. 공개 전에 실제 배포 트랙의 모든 버전, GA4 보관·데이터 공유·Google Signals·Ads 연결 설정과 국외 처리 안내를 확인한다. 노션에 게시할 때는 이 안내 문단을 제외하고 아래 **개인정보처리방침**부터 복사한다.
+이 문서는 Firebase Analytics·Crashlytics를 포함하고 사용자 선택에 따라 수집하는 FeelCamera Release 빌드(`com.sseo.feelcamera`)와 이전 테스트 패키지를 기준으로 작성했다. 공개 개인정보처리방침과 패키지 정보·시행일을 함께 관리한다. 공개 전에 실제 배포 트랙의 모든 버전, GA4 보관·데이터 공유·Google Signals·Ads 연결 설정과 국외 처리 안내를 확인한다. 노션에 게시할 때는 이 안내 문단을 제외하고 아래 **개인정보처리방침**부터 복사한다.
 
 ---
 
 # FeelCamera 개인정보처리방침
 
-시행일: 2026년 10월 9일
+시행일: 2026년 10월 26일
 
-FeelCamera(`com.newfeelcamera`)는 필름 효과를 적용해 사진을 촬영하고 기기에 저장하는 앱입니다. 개발자 표시명은 **SseO_KR**이며, 개인정보 관련 문의는 **skw4223@gmail.com**으로 받을 수 있습니다.
+FeelCamera(`com.sseo.feelcamera`, 이전 테스트 패키지 `com.newfeelcamera`)는 필름 효과를 적용해 사진을 촬영하고 기기에 저장하는 앱입니다. 개발자 표시명은 **SseO_KR**이며, 개인정보 관련 문의는 **skw4223@gmail.com**으로 받을 수 있습니다.
 
 ## 1. 앱이 접근하고 저장하는 정보
 
 - **카메라:** 사진 촬영과 미리보기를 위해 사용자가 허용한 카메라 권한으로 영상에 접근합니다. 미리보기 영상은 촬영 기능을 위해 기기에서 처리합니다.
-- **사진:** 촬영 결과는 기기의 공유 사진 저장 공간인 `Pictures/NewFeelCamera` 폴더에 JPEG로 저장됩니다. 앱은 이 폴더에 자신이 저장한 사진 중 가장 최근 사진을 찾아 화면에 표시합니다. 기기의 사진 앱이나 적절한 접근 권한을 가진 다른 앱에서도 저장된 사진을 볼 수 있습니다. FeelCamera는 사진 내용을 개발자 서버나 Firebase로 업로드하지 않으며, 사진 파일 경로를 분석 이벤트에 넣지 않습니다.
+- **사진:** 촬영 결과는 기기의 공유 사진 저장 공간인 `Pictures/FeelCamera` 폴더에 JPEG로 저장됩니다. 앱은 이 폴더에 자신이 저장한 사진 중 가장 최근 사진을 찾아 화면에 표시합니다. 기기의 사진 앱이나 적절한 접근 권한을 가진 다른 앱에서도 저장된 사진을 볼 수 있습니다. FeelCamera는 사진 내용을 개발자 서버나 Firebase로 업로드하지 않으며, 사진 파일 경로를 분석 이벤트에 넣지 않습니다.
 - **설정:** 시작 필름, 격자 표시, 셔터음, 사용 통계·오류 보고 선택을 앱의 기기 내 저장 공간에 보관합니다. 계정을 만들거나 이 설정을 개발자 서버로 전송하지 않습니다.
 
 ## 2. Google Play와 다른 앱
@@ -38,7 +38,7 @@ Android의 백업 기능이 켜져 있으면 앱 설정이 사용자의 Google �
 
 ## 4. 보관 및 삭제
 
-촬영한 사진은 사용자가 기기의 사진 앱이나 파일 관리 기능으로 삭제할 때까지 기기에 남습니다. 앱을 삭제해도 `Pictures/NewFeelCamera`에 저장된 사진은 남을 수 있습니다. 앱 설정은 앱 데이터 삭제 또는 앱 제거 시 기기에서 삭제되지만, Android 백업을 사용했다면 기기 설정에 따라 복원될 수 있습니다.
+촬영한 사진은 사용자가 기기의 사진 앱이나 파일 관리 기능으로 삭제할 때까지 기기에 남습니다. 앱을 삭제해도 `Pictures/FeelCamera`에 저장된 사진은 남을 수 있습니다. 앱 설정은 앱 데이터 삭제 또는 앱 제거 시 기기에서 삭제되지만, Android 백업을 사용했다면 기기 설정에 따라 복원될 수 있습니다.
 
 Analytics의 이벤트 데이터 보관 설정은 2개월, 사용자 데이터 보관 설정은 14개월입니다. 새 사용자 활동이 있으면 사용자 데이터 보관 기간이 다시 시작되므로 계속 사용하는 동안 보관 기간이 연장될 수 있습니다. 이 설정은 표준 집계 보고서 전체의 보관 기간을 의미하지 않습니다. [Analytics 데이터 보관 안내](https://support.google.com/analytics/answer/7667196?hl=ko)
 
@@ -56,14 +56,14 @@ Firebase는 Crashlytics의 오류 스택과 관련 식별자를 90일간 보관�
 
 # FeelCamera Privacy Policy
 
-Effective date: October 9, 2026
+Effective date: October 26, 2026
 
-FeelCamera (`com.newfeelcamera`) is a camera app that applies film effects and saves photos on your device. The developer name is **SseO_KR**. For privacy questions, contact **skw4223@gmail.com**.
+FeelCamera (`com.sseo.feelcamera`; previous test package: `com.newfeelcamera`) is a camera app that applies film effects and saves photos on your device. The developer name is **SseO_KR**. For privacy questions, contact **skw4223@gmail.com**.
 
 ## 1. Information the app accesses and stores
 
 - **Camera:** With your permission, the app accesses the camera to show a preview and take photos. Preview frames are processed on your device for the camera feature.
-- **Photos:** The app saves captured JPEG photos in the shared `Pictures/NewFeelCamera` folder on your device. It looks up the most recent photo it saved to show it in the app. Your photo app and other apps with appropriate access can also view saved photos. FeelCamera does not upload photo contents to the developer's servers or Firebase, or include photo file paths in analytics events.
+- **Photos:** The app saves captured JPEG photos in the shared `Pictures/FeelCamera` folder on your device. It looks up the most recent photo it saved to show it in the app. Your photo app and other apps with appropriate access can also view saved photos. FeelCamera does not upload photo contents to the developer's servers or Firebase, or include photo file paths in analytics events.
 - **Settings:** The app stores your starting film, grid, shutter sound, and usage statistics/crash reporting choices locally. It does not require an account or send these settings to a developer server.
 
 ## 2. Google Play and other apps
@@ -88,7 +88,7 @@ Selected analytics/crash data is encrypted in transit using HTTPS/TLS and sent t
 
 ## 4. Retention and deletion
 
-Captured photos remain on your device until you delete them using your photo or file management app. Photos in `Pictures/NewFeelCamera` may remain after you uninstall FeelCamera. Local app settings are removed from the device when you clear the app's data or uninstall it, but they may be restored if Android backup was enabled.
+Captured photos remain on your device until you delete them using your photo or file management app. Photos in `Pictures/FeelCamera` may remain after you uninstall FeelCamera. Local app settings are removed from the device when you clear the app's data or uninstall it, but they may be restored if Android backup was enabled.
 
 Analytics event data retention is set to 2 months and user data retention to 14 months. New user activity resets the user data retention period, so continued activity can extend it. These settings do not specify a retention limit for all standard aggregated reports. See [Analytics data retention](https://support.google.com/analytics/answer/7667196?hl=en).
 

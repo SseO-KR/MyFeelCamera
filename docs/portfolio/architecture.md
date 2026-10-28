@@ -91,7 +91,7 @@ ViewModel의 촬영 작업
 
 설정 화면으로 이동해도 카메라 destination이 back stack에 남아 있으면 ViewModel은 유지됩니다. 단순한 화면 이탈과 ViewModel 정리는 다릅니다. destination 제거로 ViewModel이 정리되거나 프로세스가 종료된 뒤에도 저장을 보장해야 한다면, 작업 수명과 원본 보존 방식을 다시 설계해야 합니다. **(현재 선택의 한계)**
 
-관련 코드: [CameraViewModel](../../app/src/main/java/com/newfeelcamera/ui/camera/CameraViewModel.kt) · [CaptureProcessor](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureProcessor.kt) · [CaptureEglSession](../../app/src/main/java/com/newfeelcamera/camera/capture/CaptureEglSession.kt)
+관련 코드: [CameraViewModel](../../app/src/main/java/com/sseo/feelcamera/ui/camera/CameraViewModel.kt) · [CaptureProcessor](../../app/src/main/java/com/sseo/feelcamera/camera/capture/CaptureProcessor.kt) · [CaptureEglSession](../../app/src/main/java/com/sseo/feelcamera/camera/capture/CaptureEglSession.kt)
 
 ## 배포 기능을 분리하는 방식
 

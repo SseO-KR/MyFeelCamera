@@ -1,0 +1,33 @@
+APP NAME
+FeelCamera - Film Camera
+
+SHORT DESCRIPTION
+Choose WARM or DUSK, preview the color, and capture your everyday moments.
+
+FULL DESCRIPTION
+Choose a film-inspired look before you shoot.
+
+FeelCamera applies WARM and DUSK color to your live camera preview and captured photos. Pick a look, frame your shot, and save the moment to your device.
+
+TWO FILM-INSPIRED LOOKS
+Switch between WARM and DUSK while looking at the camera preview.
+
+SIMPLE CAMERA CONTROLS
+Take photos with the on-screen shutter or your phone's volume buttons. Adjust the zoom and use the flash when your device supports it.
+
+MAKE IT YOUR CAMERA
+Choose your starting film, turn the composition grid on or off, and adjust the shutter sound setting. Shutter sound availability depends on your device and regional requirements.
+
+PHOTOS SAVED TO YOUR DEVICE
+Photos are saved as JPEG files in your device's Pictures/FeelCamera folder. Tap the latest-photo thumbnail to open the photo in a compatible gallery app. Photo contents are not uploaded to Firebase or a developer server.
+
+NO ACCOUNT REQUIRED
+The app has no ads, no in-app purchases, and no photo-count limit.
+
+YOUR MONITORING CHOICES
+Usage statistics and crash reporting are optional. You can choose them separately and change your choices in Settings. The camera works without either choice.
+
+FeelCamera currently supports the rear camera on Android 10 and later. Camera access is required to take photos.
+
+Support: skw4223@gmail.com
+Privacy policy: https://curly-crowberry-6e3.notion.site/FeelCamera-3f4a6411e1a4805f968df6a70c04a331
