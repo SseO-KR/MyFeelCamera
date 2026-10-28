@@ -80,6 +80,7 @@ fun SettingsRoute(
         uiState = uiState,
         onStartFilmSelected = viewModel::setStartFilm,
         onGridChanged = viewModel::setShowGrid,
+        onShutterSoundMutedChanged = viewModel::setShutterSoundMuted,
         onShutterSoundLevelSelected = viewModel::setShutterSoundLevel,
         onAnalyticsChanged = { enabled ->
             viewModel.setTelemetryConsent(enabled, uiState.telemetryConsent.crashReportingEnabled)
@@ -97,6 +98,7 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     onStartFilmSelected: (FilmPreset) -> Unit,
     onGridChanged: (Boolean) -> Unit,
+    onShutterSoundMutedChanged: (Boolean) -> Unit,
     onShutterSoundLevelSelected: (ShutterSoundLevel) -> Unit,
     onAnalyticsChanged: (Boolean) -> Unit,
     onCrashReportingChanged: (Boolean) -> Unit,
@@ -244,34 +246,69 @@ fun SettingsScreen(
                     )
                 }
 
-                Column(modifier = Modifier.selectableGroup()) {
-                    Text(
-                        text = stringResource(R.string.shutter_sound),
-                        modifier = Modifier.semantics { heading() },
-                        color = Ink,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    if (uiState.mustPlayShutterSound) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .toggleable(
+                            value = uiState.isShutterSoundMuted,
+                            enabled = !uiState.isSaving,
+                            role = Role.Switch,
+                            onValueChange = onShutterSoundMutedChanged,
+                        )
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
-                            text = stringResource(R.string.shutter_sound_required),
+                            text = stringResource(R.string.silent_capture),
+                            color = Ink,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(
+                                if (uiState.usesSystemShutterSound) R.string.system_shutter_sound_description
+                                else R.string.silent_capture_description,
+                            ),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
-                    } else {
+                    }
+                    Switch(
+                        checked = uiState.isShutterSoundMuted,
+                        onCheckedChange = null,
+                        enabled = !uiState.isSaving,
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = Accent,
+                            uncheckedTrackColor = Rail,
+                        ),
+                    )
+                }
+
+                if (!uiState.usesSystemShutterSound) {
+                    Column(modifier = Modifier.selectableGroup()) {
+                        Text(
+                            text = stringResource(R.string.shutter_sound),
+                            modifier = Modifier.semantics { heading() },
+                            color = Ink,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                         Text(
                             text = stringResource(R.string.shutter_sound_description),
                             color = InkDim,
                             fontSize = 13.sp,
                         )
-                        ShutterSoundLevel.entries.forEach { level ->
+                        ShutterSoundLevel.entries.filter { it != ShutterSoundLevel.OFF }.forEach { level ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 48.dp)
                                     .selectable(
                                         selected = uiState.shutterSoundLevel == level,
-                                        enabled = !uiState.isSaving,
+                                        enabled = !uiState.isSaving && !uiState.isShutterSoundMuted,
                                         role = Role.RadioButton,
                                         onClick = { onShutterSoundLevelSelected(level) },
                                     )
@@ -281,7 +318,7 @@ fun SettingsScreen(
                                 RadioButton(
                                     selected = uiState.shutterSoundLevel == level,
                                     onClick = null,
-                                    enabled = !uiState.isSaving,
+                                    enabled = !uiState.isSaving && !uiState.isShutterSoundMuted,
                                     colors = RadioButtonDefaults.colors(
                                         selectedColor = Accent,
                                         unselectedColor = InkDim,
@@ -290,7 +327,7 @@ fun SettingsScreen(
                                 Text(
                                     text = stringResource(level.labelRes),
                                     modifier = Modifier.padding(start = 12.dp),
-                                    color = Ink,
+                                    color = if (uiState.isShutterSoundMuted) InkDim else Ink,
                                     fontSize = 15.sp,
                                 )
                             }

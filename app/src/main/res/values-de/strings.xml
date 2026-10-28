@@ -43,8 +43,10 @@
     <string name="start_film_description">Film, der beim Öffnen der Kamera ausgewählt wird</string>
     <string name="show_grid">Raster anzeigen</string>
     <string name="show_grid_description">Ein 3×3-Raster in der Vorschau anzeigen</string>
+    <string name="silent_capture">Lautlos fotografieren</string>
+    <string name="silent_capture_description">Fotos ohne Auslöseton aufnehmen.</string>
     <string name="shutter_sound">Auslöseton</string>
-    <string name="shutter_sound_required">Dieses Gerät gibt immer einen Auslöseton wieder. Die Lautstärke kannst du in den Geräteeinstellungen ändern.</string>
+    <string name="system_shutter_sound_description">Wenn lautloses Fotografieren ausgeschaltet ist, wird der Standardauslöseton des Geräts abgespielt.</string>
     <string name="shutter_sound_description">Die Lautstärke des Auslösetons hängt auch von der Gerätelautstärke ab.</string>
     <string name="sound_off">Aus</string>
     <string name="sound_low">Leise</string>

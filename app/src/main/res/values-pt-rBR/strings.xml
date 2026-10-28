@@ -43,8 +43,10 @@
     <string name="start_film_description">Filtro selecionado ao abrir a câmera</string>
     <string name="show_grid">Mostrar grade</string>
     <string name="show_grid_description">Mostrar uma grade de composição 3×3 na prévia</string>
+    <string name="silent_capture">Captura silenciosa</string>
+    <string name="silent_capture_description">Tire fotos sem reproduzir o som do obturador.</string>
     <string name="shutter_sound">Som do obturador</string>
-    <string name="shutter_sound_required">Este dispositivo sempre reproduz o som do obturador. Ajuste o volume nas configurações do dispositivo.</string>
+    <string name="system_shutter_sound_description">Quando a captura silenciosa está desativada, o dispositivo reproduz o som padrão do obturador.</string>
     <string name="shutter_sound_description">O volume do obturador também depende do volume do dispositivo.</string>
     <string name="sound_off">Desligado</string>
     <string name="sound_low">Baixo</string>

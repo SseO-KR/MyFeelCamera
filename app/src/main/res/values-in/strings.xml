@@ -43,8 +43,10 @@
     <string name="start_film_description">Film yang dipilih saat kamera dibuka</string>
     <string name="show_grid">Tampilkan kisi</string>
     <string name="show_grid_description">Tampilkan kisi komposisi 3×3 pada pratinjau</string>
+    <string name="silent_capture">Pemotretan senyap</string>
+    <string name="silent_capture_description">Ambil foto tanpa memutar suara rana.</string>
     <string name="shutter_sound">Suara rana</string>
-    <string name="shutter_sound_required">Perangkat ini selalu memutar suara rana. Atur volumenya di pengaturan perangkat.</string>
+    <string name="system_shutter_sound_description">Saat pemotretan senyap dinonaktifkan, perangkat memutar suara rana bawaannya.</string>
     <string name="shutter_sound_description">Volume suara rana juga dipengaruhi volume perangkat.</string>
     <string name="sound_off">Mati</string>
     <string name="sound_low">Rendah</string>

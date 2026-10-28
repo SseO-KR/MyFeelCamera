@@ -43,8 +43,10 @@
     <string name="start_film_description">Filtre sélectionné à l\'ouverture de l\'appareil photo</string>
     <string name="show_grid">Afficher la grille</string>
     <string name="show_grid_description">Afficher une grille de composition 3×3 dans l\'aperçu</string>
+    <string name="silent_capture">Prise de vue silencieuse</string>
+    <string name="silent_capture_description">Prenez des photos sans son de déclencheur.</string>
     <string name="shutter_sound">Son du déclencheur</string>
-    <string name="shutter_sound_required">Cet appareil émet toujours un son de déclencheur. Réglez son volume dans les paramètres de l\'appareil.</string>
+    <string name="system_shutter_sound_description">Quand la prise de vue silencieuse est désactivée, le son de déclencheur par défaut de votre appareil est utilisé.</string>
     <string name="shutter_sound_description">Le volume du déclencheur dépend aussi du volume de l\'appareil.</string>
     <string name="sound_off">Désactivé</string>
     <string name="sound_low">Faible</string>

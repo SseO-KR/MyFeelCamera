@@ -43,8 +43,10 @@
     <string name="start_film_description">Kamera açıldığında seçilecek film</string>
     <string name="show_grid">Izgarayı göster</string>
     <string name="show_grid_description">Önizlemede 3×3 kompozisyon ızgarası göster</string>
+    <string name="silent_capture">Sessiz çekim</string>
+    <string name="silent_capture_description">Deklanşör sesi çalmadan fotoğraf çekin.</string>
     <string name="shutter_sound">Deklanşör sesi</string>
-    <string name="shutter_sound_required">Bu cihaz her zaman deklanşör sesi çalar. Ses düzeyini cihaz ayarlarından değiştirin.</string>
+    <string name="system_shutter_sound_description">Sessiz çekim kapalıyken cihazın varsayılan deklanşör sesi çalınır.</string>
     <string name="shutter_sound_description">Deklanşör sesi, cihazın ses düzeyinden de etkilenir.</string>
     <string name="sound_off">Kapalı</string>
     <string name="sound_low">Düşük</string>

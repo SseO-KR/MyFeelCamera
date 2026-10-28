@@ -39,12 +39,12 @@ class ShutterSoundPlayer @Inject constructor(
     }
 
     fun play(level: ShutterSoundLevel) {
+        if (level == ShutterSoundLevel.OFF) return
+
         if (CameraInfo.mustPlayShutterSound()) {
             systemSound.play(MediaActionSound.SHUTTER_CLICK)
             return
         }
-
-        if (level == ShutterSoundLevel.OFF) return
 
         if (!soundLoaded) return
 

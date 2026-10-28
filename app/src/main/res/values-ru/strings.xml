@@ -43,8 +43,10 @@
     <string name="start_film_description">Плёнка, выбранная при открытии камеры</string>
     <string name="show_grid">Показывать сетку</string>
     <string name="show_grid_description">Показывать в видоискателе сетку 3×3</string>
+    <string name="silent_capture">Беззвучная съёмка</string>
+    <string name="silent_capture_description">Снимайте фотографии без звука затвора.</string>
     <string name="shutter_sound">Звук затвора</string>
-    <string name="shutter_sound_required">На этом устройстве звук затвора включён всегда. Отрегулируйте громкость в настройках устройства.</string>
+    <string name="system_shutter_sound_description">Когда беззвучная съёмка выключена, устройство воспроизводит стандартный звук затвора.</string>
     <string name="shutter_sound_description">Громкость звука затвора также зависит от громкости устройства.</string>
     <string name="sound_off">Выкл.</string>
     <string name="sound_low">Тихо</string>

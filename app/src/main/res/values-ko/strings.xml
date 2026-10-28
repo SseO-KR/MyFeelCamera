@@ -43,8 +43,10 @@
     <string name="start_film_description">카메라를 열 때 선택할 필름</string>
     <string name="show_grid">격자 표시</string>
     <string name="show_grid_description">미리보기에 3×3 구도선 표시</string>
+    <string name="silent_capture">무음 촬영</string>
+    <string name="silent_capture_description">촬영음을 재생하지 않고 사진을 촬영합니다.</string>
     <string name="shutter_sound">촬영음</string>
-    <string name="shutter_sound_required">이 기기는 촬영음을 항상 재생합니다. 음량은 기기 설정에서 조절하세요.</string>
+    <string name="system_shutter_sound_description">무음 촬영을 끄면 기기의 기본 촬영음을 재생합니다.</string>
     <string name="shutter_sound_description">촬영음 크기는 기기 음량의 영향도 받습니다.</string>
     <string name="sound_off">끔</string>
     <string name="sound_low">작게</string>

@@ -43,8 +43,10 @@
     <string name="start_film_description">開啟相機時選用的底片</string>
     <string name="show_grid">顯示格線</string>
     <string name="show_grid_description">在預覽畫面顯示 3×3 構圖格線</string>
+    <string name="silent_capture">靜音拍攝</string>
+    <string name="silent_capture_description">拍照時不播放快門聲。</string>
     <string name="shutter_sound">快門聲</string>
-    <string name="shutter_sound_required">此裝置一律會播放快門聲。請在裝置設定中調整音量。</string>
+    <string name="system_shutter_sound_description">關閉靜音拍攝後，會播放裝置的預設快門聲。</string>
     <string name="shutter_sound_description">快門聲大小也會受到裝置音量影響。</string>
     <string name="sound_off">關閉</string>
     <string name="sound_low">低</string>

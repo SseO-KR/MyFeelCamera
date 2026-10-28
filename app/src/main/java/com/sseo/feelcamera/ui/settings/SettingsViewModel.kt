@@ -24,10 +24,13 @@ data class SettingsUiState(
     val startFilm: FilmPreset = FilmPreset.WARM,
     val showGrid: Boolean = true,
     val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
-    val mustPlayShutterSound: Boolean = CameraInfo.mustPlayShutterSound(),
+    val usesSystemShutterSound: Boolean = CameraInfo.mustPlayShutterSound(),
     val telemetryConsent: TelemetryConsent = TelemetryConsent(),
     @field:StringRes val errorMessageRes: Int? = null,
-)
+) {
+    val isShutterSoundMuted: Boolean
+        get() = shutterSoundLevel == ShutterSoundLevel.OFF
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -90,13 +93,24 @@ class SettingsViewModel @Inject constructor(
 
     fun setShutterSoundLevel(level: ShutterSoundLevel) {
         val current = _uiState.value
-        if (current.isLoading || current.isSaving || current.mustPlayShutterSound ||
+        if (current.usesSystemShutterSound || current.isShutterSoundMuted ||
             current.shutterSoundLevel == level
         ) return
+        saveShutterSoundSetting { settingsRepository.setShutterSoundLevel(level) }
+    }
+
+    fun setShutterSoundMuted(muted: Boolean) {
+        if (_uiState.value.isShutterSoundMuted == muted) return
+        saveShutterSoundSetting { settingsRepository.setShutterSoundMuted(muted) }
+    }
+
+    private fun saveShutterSoundSetting(save: suspend () -> Unit) {
+        val current = _uiState.value
+        if (current.isLoading || current.isSaving) return
         _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
-                settingsRepository.setShutterSoundLevel(level)
+                save()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

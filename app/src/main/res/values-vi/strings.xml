@@ -43,8 +43,10 @@
     <string name="start_film_description">Phim được chọn khi mở camera</string>
     <string name="show_grid">Hiện lưới</string>
     <string name="show_grid_description">Hiện lưới bố cục 3×3 trên màn hình xem trước</string>
+    <string name="silent_capture">Chụp im lặng</string>
+    <string name="silent_capture_description">Chụp ảnh mà không phát âm thanh màn trập.</string>
     <string name="shutter_sound">Âm thanh màn trập</string>
-    <string name="shutter_sound_required">Thiết bị này luôn phát âm thanh màn trập. Hãy chỉnh âm lượng trong cài đặt thiết bị.</string>
+    <string name="system_shutter_sound_description">Khi tắt chụp im lặng, thiết bị sẽ phát âm thanh màn trập mặc định.</string>
     <string name="shutter_sound_description">Âm lượng màn trập cũng chịu ảnh hưởng của âm lượng thiết bị.</string>
     <string name="sound_off">Tắt</string>
     <string name="sound_low">Nhỏ</string>

@@ -39,6 +39,7 @@ class AppSettingsRepository internal constructor(
     private val startFilmKey = stringPreferencesKey("start_film")
     private val showGridKey = booleanPreferencesKey("show_grid")
     private val shutterSoundLevelKey = stringPreferencesKey("shutter_sound_level")
+    private val lastAudibleShutterSoundLevelKey = stringPreferencesKey("last_audible_shutter_sound_level")
     private val cameraPermissionIntroSeenKey = booleanPreferencesKey("camera_permission_intro_seen")
     private val cameraPermissionRequestedKey = booleanPreferencesKey("camera_permission_requested")
     private val telemetryChoiceMadeKey = booleanPreferencesKey("telemetry_choice_made")
@@ -87,6 +88,29 @@ class AppSettingsRepository internal constructor(
     suspend fun setShutterSoundLevel(level: ShutterSoundLevel) {
         dataStore.edit { preferences ->
             preferences[shutterSoundLevelKey] = level.name
+            if (level != ShutterSoundLevel.OFF) {
+                preferences[lastAudibleShutterSoundLevelKey] = level.name
+            }
+        }
+    }
+
+    suspend fun setShutterSoundMuted(muted: Boolean) {
+        dataStore.edit { preferences ->
+            val currentLevel = ShutterSoundLevel.entries.firstOrNull {
+                it.name == preferences[shutterSoundLevelKey]
+            } ?: ShutterSoundLevel.MEDIUM
+
+            if (muted) {
+                if (currentLevel != ShutterSoundLevel.OFF) {
+                    preferences[lastAudibleShutterSoundLevelKey] = currentLevel.name
+                }
+                preferences[shutterSoundLevelKey] = ShutterSoundLevel.OFF.name
+            } else if (currentLevel == ShutterSoundLevel.OFF) {
+                val restoredLevel = ShutterSoundLevel.entries.firstOrNull {
+                    it != ShutterSoundLevel.OFF && it.name == preferences[lastAudibleShutterSoundLevelKey]
+                } ?: ShutterSoundLevel.MEDIUM
+                preferences[shutterSoundLevelKey] = restoredLevel.name
+            }
         }
     }
 

@@ -43,8 +43,10 @@
     <string name="start_film_description">Filtro selezionato all\'apertura della fotocamera</string>
     <string name="show_grid">Mostra griglia</string>
     <string name="show_grid_description">Mostra una griglia 3×3 nell\'anteprima</string>
+    <string name="silent_capture">Scatto silenzioso</string>
+    <string name="silent_capture_description">Scatta foto senza riprodurre il suono di scatto.</string>
     <string name="shutter_sound">Suono dell\'otturatore</string>
-    <string name="shutter_sound_required">Questo dispositivo riproduce sempre il suono dell\'otturatore. Regola il volume nelle impostazioni del dispositivo.</string>
+    <string name="system_shutter_sound_description">Quando lo scatto silenzioso è disattivato, viene riprodotto il suono di scatto predefinito del dispositivo.</string>
     <string name="shutter_sound_description">Il volume dell\'otturatore dipende anche dal volume del dispositivo.</string>
     <string name="sound_off">Disattivato</string>
     <string name="sound_low">Basso</string>

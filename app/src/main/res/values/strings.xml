@@ -47,8 +47,10 @@
     <string name="start_film_description">Film selected when you open the camera</string>
     <string name="show_grid">Show grid</string>
     <string name="show_grid_description">Show a 3×3 composition grid in the preview</string>
+    <string name="silent_capture">Silent capture</string>
+    <string name="silent_capture_description">Take photos without playing a shutter sound.</string>
     <string name="shutter_sound">Shutter sound</string>
-    <string name="shutter_sound_required">This device always plays a shutter sound. Adjust its volume in device settings.</string>
+    <string name="system_shutter_sound_description">When silent capture is off, this device plays its default shutter sound.</string>
     <string name="shutter_sound_description">Shutter sound volume is also affected by your device volume.</string>
     <string name="sound_off">Off</string>
     <string name="sound_low">Low</string>

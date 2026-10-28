@@ -43,8 +43,10 @@
     <string name="start_film_description">कैमरा खोलने पर चुनी जाने वाली फ़िल्म</string>
     <string name="show_grid">ग्रिड दिखाएँ</string>
     <string name="show_grid_description">प्रीव्यू में 3×3 कम्पोज़िशन ग्रिड दिखाएँ</string>
+    <string name="silent_capture">साइलेंट कैप्चर</string>
+    <string name="silent_capture_description">शटर की आवाज़ के बिना फ़ोटो लें।</string>
     <string name="shutter_sound">शटर की आवाज़</string>
-    <string name="shutter_sound_required">यह डिवाइस हमेशा शटर की आवाज़ बजाता है। वॉल्यूम डिवाइस की सेटिंग में बदलें।</string>
+    <string name="system_shutter_sound_description">साइलेंट कैप्चर बंद होने पर डिवाइस की डिफ़ॉल्ट शटर आवाज़ बजती है।</string>
     <string name="shutter_sound_description">शटर की आवाज़ पर डिवाइस के वॉल्यूम का भी असर पड़ता है।</string>
     <string name="sound_off">बंद</string>
     <string name="sound_low">कम</string>

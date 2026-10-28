@@ -43,8 +43,10 @@
     <string name="start_film_description">الفيلم المحدد عند فتح الكاميرا</string>
     <string name="show_grid">إظهار الشبكة</string>
     <string name="show_grid_description">إظهار شبكة تكوين 3×3 في المعاينة</string>
+    <string name="silent_capture">التصوير الصامت</string>
+    <string name="silent_capture_description">التقط الصور بدون تشغيل صوت الغالق.</string>
     <string name="shutter_sound">صوت الغالق</string>
-    <string name="shutter_sound_required">يصدر هذا الجهاز صوت الغالق دائمًا. اضبط مستوى الصوت من إعدادات الجهاز.</string>
+    <string name="system_shutter_sound_description">عند إيقاف التصوير الصامت، يشغل الجهاز صوت الغالق الافتراضي.</string>
     <string name="shutter_sound_description">يتأثر صوت الغالق أيضًا بمستوى صوت الجهاز.</string>
     <string name="sound_off">إيقاف</string>
     <string name="sound_low">منخفض</string>

@@ -43,8 +43,10 @@
     <string name="start_film_description">打开相机时选用的胶片</string>
     <string name="show_grid">显示网格</string>
     <string name="show_grid_description">在预览中显示 3×3 构图网格</string>
+    <string name="silent_capture">静音拍摄</string>
+    <string name="silent_capture_description">拍照时不播放快门声音。</string>
     <string name="shutter_sound">快门声音</string>
-    <string name="shutter_sound_required">此设备始终会播放快门声音。请在设备设置中调整音量。</string>
+    <string name="system_shutter_sound_description">关闭静音拍摄后，将播放设备的默认快门声音。</string>
     <string name="shutter_sound_description">快门声音大小也受设备音量影响。</string>
     <string name="sound_off">关闭</string>
     <string name="sound_low">低</string>

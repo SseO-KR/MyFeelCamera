@@ -43,8 +43,10 @@
     <string name="start_film_description">カメラを開いたときに選択するフィルム</string>
     <string name="show_grid">グリッドを表示</string>
     <string name="show_grid_description">プレビューに3×3の構図ガイドを表示</string>
+    <string name="silent_capture">無音撮影</string>
+    <string name="silent_capture_description">シャッター音を鳴らさずに撮影します。</string>
     <string name="shutter_sound">シャッター音</string>
-    <string name="shutter_sound_required">この端末ではシャッター音が常に鳴ります。音量は端末の設定で調整してください。</string>
+    <string name="system_shutter_sound_description">無音撮影をオフにすると、端末の標準シャッター音が鳴ります。</string>
     <string name="shutter_sound_description">シャッター音の大きさは端末の音量にも影響されます。</string>
     <string name="sound_off">オフ</string>
     <string name="sound_low">小</string>
