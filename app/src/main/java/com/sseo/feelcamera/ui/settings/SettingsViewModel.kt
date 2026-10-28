@@ -20,7 +20,10 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val isLoading: Boolean = true,
-    val isSaving: Boolean = false,
+    val isStartFilmSaving: Boolean = false,
+    val isGridSaving: Boolean = false,
+    val isShutterSoundSaving: Boolean = false,
+    val isTelemetrySaving: Boolean = false,
     val startFilm: FilmPreset = FilmPreset.WARM,
     val showGrid: Boolean = true,
     val shutterSoundLevel: ShutterSoundLevel = ShutterSoundLevel.MEDIUM,
@@ -28,15 +31,25 @@ data class SettingsUiState(
     val telemetryConsent: TelemetryConsent = TelemetryConsent(),
     @field:StringRes val errorMessageRes: Int? = null,
 ) {
+    val isSaving: Boolean
+        get() = isStartFilmSaving || isGridSaving || isShutterSoundSaving || isTelemetrySaving
+
     val isShutterSoundMuted: Boolean
         get() = shutterSoundLevel == ShutterSoundLevel.OFF
 }
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel internal constructor(
     private val settingsRepository: AppSettingsRepository,
+    usesSystemShutterSound: Boolean,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    @Inject
+    constructor(settingsRepository: AppSettingsRepository) : this(
+        settingsRepository,
+        CameraInfo.mustPlayShutterSound(),
+    )
+
+    private val _uiState = MutableStateFlow(SettingsUiState(usesSystemShutterSound = usesSystemShutterSound))
     val uiState = _uiState.asStateFlow()
 
     init {
@@ -57,9 +70,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setStartFilm(film: FilmPreset) {
         val current = _uiState.value
-        if (current.isLoading || current.isSaving || current.startFilm == film) return
+        if (current.isLoading || current.isStartFilmSaving || current.startFilm == film) return
 
-        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
+        _uiState.update { it.copy(isStartFilmSaving = true, errorMessageRes = null) }
 
         viewModelScope.launch {
             try {
@@ -69,15 +82,15 @@ class SettingsViewModel @Inject constructor(
             } catch (error: Exception) {
                 showWriteError(error)
             } finally {
-                _uiState.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isStartFilmSaving = false) }
             }
         }
     }
 
     fun setShowGrid(showGrid: Boolean) {
         val current = _uiState.value
-        if (current.isLoading || current.isSaving || current.showGrid == showGrid) return
-        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
+        if (current.isLoading || current.isGridSaving || current.showGrid == showGrid) return
+        _uiState.update { it.copy(isGridSaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
                 settingsRepository.setShowGrid(showGrid)
@@ -86,7 +99,7 @@ class SettingsViewModel @Inject constructor(
             } catch (error: Exception) {
                 showWriteError(error)
             } finally {
-                _uiState.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isGridSaving = false) }
             }
         }
     }
@@ -106,8 +119,8 @@ class SettingsViewModel @Inject constructor(
 
     private fun saveShutterSoundSetting(save: suspend () -> Unit) {
         val current = _uiState.value
-        if (current.isLoading || current.isSaving) return
-        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
+        if (current.isLoading || current.isShutterSoundSaving) return
+        _uiState.update { it.copy(isShutterSoundSaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
                 save()
@@ -116,15 +129,15 @@ class SettingsViewModel @Inject constructor(
             } catch (error: Exception) {
                 showWriteError(error)
             } finally {
-                _uiState.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isShutterSoundSaving = false) }
             }
         }
     }
 
     fun setTelemetryConsent(analyticsEnabled: Boolean, crashReportingEnabled: Boolean) {
         val current = _uiState.value
-        if (current.isLoading || current.isSaving) return
-        _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
+        if (current.isLoading || current.isTelemetrySaving) return
+        _uiState.update { it.copy(isTelemetrySaving = true, errorMessageRes = null) }
         viewModelScope.launch {
             try {
                 settingsRepository.setTelemetryConsent(analyticsEnabled, crashReportingEnabled)
@@ -133,7 +146,7 @@ class SettingsViewModel @Inject constructor(
             } catch (error: Exception) {
                 showWriteError(error)
             } finally {
-                _uiState.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isTelemetrySaving = false) }
             }
         }
     }

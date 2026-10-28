@@ -183,7 +183,7 @@ fun SettingsScreen(
                                 .heightIn(min = 48.dp)
                                 .selectable(
                                     selected = uiState.startFilm == film,
-                                    enabled = !uiState.isSaving,
+                                    enabled = !uiState.isStartFilmSaving,
                                     role = Role.RadioButton,
                                     onClick = { onStartFilmSelected(film) },
                                 )
@@ -193,7 +193,7 @@ fun SettingsScreen(
                             RadioButton(
                                 selected = uiState.startFilm == film,
                                 onClick = null,
-                                enabled = !uiState.isSaving,
+                                enabled = !uiState.isStartFilmSaving,
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = Accent,
                                     unselectedColor = InkDim,
@@ -214,7 +214,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .toggleable(
                             value = uiState.showGrid,
-                            enabled = !uiState.isSaving,
+                            enabled = !uiState.isGridSaving,
                             role = Role.Switch,
                             onValueChange = onGridChanged,
                         )
@@ -238,7 +238,7 @@ fun SettingsScreen(
                     Switch(
                         checked = uiState.showGrid,
                         onCheckedChange = null,
-                        enabled = !uiState.isSaving,
+                        enabled = !uiState.isGridSaving,
                         colors = SwitchDefaults.colors(
                             checkedTrackColor = Accent,
                             uncheckedTrackColor = Rail,
@@ -252,7 +252,7 @@ fun SettingsScreen(
                         .heightIn(min = 48.dp)
                         .toggleable(
                             value = uiState.isShutterSoundMuted,
-                            enabled = !uiState.isSaving,
+                            enabled = !uiState.isShutterSoundSaving,
                             role = Role.Switch,
                             onValueChange = onShutterSoundMutedChanged,
                         )
@@ -279,7 +279,7 @@ fun SettingsScreen(
                     Switch(
                         checked = uiState.isShutterSoundMuted,
                         onCheckedChange = null,
-                        enabled = !uiState.isSaving,
+                        enabled = !uiState.isShutterSoundSaving,
                         colors = SwitchDefaults.colors(
                             checkedTrackColor = Accent,
                             uncheckedTrackColor = Rail,
@@ -308,7 +308,7 @@ fun SettingsScreen(
                                     .heightIn(min = 48.dp)
                                     .selectable(
                                         selected = uiState.shutterSoundLevel == level,
-                                        enabled = !uiState.isSaving && !uiState.isShutterSoundMuted,
+                                        enabled = !uiState.isShutterSoundSaving && !uiState.isShutterSoundMuted,
                                         role = Role.RadioButton,
                                         onClick = { onShutterSoundLevelSelected(level) },
                                     )
@@ -318,7 +318,7 @@ fun SettingsScreen(
                                 RadioButton(
                                     selected = uiState.shutterSoundLevel == level,
                                     onClick = null,
-                                    enabled = !uiState.isSaving && !uiState.isShutterSoundMuted,
+                                    enabled = !uiState.isShutterSoundSaving && !uiState.isShutterSoundMuted,
                                     colors = RadioButtonDefaults.colors(
                                         selectedColor = Accent,
                                         unselectedColor = InkDim,
@@ -349,7 +349,7 @@ fun SettingsScreen(
                             crashReportingEnabled = uiState.telemetryConsent.crashReportingEnabled,
                             onAnalyticsChanged = onAnalyticsChanged,
                             onCrashReportingChanged = onCrashReportingChanged,
-                            enabled = !uiState.isSaving,
+                            enabled = !uiState.isTelemetrySaving,
                         )
                         Text(
                             text = stringResource(R.string.crash_reporting_restart_notice),
