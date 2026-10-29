@@ -1,8 +1,8 @@
 # 자동화 테스트
 
-GitHub Actions의 기본 범위는 JVM 단위 테스트 15개와 확인된 계측 테스트 31개다. 모든 브랜치의 Push와 PR에서 API 35로 검사한다. 매일 UTC 18:00(KST 03:00)에는 최소 지원 API 29와 API 35에서 같은 31개를 검사한다. 모든 기기 테스트는 폐기 가능한 에뮬레이터를 대상으로 한다.
+GitHub Actions는 JVM 단위 테스트 15개, 카메라 비의존 계측 테스트 31개, 가상 장면 촬영 E2E 1개를 실행한다. 모든 브랜치의 Push와 PR에서 API 35와 API 36으로 검사한다. 매일 UTC 18:00(KST 03:00)에는 최소 지원 API 29, API 35, API 36을 검사한다. 모든 기기 테스트는 폐기 가능한 에뮬레이터를 대상으로 한다.
 
-촬영 E2E는 고정 카메라 입력에서 첫 프레임 대기가 실패하여 아직 정상 실행이 확인되지 않았다. 자동 검사에서는 제외하며, 수동 실행의 `e2e` 입력을 명시적으로 켰을 때만 실험용 전체 시나리오를 실행한다. GitHub의 Run workflow 버튼과 야간 스케줄은 workflow가 기본 브랜치에 반영된 후 사용할 수 있다. 기능 브랜치에서도 Push 검사는 실행된다.
+가상 장면 촬영 E2E는 실제 CameraX·렌더러·MediaStore를 사용해 첫 프레임, WARM/DUSK 전환, 화면·볼륨 셔터, 교대 10회 촬영, 설정 화면 왕복, Activity STOP/RESUME 후 촬영을 확인한다. 장면의 색상은 에뮬레이터별로 달라 고정 RGB 비교를 하지 않는다. 고정 회색 `imagefile:` 입력을 사용하는 기존 전체 촬영 시나리오는 실험용으로 남아 있으며 기본 Actions 검사에는 포함하지 않는다. workflow가 기본 브랜치에 반영되면 GitHub의 Run workflow와 야간 스케줄도 사용할 수 있고, 기능 브랜치에서도 Push·PR 검사를 실행한다.
 
 프로젝트의 [AGENTS.md](../AGENTS.md)에 따라 로컬 에뮬레이터 실행·ADB·설치·앱 조작·캡처는 해당 작업에 대한 사용자의 명시적 허가 후에만 수행한다. 테스트 작성이나 아래 명령의 문서화가 실행을 의미하지 않는다.
 
@@ -15,6 +15,7 @@ GitHub Actions의 기본 범위는 JVM 단위 테스트 15개와 확인된 계�
 | `PhotoSaveIntegrationTest` | JPEG 픽셀·크기·방향·메타데이터, 별도 URI, 처리 실패 후 저장, 쓰기·공개 실패 시 미완성 항목 삭제 | PR |
 | `CameraCaptureE2ETest` | 실제 CameraX 촬영, 미리보기 PixelCopy 색상, 저장 사진 색상, 썸네일 출처·로딩, 필름 변경 직후 촬영·복원 | 수동 실험용 |
 | `CameraCaptureE2ETest`의 반복 촬영 | WARM/DUSK 교대 촬영 10회, 각각 별도 사진 저장 | 수동 실험용 |
+| `CameraSceneCaptureE2ETest` | 가상 장면 첫 프레임, WARM/DUSK 촬영, 화면·볼륨 셔터, 10회 연속 촬영, 설정 왕복·Activity 복귀 후 촬영, MediaStore JPEG·썸네일 | Push·PR API 36, nightly |
 | `CameraLifecycleE2ETest` | STOP/RESUME, 설정 왕복, display 회전 후 새 프레임·촬영 | 수동 실험용 |
 | `CameraPermissionE2ETest` | OS 권한 창 거부 → 촬영 차단 → 재요청 허용 → 실제 촬영 | 수동 별도 프로세스 |
 | `SettingsRestartE2ETest` | UI에서 필름·격자·셔터음 변경 → 프로세스 종료 → 새 프로세스에서 복원·촬영 | 수동 2단계 |
@@ -47,7 +48,7 @@ python3 scripts/generate_film_references.py
 
 기본 `standard` 모드는 실제 카메라 입력을 요구하지 않는다. UI 테스트가 상태를 제어하고, 이미지 테스트는 자체 Surface/OES 입력을 사용한다. Actions에서도 카메라를 비활성화한 에뮬레이터로 31개를 실행한다.
 
-실험용 `core`·`extended` 모드는 `-camera-back imagefile:<절대 경로>/app/src/androidTest/assets/film/camera-input.png`로 시작한 에뮬레이터를 요구한다. `imagefile:`를 지원하는 Emulator가 필요하다. 검증 환경이 바뀌면 버전·출력 차이를 검토한다. 기본 `emulated`나 `none`으로 바꾸면 이 E2E의 고정 색상 기준을 만족하지 못한다. [Android 카메라 입력 옵션](https://developer.android.com/studio/run/emulator-commandline)
+실험용 `core`·`extended` 모드는 `-camera-back imagefile:<절대 경로>/app/src/androidTest/assets/film/camera-input.png`로 시작한 에뮬레이터를 요구한다. `imagefile:`를 지원하는 Emulator가 필요하다. 검증 환경이 바뀌면 버전·출력 차이를 검토한다. 가상 장면의 이미지 색은 고정 RGB 기준에 사용하지 않는다. [Android 카메라 입력 옵션](https://developer.android.com/studio/run/emulator-commandline)
 
 카메라 입력은 RGB(128,128,128)의 회색이다. 해상도·센서 방향·카메라 크롭 차이로 색상 판정이 흔들리지 않도록 중앙 영역의 RGB 평균을 비교하며 채널별 오차 8을 허용한다. WARM·DUSK의 기대 채널 차이보다 작게 정했다. 형상·회전의 정확도는 별도의 비대칭 이미지 테스트가 담당한다.
 
@@ -63,6 +64,12 @@ python3 scripts/generate_film_references.py --check
 
 ```sh
 bash scripts/run_android_ci.sh standard
+```
+
+가상 장면 촬영 E2E는 GitHub Actions에서 API 36 에뮬레이터로 실행한다. 연결된 가상 장면 에뮬레이터에서 로컬 실행하려면:
+
+```sh
+bash scripts/run_android_ci.sh scene
 ```
 
 고정 카메라 입력을 준비한 실험용 E2E 실행:

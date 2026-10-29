@@ -9,14 +9,14 @@ test_namespace="${app_package}.testing"
 permission_class="${app_package}.ui.camera.CameraPermissionE2ETest"
 restart_class="${app_package}.ui.settings.SettingsRestartE2ETest"
 suite_mode="${1:-standard}"
-case "$suite_mode" in standard|core|extended) ;; *) echo 'Usage: bash scripts/run_android_ci.sh [standard|core|extended]' >&2; exit 2 ;; esac
-fixture_camera=true
-if [[ "$suite_mode" == standard ]]; then fixture_camera=false; fi
+case "$suite_mode" in standard|core|extended|scene) ;; *) echo 'Usage: bash scripts/run_android_ci.sh [standard|core|extended|scene]' >&2; exit 2 ;; esac
+fixture_camera=false
+if [[ "$suite_mode" == core || "$suite_mode" == extended ]]; then fixture_camera=true; fi
 
 mkdir -p app/build/ci-device
 adb wait-for-device
 if [[ "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" != 1 ]]; then
-  echo 'This suite requires an Android emulator. core/extended also require the fixed camera input.' >&2
+  echo 'This suite requires an Android emulator; core/extended need the fixture camera and scene needs the virtual-scene camera.' >&2
   exit 2
 fi
 # Emulator의 자체 adb -e 설정은 무선 연결 기기가 있으면 대상을 고르지 못할 수 있다.
@@ -87,6 +87,8 @@ if [[ "$suite_mode" == standard ]]; then
   standard_classes+=",$app_package.ui.camera.CameraScreenUiTest"
   standard_classes+=",$app_package.ui.settings.SettingsUiTest"
   run_suite standard 31 -e class "$standard_classes"
+elif [[ "$suite_mode" == scene ]]; then
+  run_suite scene 1 -e class "$app_package.ui.camera.CameraSceneCaptureE2ETest"
 else
   excluded_annotations="$test_namespace.ProcessRestartTest"
   expected_count=37
