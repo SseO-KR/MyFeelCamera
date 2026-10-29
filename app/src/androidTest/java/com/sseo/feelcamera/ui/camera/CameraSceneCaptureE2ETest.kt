@@ -142,7 +142,7 @@ class CameraSceneCaptureE2ETest {
         savePreview(label)
         val before = photos()
         if (keyCode == null) compose.onNodeWithTag("shutter").assertIsEnabled().performClick()
-        else assertTrue("Volume key injection failed", device.pressKeyCode(keyCode))
+        else dispatchVolumeShutter(keyCode)
         var added = emptySet<Uri>()
         compose.waitUntil(30_000) { added = photos() - before; added.isNotEmpty() }
         assertEquals("One shutter must create one JPEG", 1, added.size)
@@ -165,6 +165,17 @@ class CameraSceneCaptureE2ETest {
                 .put("exifOrientation", ExifInterface(file.absolutePath).getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)))
             checkpoint("saved-$label")
         } finally { bitmap.recycle() }
+    }
+
+    private fun dispatchVolumeShutter(keyCode: Int) {
+        var downHandled = false
+        var upHandled = false
+        scenario.onActivity { activity ->
+            downHandled = activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+            upHandled = activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        }
+        assertTrue("Activity must route the volume key down event to the camera shutter", downHandled)
+        assertTrue("Activity must consume the volume key up event", upHandled)
     }
 
     private fun savePreview(label: String) {
