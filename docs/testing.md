@@ -26,7 +26,7 @@ GitHub Actions는 JVM 단위 테스트 15개, 카메라 비의존 계측 테스�
 
 동일 조건의 이미지 비교와 실제 촬영 경로를 나눠 검증한다. `PreviewFixture`는 테스트 비트맵을 실제 Surface/OES에 쓰고 production `CameraRenderer`를 사용한다. 촬영 이미지 테스트는 production `CaptureGlRenderer`를 사용한다. 저장 테스트도 실제 EGL·MediaStore를 사용하며 실패 테스트만 ContentProvider 경계에서 실패를 주입한다.
 
-UI 테스트는 카메라 바인딩 완료와 화면 상태를 제어한다. E2E에서는 카메라·렌더러·저장을 대체하지 않고 실제 앱을 실행한다. 렌더러의 `renderedFrame`은 첫 입력 프레임을 소비한 뒤 그린 필름과 증가하는 번호를 기록한다. Compose 상태 반영, GL draw, Surface 게시 시점은 다르므로 PixelCopy 색상 확인도 완료 조건으로 기다린다. 고정 시간 sleep은 사용하지 않는다.
+UI 테스트는 카메라 바인딩 완료와 화면 상태를 제어한다. E2E에서는 카메라·렌더러·저장을 대체하지 않고 실제 앱을 실행한다. 렌더러의 `renderedFrame`은 첫 입력 프레임을 소비한 뒤 그린 필름과 증가하는 번호를 기록한다. 번호는 Renderer 인스턴스마다 시작하므로 화면 전환·복귀처럼 인스턴스가 바뀔 수 있는 경계에서는 이전 번호와 비교하지 않고 새 프레임 객체를 기다린다. Compose 상태 반영, GL draw, Surface 게시 시점은 다르므로 PixelCopy 색상 확인도 완료 조건으로 기다린다. 고정 시간 sleep은 사용하지 않는다.
 
 사진 방향의 픽셀 정확도는 비대칭 테스트 이미지로 네 방향을 검증한다. display 회전 E2E는 창 회전 이후 미리보기와 촬영이 계속 동작하는지 검증하며, 물리 센서의 방향 변화를 재현한다고 간주하지 않는다.
 

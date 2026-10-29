@@ -78,17 +78,17 @@ class CameraSceneCaptureE2ETest {
         checkpoint("ten-sequential-captures")
 
         selectFilm(FilmPreset.DUSK)
-        val settingsReturnSequence = preview()?.renderedFrame?.sequence ?: -1L
+        val frameBeforeSettings = preview()?.renderedFrame
         compose.onNodeWithContentDescription(context.getString(R.string.settings)).performClick()
         compose.onNodeWithTag("settings_back").assertExists().performClick()
-        waitForFrame(FilmPreset.DUSK, settingsReturnSequence)
+        waitForFrame(FilmPreset.DUSK, frameBeforeSettings)
         takePhoto("after-settings", FilmPreset.DUSK)
         checkpoint("settings-roundtrip")
 
-        val resumeSequence = preview()?.renderedFrame?.sequence ?: -1L
+        val frameBeforePause = preview()?.renderedFrame
         scenario.moveToState(Lifecycle.State.CREATED)
         scenario.moveToState(Lifecycle.State.RESUMED)
-        waitForFrame(FilmPreset.DUSK, resumeSequence)
+        waitForFrame(FilmPreset.DUSK, frameBeforePause)
         takePhoto("after-stop-resume", FilmPreset.DUSK)
         checkpoint("activity-stop-resume")
         assertEquals("All seventeen successful actions must remain saved", 17, (photos() - initialPhotos).size)
@@ -121,20 +121,20 @@ class CameraSceneCaptureE2ETest {
         }
     }
 
-    private fun waitForFrame(film: FilmPreset, afterSequence: Long = -1) {
+    private fun waitForFrame(film: FilmPreset, afterFrame: Any? = null) {
         waitForShutter()
         compose.waitUntil(20_000) {
-            preview()?.renderedFrame?.let { it.film == film && it.sequence > afterSequence } == true
+            preview()?.renderedFrame?.let { it.film == film && it !== afterFrame } == true
         }
     }
 
     private fun selectFilm(film: FilmPreset) {
         val dial = compose.onNodeWithTag("film_dial")
         val expected = context.getString(film.labelRes)
-        val previousSequence = preview()?.renderedFrame?.sequence ?: -1L
+        val previousFrame = preview()?.renderedFrame
         if (dial.fetchSemanticsNode().config[SemanticsProperties.StateDescription] != expected) dial.performClick()
         dial.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, expected))
-        waitForFrame(film, previousSequence)
+        waitForFrame(film, previousFrame)
     }
 
     private fun takePhoto(label: String, film: FilmPreset, keyCode: Int? = null) {
